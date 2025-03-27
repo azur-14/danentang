@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:manager/categories_management.dart';
-import 'package:manager/coupon_management.dart';
-import 'package:manager/customer_support.dart';
-import 'package:manager/order_list.dart';
-import 'package:manager/product_management.dart';
-import 'package:manager/projects.dart';
-import 'package:manager/user_list.dart';
-import 'package:manager/user_report.dart';
+import 'package:danentang/categories_management.dart';
+import 'package:danentang/coupon_management.dart';
+import 'package:danentang/customer_support.dart';
+import 'package:danentang/order_list.dart';
+import 'package:danentang/product_management.dart';
+import 'package:danentang/projects.dart';
+import 'package:danentang/user_list.dart';
+import 'package:danentang/user_report.dart';
 
 class DashBoard extends StatelessWidget {
   @override

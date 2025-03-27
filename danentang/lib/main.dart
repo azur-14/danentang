@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:danentang/Screens/Login_Screen.dart';
-import 'package:danentang/Screens/Login_SignUp_Screen.dart';
+import 'package:danentang/login.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,13 +12,13 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'CuoiKi',
+      title: 'Final',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
       debugShowCheckedModeBanner: false,
 
-      home: LoginSignupScreen(),
+      home: Login(),
     );
   }
 }

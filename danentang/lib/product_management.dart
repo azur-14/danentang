@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:manager/add_product.dart';
-import 'package:manager/delete_product.dart';
+import 'package:danentang/add_product.dart';
+import 'package:danentang/delete_product.dart';
 
 void main() {
   runApp(Product_Management());

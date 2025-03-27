@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:manager/customer_service.dart';
+import 'package:danentang/customer_service.dart';
 
 class Customer_Support extends StatelessWidget {
   @override
