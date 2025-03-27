@@ -1,0 +1,71 @@
+{
+   "checksum": "45e256f4c6711548bd01a03654a21244",
+   "roots": {
+      "bookmark_bar": {
+         "children": [ {
+            "date_added": "13311653808235952",
+            "date_last_used": "0",
+            "guid": "b9b81b18-b932-43ff-abd0-7307889b347f",
+            "id": "6",
+            "name": "ie",
+            "type": "url",
+            "url": "https://www.cambridgelms.org/main/p/splash"
+         }, {
+            "date_added": "13322728743946233",
+            "date_last_used": "0",
+            "guid": "f32b7200-a514-48fd-9c01-be0f207cdf0b",
+            "id": "7",
+            "name": "Thuyết trình PLĐC - Presentation",
+            "type": "url",
+            "url": "https://www.canva.com/design/DAFcgIlwqf4/MpyisslpQnG08Pf6ljh6xw/edit"
+         }, {
+            "date_added": "13326828643849156",
+            "date_last_used": "0",
+            "guid": "35bbf891-2bb3-48fb-9690-a907b566788a",
+            "id": "8",
+            "name": "Google Drive: Sign-in",
+            "type": "url",
+            "url": "https://accounts.google.com/v3/signin/challenge/pwd?TL=AG7eRGAQY2rqExMiNGnbp_qxee1s8FlYScFqfbw5UEfd5OkXsU7wV5e_XQid0TOX&checkConnection=youtube%3A1409%3A0&checkedDomains=youtube&cid=1&continue=https%3A%2F%2Fdrive.google.com%2Fdrive%2Ffolders%2F1tioug4MQZC5BVMpfXVdYdqZU3xkybwRp%3Fusp%3Dsharing&dsh=S-1962919403%3A1682354935342586&flowEntry=ServiceLogin&flowName=GlifWebSignIn&followup=https%3A%2F%2Fdrive.google.com%2Fdrive%2Ffolders%2F1tioug4MQZC5BVMpfXVdYdqZU3xkybwRp%3Fusp%3Dsharing&ifkv=AQMjQ7SbCMlPNrirWG4dvaBkqwEEkVDB8pwXjyBY7iu7HSIwqOB6TCSmLWCaPC2yM3WgB6ZkR00q&osid=1&pstMsg=1&service=wise&authuser=0"
+         }, {
+            "date_added": "13364666049433200",
+            "date_last_used": "0",
+            "guid": "23b9c0e5-73c6-41fa-9419-8a3d40873e4b",
+            "id": "9",
+            "meta_info": {
+               "power_bookmark_meta": ""
+            },
+            "name": "TƯ TƯỞNG HỒ CHÍ MINH - Bài thuyết trình",
+            "type": "url",
+            "url": "https://www.canva.com/design/DAGKFNUCGXk/6hNS-KxsZ3ZHZ9HM4TCqwg/edit"
+         } ],
+         "date_added": "13387390975478214",
+         "date_last_used": "0",
+         "date_modified": "13364666049433200",
+         "guid": "0bc5d13f-2cba-5d74-951f-3f233fe6c908",
+         "id": "1",
+         "name": "Bookmarks bar",
+         "type": "folder"
+      },
+      "other": {
+         "children": [  ],
+         "date_added": "13387390975478224",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "82b081ec-3dd3-529c-8475-ab6c344590dd",
+         "id": "2",
+         "name": "Other bookmarks",
+         "type": "folder"
+      },
+      "synced": {
+         "children": [  ],
+         "date_added": "13387390975478226",
+         "date_last_used": "0",
+         "date_modified": "0",
+         "guid": "4cf2e351-0e85-532b-bb37-df045d8f8d0f",
+         "id": "3",
+         "name": "Mobile bookmarks",
+         "type": "folder"
+      }
+   },
+   "version": 1
+}
