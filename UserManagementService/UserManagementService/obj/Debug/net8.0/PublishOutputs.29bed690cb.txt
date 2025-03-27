@@ -1,0 +1,11 @@
+D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\PubTmp\Out\UserManagementService.exe
+D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\PubTmp\Out\appsettings.Development.json
+D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\PubTmp\Out\appsettings.json
+D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\PubTmp\Out\UserManagementService.dll
+D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\PubTmp\Out\UserManagementService.deps.json
+D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\PubTmp\Out\UserManagementService.runtimeconfig.json
+D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\PubTmp\Out\UserManagementService.pdb
+D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\PubTmp\Out\Microsoft.OpenApi.dll
+D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\PubTmp\Out\Swashbuckle.AspNetCore.Swagger.dll
+D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\PubTmp\Out\Swashbuckle.AspNetCore.SwaggerGen.dll
+D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\PubTmp\Out\Swashbuckle.AspNetCore.SwaggerUI.dll

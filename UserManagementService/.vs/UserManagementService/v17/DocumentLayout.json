@@ -1,7 +1,12 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "D:\\code\\danentang\\UserManagementService\\",
-  "Documents": [],
+  "WorkspaceRootPath": "D:\\microservices\\danentang\\UserManagementService\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|d:\\microservices\\danentang\\usermanagementservice\\usermanagementservice\\weatherforecast.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|solutionrelative:usermanagementservice\\weatherforecast.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
@@ -9,8 +14,12 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": -1,
+          "SelectedChildIndex": 20,
           "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{74946827-37a0-11d2-a273-00c04f8ef4ff}"
@@ -86,6 +95,19 @@
             {
               "$type": "Bookmark",
               "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "WeatherForecast.cs",
+              "DocumentMoniker": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\WeatherForecast.cs",
+              "RelativeDocumentMoniker": "UserManagementService\\WeatherForecast.cs",
+              "ToolTip": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\WeatherForecast.cs",
+              "RelativeToolTip": "UserManagementService\\WeatherForecast.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-03-27T17:25:01.574Z",
+              "EditorCaption": ""
             }
           ]
         }
