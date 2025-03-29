@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:danentang/Screens/Login_Screen.dart';
+import 'package:danentang/Screens/Login_SignUp_Screen.dart';
+import 'package:danentang/Screens/SignUp.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +20,7 @@ class MyApp extends StatelessWidget {
       ),
       debugShowCheckedModeBanner: false,
 
-      home: Login(),
+      home: Signup(),
     );
   }
 }
