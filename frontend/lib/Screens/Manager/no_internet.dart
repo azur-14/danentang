@@ -7,12 +7,12 @@ class NoInternet extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: NoDataScreen(),
+      home: NoInternetScreen(),
     );
   }
 }
 
-class NoDataScreen extends StatelessWidget {
+class NoInternetScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
