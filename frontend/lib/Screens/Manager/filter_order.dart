@@ -5,10 +5,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(MyApp());
+  runApp(Filter_Order());
 }
 
-class MyApp extends StatelessWidget {
+class Filter_Order extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
