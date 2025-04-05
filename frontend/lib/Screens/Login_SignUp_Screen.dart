@@ -1,58 +1,39 @@
 import 'package:flutter/material.dart';
-import 'package:danentang/Screens/Login_Screen.dart';
+import '../../Widget/Footer/footer_into.dart'; // Import Footer
 
-class SignUp extends StatelessWidget {
+class LoginSignupScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: SignUpScreen(),
-    );
-  }
-}
-
-class SignUpScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
-      backgroundColor: Colors.deepPurple.shade900,
+      backgroundColor: Color(0xFF211463),
       body: Column(
         children: [
           const SizedBox(height: 80),
-          // Logo và tên ứng dụng
+
+          // Logo ở giữa
           Center(
-            child: Column(
-              children: [
-                Image.asset('assets/shopping_bag.png', width: 100),
-                const SizedBox(height: 10),
-                Text(
-                  "Hoalahe",
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
+            child: Image.asset('assets/Logo.png', width: 150),
           ),
-          const SizedBox(height: 40),
+
+          const SizedBox(height: 10),
 
           // Form đăng ký
           Expanded(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(40),
                   topRight: Radius.circular(40),
                 ),
               ),
-              child: Column(
+                            child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 20),
+                  SizedBox(height: screenHeight * 0.05),
                   Text(
                     "Sign-up",
                     style: TextStyle(
@@ -61,108 +42,89 @@ class SignUpScreen extends StatelessWidget {
                       color: Colors.black,
                     ),
                   ),
-                  const SizedBox(height: 10),
-
-                  // Ô nhập tên
-                  _buildTextField("Enter your name *"),
-                  const SizedBox(height: 10),
-
-                  // Ô nhập mật khẩu
-                  _buildPasswordField("Enter your password *"),
-                  const SizedBox(height: 10),
-
-                  // Ô nhập lại mật khẩu
-                  _buildPasswordField("Enter your password again *"),
-                  const SizedBox(height: 10),
-
-                  // Ô nhập địa chỉ
-                  _buildTextField("Enter your address *"),
                   const SizedBox(height: 20),
+                                    
+                  // Ô nhập email
+                  TextField(
+                    decoration: InputDecoration(
+                      hintText: "Enter your email *",
+                      filled: true,
+                      fillColor: Colors.grey.shade200,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
 
-                  // Nút Sign Up
+                  // Điều khoản sử dụng
+                  Row(
+                    children: [
+                      const Text(
+                        "By continuing, I agree to the ",
+                        style: TextStyle(color: Colors.black54),
+                      ),
+                      GestureDetector(
+                        onTap: () {},
+                        child: const Text(
+                          "Terms of Use",
+                          style: TextStyle(color: Color(0xFF642FBF), fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const Text(" & "),
+                      GestureDetector(
+                        onTap: () {},
+                        child: const Text(
+                          "Privacy Policy",
+                          style: TextStyle(color: Color(0xFF642FBF), fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 50),
+
+                  // Nút Continue
                   SizedBox(
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple,
+                        backgroundColor: Color(0xFF8204FF),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
                       onPressed: () {},
-                      child: Text(
-                        "Sign Up",
+                      child: const Text(
+                        "Continue",
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Center(
+
+                  // Hỗ trợ đăng nhập
+                  Padding(
+                    padding: const EdgeInsets.only(left: 5), // Thêm khoảng cách nếu cần
                     child: GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => LoginScreen()),
-                        );
-                      },
-                      child: RichText(
-                        text: TextSpan(
-                          style: TextStyle(color: Colors.black54),
-                          children: [
-                            TextSpan(text: "Already have an account? "),
-                            TextSpan(
-                              text: "Log in now.",
-                              style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
+                      onTap: () {},
+                      child: const Text(
+                        "Have trouble logging in? Get help",
+                        style: TextStyle(color: Color(0xFF642FBF), fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
                   const Spacer(),
-                  Center(
-                    child: Text(
-                      "SHOPPING APP",
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
+
+                  // Footer
+                  Center(child: AppFooter()),
                   const SizedBox(height: 10),
                 ],
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTextField(String hintText) {
-    return TextField(
-      decoration: InputDecoration(
-        hintText: hintText,
-        filled: true,
-        fillColor: Colors.grey.shade200,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide.none,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPasswordField(String hintText) {
-    return TextField(
-      obscureText: true,
-      decoration: InputDecoration(
-        hintText: hintText,
-        filled: true,
-        fillColor: Colors.grey.shade200,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide.none,
-        ),
-        suffixIcon: Icon(Icons.remove_red_eye_outlined, color: Colors.black26),
       ),
     );
   }
