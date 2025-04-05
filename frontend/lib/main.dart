@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:danentang/Screens/Login_Screen.dart';
-import 'package:danentang/Screens/Login_SignUp_Screen.dart';
-import 'package:danentang/Screens/SignUp.dart';
+import 'package:danentang/Screens/Customer/SignUp.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
