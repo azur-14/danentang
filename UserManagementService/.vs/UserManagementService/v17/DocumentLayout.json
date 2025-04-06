@@ -3,22 +3,90 @@
   "WorkspaceRootPath": "D:\\microservices\\danentang\\UserManagementService\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|d:\\microservices\\danentang\\usermanagementservice\\usermanagementservice\\weatherforecast.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|solutionrelative:usermanagementservice\\weatherforecast.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|d:\\microservices\\danentang\\usermanagementservice\\usermanagementservice\\usermanagementservice.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|solutionrelative:usermanagementservice\\usermanagementservice.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|d:\\microservices\\danentang\\usermanagementservice\\usermanagementservice\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|solutionrelative:usermanagementservice\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|d:\\microservices\\danentang\\usermanagementservice\\usermanagementservice\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|solutionrelative:usermanagementservice\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|d:\\microservices\\danentang\\usermanagementservice\\usermanagementservice\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|solutionrelative:usermanagementservice\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     }
   ],
   "DocumentGroupContainers": [
     {
-      "Orientation": 0,
+      "Orientation": 1,
       "VerticalTabListWidth": 256,
       "DocumentGroups": [
         {
-          "DockedWidth": 200,
-          "SelectedChildIndex": 20,
+          "DockedHeight": 366,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Bookmark",
+              "Name": "ST:0:0:{1c64b9c2-e352-428e-a56d-0ace190b99a6}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "UserManagementService",
+              "DocumentMoniker": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\UserManagementService.csproj",
+              "RelativeDocumentMoniker": "UserManagementService\\UserManagementService.csproj",
+              "ToolTip": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\UserManagementService.csproj",
+              "RelativeToolTip": "UserManagementService\\UserManagementService.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACEAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-04-05T11:44:39.058Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "launchSettings.json",
+              "DocumentMoniker": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Properties\\launchSettings.json",
+              "RelativeDocumentMoniker": "UserManagementService\\Properties\\launchSettings.json",
+              "ToolTip": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Properties\\launchSettings.json",
+              "RelativeToolTip": "UserManagementService\\Properties\\launchSettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-04-05T13:45:34.231Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
               "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Program.cs",
+              "DocumentMoniker": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Program.cs",
+              "RelativeDocumentMoniker": "UserManagementService\\Program.cs",
+              "ToolTip": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Program.cs",
+              "RelativeToolTip": "UserManagementService\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAACBjwAMAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-05T11:46:02.966Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\appsettings.json",
+              "RelativeDocumentMoniker": "UserManagementService\\appsettings.json",
+              "ToolTip": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\appsettings.json",
+              "RelativeToolTip": "UserManagementService\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-04-05T11:46:15.846Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Bookmark",
@@ -66,10 +134,6 @@
             },
             {
               "$type": "Bookmark",
-              "Name": "ST:0:0:{1c64b9c2-e352-428e-a56d-0ace190b99a6}"
-            },
-            {
-              "$type": "Bookmark",
               "Name": "ST:134:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
             },
             {
@@ -95,19 +159,20 @@
             {
               "$type": "Bookmark",
               "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            }
+          ]
+        },
+        {
+          "DockedHeight": 34,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
             },
             {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "WeatherForecast.cs",
-              "DocumentMoniker": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\WeatherForecast.cs",
-              "RelativeDocumentMoniker": "UserManagementService\\WeatherForecast.cs",
-              "ToolTip": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\WeatherForecast.cs",
-              "RelativeToolTip": "UserManagementService\\WeatherForecast.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-03-27T17:25:01.574Z",
-              "EditorCaption": ""
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{0ad07096-bba9-4900-a651-0598d26f6d24}"
             }
           ]
         }
