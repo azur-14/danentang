@@ -1,20 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../Widget/Footer/footer_into.dart';
-<<<<<<<< HEAD:frontend/lib/Screens/Login/SignUp.dart
-class Sign_Up extends StatelessWidget {
-========
-class Login extends StatelessWidget {
-  const Login({super.key});
 
->>>>>>>> 931f329ab46fc9c0e833611cbaec7b7377187fdf:frontend/lib/Screens/Customer/SignUp.dart
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Signup(),
-    );
-  }
-}
 
 class Signup extends StatelessWidget {
   const Signup({super.key});
