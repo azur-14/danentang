@@ -10,7 +10,7 @@ class LoginSignupScreen extends StatelessWidget {
     double screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
       backgroundColor: Color(0xFF211463),
-      body: SingleChildScrollView(  // Wrap the entire body in SingleChildScrollView
+      body: SingleChildScrollView( 
         child: Column(
           children: [
             const SizedBox(height: 80),
