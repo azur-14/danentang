@@ -3,6 +3,18 @@
   "WorkspaceRootPath": "D:\\microservices\\danentang\\UserManagementService\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|d:\\microservices\\danentang\\usermanagementservice\\usermanagementservice\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|solutionrelative:usermanagementservice\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|d:\\microservices\\danentang\\usermanagementservice\\usermanagementservice\\data\\userdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|solutionrelative:usermanagementservice\\data\\userdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|d:\\microservices\\danentang\\usermanagementservice\\usermanagementservice\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|solutionrelative:usermanagementservice\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|d:\\microservices\\danentang\\usermanagementservice\\usermanagementservice\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
       "RelativeMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|solutionrelative:usermanagementservice\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     },
@@ -11,28 +23,20 @@
       "RelativeMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|solutionrelative:usermanagementservice\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|d:\\microservices\\danentang\\usermanagementservice\\usermanagementservice\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|solutionrelative:usermanagementservice\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|d:\\microservices\\danentang\\usermanagementservice\\usermanagementservice\\usermanagementservice.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|",
-      "RelativeMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|solutionrelative:usermanagementservice\\usermanagementservice.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
+      "AbsoluteMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|d:\\microservices\\danentang\\usermanagementservice\\usermanagementservice\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|solutionrelative:usermanagementservice\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|d:\\microservices\\danentang\\usermanagementservice\\usermanagementservice\\usermanagementservice.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
       "RelativeMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|solutionrelative:usermanagementservice\\usermanagementservice.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|d:\\microservices\\danentang\\usermanagementservice\\usermanagementservice\\data\\userdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|solutionrelative:usermanagementservice\\data\\userdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|d:\\microservices\\danentang\\usermanagementservice\\usermanagementservice\\models\\address.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|solutionrelative:usermanagementservice\\models\\address.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|d:\\microservices\\danentang\\usermanagementservice\\usermanagementservice\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|solutionrelative:usermanagementservice\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|d:\\microservices\\danentang\\usermanagementservice\\usermanagementservice\\usermanagementservice.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|",
+      "RelativeMoniker": "D:0:0:{218C7A37-673C-4F5A-B163-6620899FD7F4}|UserManagementService\\UserManagementService.csproj|solutionrelative:usermanagementservice\\usermanagementservice.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
     }
   ],
   "DocumentGroupContainers": [
@@ -41,8 +45,8 @@
       "VerticalTabListWidth": 256,
       "DocumentGroups": [
         {
-          "DockedHeight": 40,
-          "SelectedChildIndex": 23,
+          "DockedHeight": 661,
+          "SelectedChildIndex": 20,
           "Children": [
             {
               "$type": "Bookmark",
@@ -118,84 +122,59 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "UserManagementService",
-              "DocumentMoniker": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\UserManagementService.csproj",
-              "RelativeDocumentMoniker": "UserManagementService\\UserManagementService.csproj",
-              "ToolTip": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\UserManagementService.csproj",
-              "RelativeToolTip": "UserManagementService\\UserManagementService.csproj",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2025-04-12T18:56:20.91Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "UserManagementService.csproj",
-              "DocumentMoniker": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\UserManagementService.csproj",
-              "RelativeDocumentMoniker": "UserManagementService\\UserManagementService.csproj",
-              "ToolTip": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\UserManagementService.csproj",
-              "RelativeToolTip": "UserManagementService\\UserManagementService.csproj",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAACEAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2025-04-05T11:44:39.058Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "Program.cs",
-              "DocumentMoniker": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Program.cs",
-              "RelativeDocumentMoniker": "UserManagementService\\Program.cs",
-              "ToolTip": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Program.cs",
-              "RelativeToolTip": "UserManagementService\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-05T11:46:02.966Z",
+              "Title": "launchSettings.json",
+              "DocumentMoniker": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Properties\\launchSettings.json",
+              "RelativeDocumentMoniker": "UserManagementService\\Properties\\launchSettings.json",
+              "ToolTip": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Properties\\launchSettings.json",
+              "RelativeToolTip": "UserManagementService\\Properties\\launchSettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-04-12T20:44:01.217Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "AuthController.cs",
-              "DocumentMoniker": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Controllers\\AuthController.cs",
-              "RelativeDocumentMoniker": "UserManagementService\\Controllers\\AuthController.cs",
-              "ToolTip": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Controllers\\AuthController.cs",
-              "RelativeToolTip": "UserManagementService\\Controllers\\AuthController.cs",
-              "ViewState": "AgIAAEQAAAAAAAAAAAAgwAwAAAATAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-12T18:07:07.472Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "UserDbContext.cs",
-              "DocumentMoniker": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Data\\UserDbContext.cs",
-              "RelativeDocumentMoniker": "UserManagementService\\Data\\UserDbContext.cs",
-              "ToolTip": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Data\\UserDbContext.cs",
-              "RelativeToolTip": "UserManagementService\\Data\\UserDbContext.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-12T18:08:20.482Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 3,
               "Title": "appsettings.json",
               "DocumentMoniker": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\appsettings.json",
               "RelativeDocumentMoniker": "UserManagementService\\appsettings.json",
               "ToolTip": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\appsettings.json",
               "RelativeToolTip": "UserManagementService\\appsettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAA6AAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAnAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
               "WhenOpened": "2025-04-05T11:46:15.846Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 6,
+              "DocumentIndex": 0,
+              "Title": "Program.cs",
+              "DocumentMoniker": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Program.cs",
+              "RelativeDocumentMoniker": "UserManagementService\\Program.cs",
+              "ToolTip": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Program.cs",
+              "RelativeToolTip": "UserManagementService\\Program.cs",
+              "ViewState": "AgIAACEAAAAAAAAAAADwvzMAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-05T11:46:02.966Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "User.cs",
+              "DocumentMoniker": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Models\\User.cs",
+              "RelativeDocumentMoniker": "UserManagementService\\Models\\User.cs",
+              "ToolTip": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Models\\User.cs",
+              "RelativeToolTip": "UserManagementService\\Models\\User.cs",
+              "ViewState": "AgIAAA4AAAAAAAAAAAAgwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-12T18:08:03.025Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
               "Title": "Address.cs",
               "DocumentMoniker": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Models\\Address.cs",
               "RelativeDocumentMoniker": "UserManagementService\\Models\\Address.cs",
@@ -208,21 +187,69 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "User.cs",
-              "DocumentMoniker": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Models\\User.cs",
-              "RelativeDocumentMoniker": "UserManagementService\\Models\\User.cs",
-              "ToolTip": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Models\\User.cs",
-              "RelativeToolTip": "UserManagementService\\Models\\User.cs",
-              "ViewState": "AgIAAA4AAAAAAAAAAAAgwAAAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 4,
+              "Title": "AuthController.cs",
+              "DocumentMoniker": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Controllers\\AuthController.cs",
+              "RelativeDocumentMoniker": "UserManagementService\\Controllers\\AuthController.cs",
+              "ToolTip": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Controllers\\AuthController.cs",
+              "RelativeToolTip": "UserManagementService\\Controllers\\AuthController.cs",
+              "ViewState": "AgIAAAcAAAAAAAAAAAAQwAkAAAA0AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-04-12T18:08:03.025Z",
+              "WhenOpened": "2025-04-12T18:07:07.472Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "UserManagementService",
+              "DocumentMoniker": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\UserManagementService.csproj",
+              "RelativeDocumentMoniker": "UserManagementService\\UserManagementService.csproj",
+              "ToolTip": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\UserManagementService.csproj",
+              "RelativeToolTip": "UserManagementService\\UserManagementService.csproj",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-04-12T18:56:20.91Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "UserDbContext.cs",
+              "DocumentMoniker": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Data\\UserDbContext.cs",
+              "RelativeDocumentMoniker": "UserManagementService\\Data\\UserDbContext.cs",
+              "ToolTip": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\Data\\UserDbContext.cs",
+              "RelativeToolTip": "UserManagementService\\Data\\UserDbContext.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-12T18:08:20.482Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "UserManagementService.csproj",
+              "DocumentMoniker": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\UserManagementService.csproj",
+              "RelativeDocumentMoniker": "UserManagementService\\UserManagementService.csproj",
+              "ToolTip": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\UserManagementService.csproj",
+              "RelativeToolTip": "UserManagementService\\UserManagementService.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAACIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-04-05T11:44:39.058Z",
               "EditorCaption": ""
             }
           ]
         },
         {
-          "DockedHeight": 360,
+          "DockedHeight": 94,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:1:0:{d212f56b-c48a-434c-a121-1c5d80b59b9f}"
+            }
+          ]
+        },
+        {
+          "DockedHeight": 45,
           "SelectedChildIndex": -1,
           "Children": [
             {
@@ -232,6 +259,10 @@
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{0ad07096-bba9-4900-a651-0598d26f6d24}"
             }
           ]
         }

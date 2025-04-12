@@ -1,14 +1,20 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using UserManagementService.Data;
+using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
+using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Thêm dịch vụ controller
 builder.Services.AddControllers();
 
-// Thêm DbContext
+// Thêm DbContext sử dụng MySQL
 builder.Services.AddDbContext<UserDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseMySql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        new MySqlServerVersion(new Version(8, 0, 25))  // Thay đổi phiên bản theo MySQL của bạn
+    )
+);
 
 // Thêm Swagger
 builder.Services.AddSwaggerGen();

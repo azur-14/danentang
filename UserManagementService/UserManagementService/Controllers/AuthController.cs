@@ -6,6 +6,8 @@ using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
+using System.Threading.Tasks;                // <<--
+using Microsoft.Extensions.Configuration;    // <<--
 
 
 namespace UserManagementService.Controllers
