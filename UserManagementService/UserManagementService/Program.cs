@@ -3,29 +3,43 @@ using UserManagementService.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Thêm dịch vụ cho controllers
+// Thêm dịch vụ controller
 builder.Services.AddControllers();
 
-// Thêm Swagger generator vào DI container
+// Thêm DbContext
+builder.Services.AddDbContext<UserDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Thêm Swagger
 builder.Services.AddSwaggerGen();
+
+// Thêm CORS cho Flutter Web/Mobile
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+});
 
 var app = builder.Build();
 
-// Cấu hình Swagger: 
+// Kích hoạt Swagger ở môi trường dev
 if (app.Environment.IsDevelopment())
 {
-    // Kích hoạt middleware tạo Swagger JSON
     app.UseSwagger();
-
-    // Kích hoạt Swagger UI, bạn có thể tùy chỉnh đường dẫn hiển thị Swagger UI
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
-        // c.RoutePrefix = string.Empty; // nếu muốn Swagger UI hiển thị tại root (ví dụ: https://localhost:5001/)
     });
 }
 
-app.UseHttpsRedirection();
+// Bật CORS (quan trọng cho Flutter Web)
+app.UseCors("AllowAll");
+
+// 👉 Có thể bật HTTPS nếu bạn test bằng Postman hoặc mobile
+// app.UseHttpsRedirection();
+
 app.UseAuthorization();
+
 app.MapControllers();
+
 app.Run();

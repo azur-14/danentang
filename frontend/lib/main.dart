@@ -5,9 +5,9 @@ import 'package:danentang/Screens/Customer/Login/Login_SignUp_Screen.dart';
 import 'package:danentang/Screens/Customer/Login/SignUp.dart';
 import 'package:danentang/Screens/Customer/User/profile_page.dart';
 
-Future<void> main() async {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
       ),
       debugShowCheckedModeBanner: false,
 
-      home: ProfilePage(),
+      home: LoginSignupScreen(),
     );
   }
 }

@@ -1,26 +1,89 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
 import '../../../../Widget/Footer/footer_into.dart';
+import '../Login/Login_Screen.dart'; // Đảm bảo import đúng đường dẫn tới Login_Screen
 
+class Signup extends StatefulWidget {
+  final String email;
+  const Signup({required this.email, super.key});
 
-class Signup extends StatelessWidget {
-  const Signup({super.key});
+  @override
+  State<Signup> createState() => _SignupState();
+}
+
+class _SignupState extends State<Signup> {
+  final nameController = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
+  final addressController = TextEditingController();
+
+  bool isLoading = false;
+
+  Future<void> registerUser() async {
+    // Kiểm tra mật khẩu có khớp không
+    if (passwordController.text != confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Mật khẩu không khớp')),
+      );
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    final url = Uri.parse('http://localhost:5012/api/auth/register');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': widget.email,
+        'fullName': nameController.text,
+        'password': passwordController.text,
+        'addressLine1': addressController.text,
+        'addressLine2': '',
+        'city': 'Hanoi',
+        'state': 'HN',
+        'zipCode': '10000',
+        'country': 'Vietnam',
+      }),
+    );
+
+    setState(() {
+      isLoading = false;
+    });
+
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đăng ký thành công!')),
+      );
+      // Sau đăng ký thành công, điều hướng về LoginScreen và truyền email
+      Future.delayed(const Duration(milliseconds: 500), () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => LoginScreen(email: widget.email)),
+        );
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Đăng ký thất bại: ${response.body}')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
+    double screenWidth  = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
-      backgroundColor: Color(0xFF211463),
+      backgroundColor: const Color(0xFF211463),
       body: Column(
         children: [
           const SizedBox(height: 80),
           Center(
-            child: Column(
-              children: [
-                Image.asset('assets/Logo.png', width: 150),
-                const SizedBox(height: 10),
-              ],
-            ),
+            child: Image.asset('assets/Logo.png', width: 150),
           ),
           const SizedBox(height: 40),
           Expanded(
@@ -29,7 +92,7 @@ class Signup extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.only(
+                borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(40),
                   topRight: Radius.circular(40),
                 ),
@@ -38,7 +101,7 @@ class Signup extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(height: screenHeight * 0.05),
-                  Text(
+                  const Text(
                     "Sign-up",
                     style: TextStyle(
                       fontSize: 22,
@@ -47,31 +110,29 @@ class Signup extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  _buildTextField("Enter your name *"),
+                  _buildTextField("Enter your name *", nameController),
                   const SizedBox(height: 15),
-                  _buildPasswordField("Enter your password *"),
+                  _buildPasswordField("Enter your password *", passwordController),
                   const SizedBox(height: 15),
-                  _buildTextField("Enter your password again *"),
+                  _buildPasswordField("Enter your password again *", confirmPasswordController),
                   const SizedBox(height: 15),
-                  _buildTextField("Enter your address *"),
-                  const SizedBox(height: 15),
+                  _buildTextField("Enter your address *", addressController),
                   const SizedBox(height: 25),
-
-                  
                   SizedBox(
-              
                     width: double.infinity,
                     height: screenHeight * 0.07,
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: isLoading ? null : registerUser,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF8204FF),
+                        backgroundColor: const Color(0xFF8204FF),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
-                      child: Text(
-                        "Login",
+                      child: isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Text(
+                        "Register",
                         style: TextStyle(
                           fontSize: screenWidth * 0.05,
                           fontWeight: FontWeight.bold,
@@ -83,11 +144,15 @@ class Signup extends StatelessWidget {
                   const SizedBox(height: 20),
                   Center(
                     child: GestureDetector(
+                      onTap: () {
+                        // Nếu người dùng đã có tài khoản, quay lại màn login
+                        Navigator.pop(context);
+                      },
                       child: RichText(
                         text: TextSpan(
                           style: TextStyle(color: Colors.black54),
                           children: [
-                            TextSpan(text: "Aldready have an account?"),
+                            TextSpan(text: "Already have an account? "),
                             TextSpan(
                               text: "Log in now.",
                               style: TextStyle(
@@ -100,7 +165,7 @@ class Signup extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  AppFooter(), // Footer tái sử dụng
+                  const AppFooter(),
                   const SizedBox(height: 10),
                 ],
               ),
@@ -111,8 +176,9 @@ class Signup extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField(String hintText) {
+  Widget _buildTextField(String hintText, TextEditingController controller) {
     return TextField(
+      controller: controller,
       decoration: InputDecoration(
         hintText: hintText,
         filled: true,
@@ -125,8 +191,9 @@ class Signup extends StatelessWidget {
     );
   }
 
-  Widget _buildPasswordField(String hintText) {
+  Widget _buildPasswordField(String hintText, TextEditingController controller) {
     return TextField(
+      controller: controller,
       obscureText: true,
       decoration: InputDecoration(
         hintText: hintText,
@@ -136,7 +203,7 @@ class Signup extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide.none,
         ),
-        suffixIcon: Icon(Icons.remove_red_eye_outlined, color: Colors.black26),
+        suffixIcon: const Icon(Icons.remove_red_eye_outlined, color: Colors.black26),
       ),
     );
   }

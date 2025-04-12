@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 
+
 namespace UserManagementService.Controllers
 {
     [ApiController]
@@ -20,6 +21,12 @@ namespace UserManagementService.Controllers
         {
             _context = context;
             _configuration = configuration;
+        }
+        [HttpGet("check-email")]
+        public async Task<IActionResult> CheckEmail(string email)
+        {
+            var exists = await _context.Users.AnyAsync(u => u.Email == email);
+            return Ok(new { exists });
         }
 
         // Đăng ký người dùng

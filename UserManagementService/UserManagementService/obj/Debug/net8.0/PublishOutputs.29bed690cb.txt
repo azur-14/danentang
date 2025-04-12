@@ -6,6 +6,7 @@ D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug
 D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\PubTmp\Out\UserManagementService.pdb
 D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\PubTmp\Out\Azure.Core.dll
 D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\PubTmp\Out\Azure.Identity.dll
+D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\PubTmp\Out\BCrypt.Net-Next.dll
 D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\PubTmp\Out\Microsoft.Bcl.AsyncInterfaces.dll
 D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\PubTmp\Out\Microsoft.Data.SqlClient.dll
 D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\PubTmp\Out\Microsoft.EntityFrameworkCore.dll
