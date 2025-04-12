@@ -1,11 +1,3 @@
-D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\UserManagementService.csproj.AssemblyReference.cache
-D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\UserManagementService.GeneratedMSBuildEditorConfig.editorconfig
-D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\UserManagementService.AssemblyInfoInputs.cache
-D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\UserManagementService.AssemblyInfo.cs
-D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\UserManagementService.csproj.CoreCompileInputs.cache
-D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\UserManagementService.MvcApplicationPartsAssemblyInfo.cs
-D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\UserManagementService.MvcApplicationPartsAssemblyInfo.cache
-D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\UserManagementService.sourcelink.json
 D:\microservices\danentang\UserManagementService\UserManagementService\bin\Debug\net8.0\appsettings.Development.json
 D:\microservices\danentang\UserManagementService\UserManagementService\bin\Debug\net8.0\appsettings.json
 D:\microservices\danentang\UserManagementService\UserManagementService\bin\Debug\net8.0\UserManagementService.exe
@@ -30,6 +22,14 @@ D:\microservices\danentang\UserManagementService\UserManagementService\bin\Debug
 D:\microservices\danentang\UserManagementService\UserManagementService\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerGen.dll
 D:\microservices\danentang\UserManagementService\UserManagementService\bin\Debug\net8.0\Swashbuckle.AspNetCore.SwaggerUI.dll
 D:\microservices\danentang\UserManagementService\UserManagementService\bin\Debug\net8.0\System.IdentityModel.Tokens.Jwt.dll
+D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\UserManagementService.csproj.AssemblyReference.cache
+D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\UserManagementService.GeneratedMSBuildEditorConfig.editorconfig
+D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\UserManagementService.AssemblyInfoInputs.cache
+D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\UserManagementService.AssemblyInfo.cs
+D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\UserManagementService.csproj.CoreCompileInputs.cache
+D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\UserManagementService.MvcApplicationPartsAssemblyInfo.cs
+D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\UserManagementService.MvcApplicationPartsAssemblyInfo.cache
+D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\UserManagementService.sourcelink.json
 D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\staticwebassets.build.json
 D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\staticwebassets.development.json
 D:\microservices\danentang\UserManagementService\UserManagementService\obj\Debug\net8.0\staticwebassets\msbuild.UserManagementService.Microsoft.AspNetCore.StaticWebAssets.props
