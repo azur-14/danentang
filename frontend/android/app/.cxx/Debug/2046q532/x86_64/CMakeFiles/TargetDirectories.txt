@@ -1,0 +1,2 @@
+D:/microservices/danentang/frontend/android/app/.cxx/Debug/2046q532/x86_64/CMakeFiles/edit_cache.dir
+D:/microservices/danentang/frontend/android/app/.cxx/Debug/2046q532/x86_64/CMakeFiles/rebuild_cache.dir
