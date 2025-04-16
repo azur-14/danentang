@@ -1,12 +1,5 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  runApp(Filter_Order());
-}
 
 class Filter_Order extends StatelessWidget {
   @override
@@ -28,6 +21,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
     return Scaffold(
       appBar: AppBar(
         title: Text("Order List"),
@@ -67,7 +61,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
           );
         },
       ),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: isMobile ? BottomNavigationBar(
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
@@ -75,7 +69,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
-      ),
+      ) : null,
     );
   }
 }

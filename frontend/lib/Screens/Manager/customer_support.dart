@@ -18,6 +18,7 @@ class CustomerSupportScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
     return Scaffold(
       backgroundColor: Colors.grey.shade200,
       appBar: AppBar(
@@ -40,7 +41,7 @@ class CustomerSupportScreen extends StatelessWidget {
         padding: EdgeInsets.all(16.0),
         children: List.generate(3, (index) => SupportTicketItem()),
       ),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: isMobile ? BottomNavigationBar(
         selectedItemColor: Colors.purple,
         unselectedItemColor: Colors.black,
         showSelectedLabels: false,
@@ -52,7 +53,8 @@ class CustomerSupportScreen extends StatelessWidget {
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
-      ),
+      )
+      : null,
     );
   }
 }

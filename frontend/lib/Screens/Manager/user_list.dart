@@ -33,6 +33,7 @@ class _UserListScreenState extends State<UserListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
     return Scaffold(
       appBar: AppBar(
         title: Text("User List", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
@@ -82,7 +83,7 @@ class _UserListScreenState extends State<UserListScreen> {
           return UserCard(user: users[index]);
         },
       ),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: isMobile ? BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.purple,
         unselectedItemColor: Colors.grey,
@@ -99,7 +100,7 @@ class _UserListScreenState extends State<UserListScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
-      ),
+      ) : null,
     );
   }
 }

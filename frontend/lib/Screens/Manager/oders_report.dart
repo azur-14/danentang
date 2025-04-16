@@ -56,7 +56,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(), // Đặt đúng vị trí
+      bottomNavigationBar: _buildBottomNavigationBar(context),
     );
   }
 
@@ -139,14 +139,20 @@ class _OrdersScreenState extends State<OrdersScreen> {
     );
   }
 
-  Widget _buildBottomNavigationBar() {
+  Widget _buildBottomNavigationBar(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    if (!isMobile) return const SizedBox.shrink();
+
     return BottomNavigationBar(
       currentIndex: 0,
-      onTap: (index) {},
+      onTap: (index) {
+        //
+      },
       type: BottomNavigationBarType.fixed,
-      selectedItemColor: Colors.purple,  // Màu khi chọn
-      unselectedItemColor: Colors.black54, // Màu chưa chọn
-      items: [
+      selectedItemColor: Colors.purple,
+      unselectedItemColor: Colors.black54,
+      items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
         BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
         BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Notifications"),
