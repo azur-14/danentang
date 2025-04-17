@@ -44,6 +44,7 @@ class CategoriesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -111,7 +112,7 @@ class CategoriesScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: isMobile ? BottomNavigationBar(
         selectedItemColor: Colors.purple,
         unselectedItemColor: Colors.black,
         items: const [
@@ -121,7 +122,8 @@ class CategoriesScreen extends StatelessWidget {
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
-      ),
+      )
+      :null,
     );
   }
 }

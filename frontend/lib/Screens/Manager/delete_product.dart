@@ -17,6 +17,7 @@ class SuccessScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
@@ -52,7 +53,7 @@ class SuccessScreen extends StatelessWidget {
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: isMobile ? BottomNavigationBar(
         selectedItemColor: Colors.purple,
         unselectedItemColor: Colors.black,
         showSelectedLabels: false,
@@ -79,7 +80,7 @@ class SuccessScreen extends StatelessWidget {
             label: "Profile",
           ),
         ],
-      ),
+      ) : null,
     );
   }
 }

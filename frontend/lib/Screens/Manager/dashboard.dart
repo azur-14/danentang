@@ -42,32 +42,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             _buildStatCards(),
             _buildCard('Users', _buildLineChartUsers(context)),
-            _buildCard('Revenue', _buildRevenueChart()),
-            _buildCard('Orders', _buildOrdersChart()),
+            _buildCard('Revenue', _buildRevenueChart(context)),
+            _buildCard('Orders', _buildOrdersChart(context)),
             _buildCard('Best-Selling Products', _buildBarChart()),
             _buildCard('Total Sales', _buildPieChart()),
             _buildManagementSections(context),
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.purple,
-        unselectedItemColor: Colors.grey,
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Notifications'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-      ),
+      bottomNavigationBar: MediaQuery.of(context).size.width < 600
+      ? BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: Colors.purple,
+          unselectedItemColor: Colors.grey,
+          currentIndex: _currentIndex,
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+            BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+            BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Notifications'),
+            BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          ],
+        )
+      : null,
     );
   }
 
@@ -140,7 +142,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 10),
-            SizedBox(height: 200, child: chart),
+            SizedBox(
+              height: MediaQuery.of(context).size.width < 600 ? 150 : 200,
+              child: chart,
+            ),
           ],
         ),
       ),
@@ -152,41 +157,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
       children: [
         Padding(
           padding: EdgeInsets.only(top: 20),
-          child: LineChart(
-            LineChartData(
-              gridData: FlGridData(show: false),
-              titlesData: FlTitlesData(
-                leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    getTitlesWidget: (value, meta) {
-                      List<String> months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-                      return value.toInt() < months.length ? Text(months[value.toInt()]) : Text('');
-                    },
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: 400,
+              child: LineChart(
+                LineChartData(
+                  gridData: FlGridData(show: false),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) {
+                          List<String> months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+                          return value.toInt() < months.length ? Text(months[value.toInt()]) : Text('');
+                        },
+                      ),
+                    ),
                   ),
+                  borderData: FlBorderData(show: false),
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: [
+                        FlSpot(0, 1),
+                        FlSpot(1, 3),
+                        FlSpot(2, 2),
+                        FlSpot(3, 5),
+                        FlSpot(4, 4),
+                        FlSpot(5, 6),
+                      ],
+                      isCurved: true,
+                      color: Colors.purple,
+                      barWidth: 3,
+                      belowBarData: BarAreaData(show: false),
+                      dotData: FlDotData(show: true),
+                    )
+                  ],
                 ),
               ),
-              borderData: FlBorderData(show: false),
-              lineBarsData: [
-                LineChartBarData(
-                  spots: [
-                    FlSpot(0, 1),
-                    FlSpot(1, 3),
-                    FlSpot(2, 2),
-                    FlSpot(3, 5),
-                    FlSpot(4, 4),
-                    FlSpot(5, 6),
-                  ],
-                  isCurved: true,
-                  color: Colors.purple,
-                  barWidth: 3,
-                  belowBarData: BarAreaData(show: false),
-                  dotData: FlDotData(show: true),
-                )
-              ],
             ),
           ),
         ),
@@ -214,69 +225,140 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildRevenueChart() {
-    return LineChart(
-      LineChartData(
-        gridData: FlGridData(show: false),
-        titlesData: FlTitlesData(
-          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true, 
-              getTitlesWidget: (value, meta) {
-                List<String> months = ['Jan', 'Feb', 'Mar', 'Apr'];
-                return value.toInt() < months.length ? Text(months[value.toInt()]) : Text('');
-              },
+  Widget _buildRevenueChart(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    final months = ['Jan', 'Feb', 'Mar', 'Apr'];
+    final revenueSpots = [
+      FlSpot(0, 50),
+      FlSpot(1, 55),
+      FlSpot(2, 60),
+      FlSpot(3, 62),
+    ];
+    final referenceSpots = [
+      FlSpot(0, 48),
+      FlSpot(1, 52),
+      FlSpot(2, 58),
+      FlSpot(3, 61),
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: isMobile ? Axis.horizontal : Axis.vertical,
+      child: SizedBox(
+        width: isMobile ? 400 : double.infinity,
+        height: 250,
+        child: LineChart(
+          LineChartData(
+            gridData: FlGridData(show: false),
+            titlesData: FlTitlesData(
+              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 30,
+                  getTitlesWidget: (value, meta) {
+                    return Text(
+                      value.toInt() < months.length ? months[value.toInt()] : '',
+                      style: TextStyle(fontSize: 12),
+                    );
+                  },
+                ),
+              ),
             ),
+            borderData: FlBorderData(show: false),
+            lineBarsData: [
+              LineChartBarData(
+                spots: revenueSpots,
+                isCurved: true,
+                color: Colors.red,
+                barWidth: 3,
+                dotData: FlDotData(show: true),
+              ),
+              LineChartBarData(
+                spots: referenceSpots,
+                isCurved: true,
+                color: Colors.grey,
+                barWidth: 2,
+                isStrokeCapRound: true,
+                dashArray: [5, 5],
+                dotData: FlDotData(show: true),
+              ),
+            ],
           ),
         ),
-        lineBarsData: [
-          LineChartBarData(
-            spots: [FlSpot(0, 50), FlSpot(1, 55), FlSpot(2, 60), FlSpot(3, 62)],
-            isCurved: true,
-            color: Colors.red,
-            barWidth: 3,
-            dotData: FlDotData(show: true),
-          ),
-          LineChartBarData(
-            spots: [FlSpot(0, 48), FlSpot(1, 52), FlSpot(2, 58), FlSpot(3, 61)],
-            isCurved: true,
-            color: Colors.grey,
-            barWidth: 2,
-            dashArray: [5, 5],
-            dotData: FlDotData(show: true),
-          ),
-        ],
       ),
     );
   }
 
-  Widget _buildOrdersChart() {
-    return LineChart(
-      LineChartData(
-        lineBarsData: [
-          LineChartBarData(
-            spots: [FlSpot(0, 30), FlSpot(1, 35), FlSpot(2, 50), FlSpot(3, 40)],
-            isCurved: true,
-            color: Colors.blue,
-            barWidth: 3,
+  Widget _buildOrdersChart(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    final weeks = ['W1', 'W2', 'W3', 'W4'];
+    final orderSpots = [
+      FlSpot(0, 30),
+      FlSpot(1, 35),
+      FlSpot(2, 50),
+      FlSpot(3, 40),
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: isMobile ? Axis.horizontal : Axis.vertical,
+      child: SizedBox(
+        width: isMobile ? 400 : double.infinity,
+        height: 250,
+        child: LineChart(
+          LineChartData(
+            gridData: FlGridData(show: false),
+            titlesData: FlTitlesData(
+              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 30,
+                  getTitlesWidget: (value, meta) {
+                    return Text(
+                      value.toInt() < weeks.length ? weeks[value.toInt()] : '',
+                      style: TextStyle(fontSize: 12),
+                    );
+                  },
+                ),
+              ),
+            ),
+            borderData: FlBorderData(show: false),
+            lineBarsData: [
+              LineChartBarData(
+                spots: orderSpots,
+                isCurved: true,
+                color: Colors.blue,
+                barWidth: 3,
+                dotData: FlDotData(show: true),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildBarChart() {
-    return BarChart(
-      BarChartData(
-        barGroups: [
-          BarChartGroupData(x: 0, barRods: [BarChartRodData(fromY: 0, toY: 20, color: Colors.grey)]),
-          BarChartGroupData(x: 1, barRods: [BarChartRodData(fromY: 0, toY: 30, color: Colors.grey)]),
-          BarChartGroupData(x: 2, barRods: [BarChartRodData(fromY: 0, toY: 25, color: Colors.grey)]),
-          BarChartGroupData(x: 3, barRods: [BarChartRodData(fromY: 0, toY: 28, color: Colors.grey)]),
-        ],
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SizedBox(
+        width: 400,
+        child: BarChart(
+          BarChartData(
+            barGroups: [
+              BarChartGroupData(x: 0, barRods: [BarChartRodData(fromY: 0, toY: 20, color: Colors.grey)]),
+              BarChartGroupData(x: 1, barRods: [BarChartRodData(fromY: 0, toY: 30, color: Colors.grey)]),
+              BarChartGroupData(x: 2, barRods: [BarChartRodData(fromY: 0, toY: 25, color: Colors.grey)]),
+              BarChartGroupData(x: 3, barRods: [BarChartRodData(fromY: 0, toY: 28, color: Colors.grey)]),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -284,6 +366,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildPieChart() {
     return PieChart(
       PieChartData(
+        sectionsSpace: 2,
+        centerSpaceRadius: 30,
         sections: [
           PieChartSectionData(value: 30, color: Colors.green, title: 'Direct'),
           PieChartSectionData(value: 20, color: Colors.blue, title: 'Affiliate'),

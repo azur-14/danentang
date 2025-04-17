@@ -51,7 +51,7 @@ class UserScreen extends StatelessWidget {
             ]),
           ],
         ),
-        bottomNavigationBar: _buildBottomNavigationBar(),
+        bottomNavigationBar: _buildBottomNavigationBar(context),
       ),
     );
   }
@@ -215,16 +215,25 @@ class UserScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomNavigationBar() {
+  Widget _buildBottomNavigationBar(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    if (!isMobile) return const SizedBox.shrink();
+
     return BottomNavigationBar(
       currentIndex: 0,
-      onTap: (index) {},
-      items: [
-        BottomNavigationBarItem(icon: Icon(Icons.home, color: Colors.purple), label: "Home"),
-        BottomNavigationBarItem(icon: Icon(Icons.history, color: Colors.black54), label: "History"),
-        BottomNavigationBarItem(icon: Icon(Icons.notifications, color: Colors.black54), label: "Notifications"),
-        BottomNavigationBarItem(icon: Icon(Icons.settings, color: Colors.black54), label: "Settings"),
-        BottomNavigationBarItem(icon: Icon(Icons.person, color: Colors.black54), label: "Profile"),
+      onTap: (index) {
+        //
+      },
+      type: BottomNavigationBarType.fixed,
+      selectedItemColor: Colors.purple,
+      unselectedItemColor: Colors.black54,
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+        BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
+        BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Notifications"),
+        BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
+        BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
       ],
     );
   }
