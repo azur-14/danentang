@@ -54,33 +54,17 @@
               "target": "Package",
               "version": "[4.0.3, )"
             },
-            "Microsoft.EntityFrameworkCore": {
-              "target": "Package",
-              "version": "[8.0.4, )"
-            },
-            "Microsoft.EntityFrameworkCore.Design": {
-              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[8.0.4, )"
-            },
-            "Microsoft.EntityFrameworkCore.Tools": {
-              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
-              "suppressParent": "All",
-              "target": "Package",
-              "version": "[8.0.4, )"
-            },
             "Microsoft.IdentityModel.Tokens": {
               "target": "Package",
               "version": "[6.29.0, )"
             },
-            "Pomelo.EntityFrameworkCore.MySql": {
+            "MongoDB.Driver": {
               "target": "Package",
-              "version": "[8.0.0, )"
+              "version": "[3.3.0, )"
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
-              "version": "[6.4.0, )"
+              "version": "[8.1.1, )"
             },
             "System.IdentityModel.Tokens.Jwt": {
               "target": "Package",

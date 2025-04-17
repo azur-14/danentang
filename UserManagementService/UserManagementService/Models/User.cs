@@ -1,32 +1,40 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Net;
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace UserManagementService.Models
 {
+  
     public class User
     {
-        public int Id { get; set; }
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string? Id { get; set; }
 
-        [Required, EmailAddress]
-        public string Email { get; set; } = string.Empty;
+        [BsonElement("email")]
+        public string Email { get; set; } = null!;
 
-        [Required]
-        public string FullName { get; set; } = string.Empty;
+        [BsonElement("fullName")]
+        public string FullName { get; set; } = null!;
 
-        // Nếu bạn chắc chắn luôn gán PasswordHash
-        // -> gán mặc định là string.Empty
-        public string PasswordHash { get; set; } = string.Empty;
+        [BsonElement("passwordHash")]
+        public string PasswordHash { get; set; } = null!;
 
+        [BsonElement("role")]
         public string Role { get; set; } = "customer";
 
+        [BsonElement("loyaltyPoints")]
         public int LoyaltyPoints { get; set; } = 0;
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
-        public DateTime UpdatedAt { get; set; } = DateTime.Now;
+        [BsonElement("createdAt")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Nếu Addresses không bao giờ null, gán = new List<Address>()
-        public List<Address> Addresses { get; set; } = new List<Address>();
+        [BsonElement("updatedAt")]
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        [BsonElement("addresses")]
+        public List<Address> Addresses { get; set; } = new();
     }
+
 
 
 }
