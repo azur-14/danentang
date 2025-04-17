@@ -21,4 +21,11 @@ class AppColors {
   // Một số màu phụ trợ khác nếu cần
   static const Color brandLight = Color(0xFFF2E7FE);
   static const Color brandDark = Color(0xFF1C0D4F);
+
+  static const Color scaffoldBackground = Color(0xFAFAFA);
+  static const Color primaryPurple = Color(0xFF8204FF);
+  static const Color lightGrey = Color(0xFFF5F5F5);
+  static const Color discountBadge = Colors.purple;
+  static const Color bannerGradientStart = Colors.purple;
+  static const Color bannerGradientEnd = Color(0xFFE1BEE7);
 }
