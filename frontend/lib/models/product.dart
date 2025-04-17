@@ -1,13 +1,13 @@
 class Product {
   final String name;
-  final int price;
-  final int originalPrice;
-  final String image;
+  final String price;
+  final String discount;
+  final String imageUrl;
 
   Product({
     required this.name,
     required this.price,
-    required this.originalPrice,
-    required this.image,
+    required this.discount,
+    required this.imageUrl,
   });
 }

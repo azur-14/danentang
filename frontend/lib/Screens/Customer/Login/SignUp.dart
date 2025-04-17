@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-import '../../../../Widget/Footer/footer_into.dart';
 import '../../../constants/colors.dart';
 import '../Login/Login_Screen.dart';
 
@@ -176,8 +175,6 @@ class _SignupState extends State<Signup> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    const AppFooter(),
                   ],
                 ),
               ),
@@ -308,8 +305,6 @@ class _SignupState extends State<Signup> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 20),
-                        const Center(child: AppFooter()),
                       ],
                     ),
                   ),

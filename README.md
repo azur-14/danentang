@@ -1,16 +1,7 @@
-# danentang
+﻿cd dô trong thư mục có file csproject; đối với User Service thì phải dô danentang/UserManagementService/UserManagementService nhe
+xong nhập lệnh
+dotnet restore
+dotnet add package MongoDB.Bson
+dotnet add package MongoDB.Driver
+rồi dotnet build là UserManagementService sẽ chạy trên cổng 5012, nhập http://localhost:5012/swagger/index.html nếu muốn xem mấy phương thức ha test API đồ; tương tự đối với các service khác nma phải chạy đồng thời nhiều terminal á
 
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
