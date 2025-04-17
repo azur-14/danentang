@@ -5,7 +5,6 @@ import 'dart:convert';
 import '../../../constants/colors.dart';
 import 'Login_Screen.dart';
 import 'SignUp.dart';
-import '../../../../Widget/Footer/footer_into.dart';
 
 
 class LoginSignupScreen extends StatefulWidget {
@@ -154,8 +153,6 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 10), // Giảm khoảng cách giữa nút và Footer
-                    Center(child: AppFooter()),
                   ],
                 ),
               ),
@@ -290,8 +287,6 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 20),
-                            const Center(child: AppFooter()),
                           ],
                         ),
                       ),

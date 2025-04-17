@@ -1,6 +1,6 @@
 ﻿using MongoDB.Driver;
-using Microsoft.Extensions.Configuration;
 using UserManagementService.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace UserManagementService.Data
 {
@@ -10,10 +10,10 @@ namespace UserManagementService.Data
 
         public MongoDbContext(IConfiguration config)
         {
-            var client = new MongoClient(config.GetConnectionString("MongoDb"));
-            _database = client.GetDatabase("UserService");
+            var client = new MongoClient(config["MongoConnection:ConnectionString"]);
+            _database = client.GetDatabase(config["MongoConnection:Database"]);
         }
 
-        public IMongoCollection<User> Users => _database.GetCollection<User>("Users");
+        public IMongoCollection<User> Users => _database.GetCollection<User>("users");
     }
 }
