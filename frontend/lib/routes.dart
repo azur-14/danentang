@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../Screens/Customer/Home/home_screen.dart';
-import '../../../Screens/Customer/Home/cart_screen.dart';
-import '../../../Screens/Customer/Home/checkout_screen.dart';
-import '../../../Screens/Customer/Home/product_list_screen.dart';
+import 'package:danentang/Screens/Customer/Home/home_screen.dart';
+import 'package:danentang/Screens/Customer/Home/cart_screen.dart';
+import 'package:danentang/Screens/Customer/Home/checkout_screen.dart';
+import 'package:danentang/Screens/Customer/Home/product_list_screen.dart';
 import 'models/product.dart';
 
 final GoRouter router = GoRouter(

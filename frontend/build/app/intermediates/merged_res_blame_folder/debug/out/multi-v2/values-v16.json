@@ -4,7 +4,7 @@
             "outputFile": "com.example.danentang.app-mergeDebugResources-42:/values-v16/values-v16.xml",
             "map": [
                 {
-                    "source": "C:\\Users\\ADMIN\\.gradle\\caches\\transforms-3\\78092378f0e0a1133c4dbafbdff1ef40\\transformed\\appcompat-1.1.0\\res\\values-v16\\values-v16.xml",
+                    "source": "C:\\Users\\noob\\.gradle\\caches\\transforms-3\\78092378f0e0a1133c4dbafbdff1ef40\\transformed\\appcompat-1.1.0\\res\\values-v16\\values-v16.xml",
                     "from": {
                         "startLines": "2",
                         "startColumns": "4",

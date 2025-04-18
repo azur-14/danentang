@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../models/product.dart';
-import '../../../Screens/Customer/Home/product_list_screen.dart';
 import 'product_card.dart';
 
 class ProductSection extends StatelessWidget {
