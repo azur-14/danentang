@@ -32,6 +32,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
     return Scaffold(
       appBar: AppBar(
         title: Text("Order List", style: TextStyle(fontWeight: FontWeight.bold)),
@@ -57,7 +58,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
           return OrderCard(order: orders[index]);
         },
       ),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: isMobile ? BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.purple,
         unselectedItemColor: Colors.grey,
@@ -74,7 +75,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
         ],
-      ),
+      ) : null,
     );
   }
 }

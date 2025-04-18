@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:danentang/constants/colors.dart';
-import 'package:danentang/data/products.dart';
+import 'package:danentang/models/product.dart';
 import 'package:danentang/widgets/category_icon.dart';
 import 'package:danentang/widgets/footer.dart';
 import 'package:danentang/widgets/product_section.dart';
@@ -16,6 +16,88 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isLoggedIn = false;
   String userName = "ban";
   bool showAllCategories = false;
+  final List<Product> laptops = [
+    Product(
+      name: "Dell XPS 13",
+      price: "1299",
+      discount: "10%",
+      imageUrl: "https://example.com/images/dell_xps13.jpg",
+    ),
+    Product(
+      name: "MacBook Air M2",
+      price: "1199",
+      discount: "5%",
+      imageUrl: "https://example.com/images/macbook_air_m2.jpg",
+    ),
+    Product(
+      name: "HP Spectre x360",
+      price: "1399",
+      discount: "15%",
+      imageUrl: "https://example.com/images/hp_spectre.jpg",
+    ),
+    Product(
+      name: "Asus ZenBook 14",
+      price: "999",
+      discount: "8%",
+      imageUrl: "https://example.com/images/asus_zenbook14.jpg",
+    ),
+  ];
+  final List<Product> budgetLaptops = [
+    Product(
+      name: "Acer Aspire 5",
+      price: "499",
+      discount: "12%",
+      imageUrl: "https://example.com/images/acer_aspire5.jpg",
+    ),
+    Product(
+      name: "Lenovo IdeaPad 3",
+      price: "449",
+      discount: "10%",
+      imageUrl: "https://example.com/images/lenovo_ideapad3.jpg",
+    ),
+  ];
+  final List<Product> promotionalProducts = [
+    Product(
+      name: "Lenovo Legion 5",
+      price: "1099",
+      discount: "20%",
+      imageUrl: "https://example.com/images/lenovo_legion5.jpg",
+    ),
+    Product(
+      name: "Asus TUF Gaming F15",
+      price: "999",
+      discount: "25%",
+      imageUrl: "https://example.com/images/asus_tuf_f15.jpg",
+    ),
+  ];
+  final List<Product> newProducts = [
+    Product(
+      name: "MacBook Pro M3",
+      price: "1999",
+      discount: "5%",
+      imageUrl: "https://example.com/images/macbook_pro_m3.jpg",
+    ),
+    Product(
+      name: "HP Envy 14 2025",
+      price: "1249",
+      discount: "10%",
+      imageUrl: "https://example.com/images/hp_envy14.jpg",
+    ),
+  ];
+  final List<Product> bestSellers = [
+    Product(
+      name: "Dell Inspiron 15",
+      price: "749",
+      discount: "15%",
+      imageUrl: "https://example.com/images/dell_inspiron15.jpg",
+    ),
+    Product(
+      name: "Acer Swift 3",
+      price: "699",
+      discount: "12%",
+      imageUrl: "https://example.com/images/acer_swift3.jpg",
+    ),
+  ];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -264,32 +346,8 @@ class _HomeScreenState extends State<HomeScreen> {
               screenWidth: screenWidth,
             ),
             ProductSection(
-              title: "Gaming Laptops",
-              products: gamingLaptops,
-              isWeb: false,
-              screenWidth: screenWidth,
-            ),
-            ProductSection(
-              title: "Ultrabooks",
-              products: ultrabooks,
-              isWeb: false,
-              screenWidth: screenWidth,
-            ),
-            ProductSection(
-              title: "Workstations",
-              products: workstations,
-              isWeb: false,
-              screenWidth: screenWidth,
-            ),
-            ProductSection(
               title: "Budget Laptops",
               products: budgetLaptops,
-              isWeb: false,
-              screenWidth: screenWidth,
-            ),
-            ProductSection(
-              title: "2-in-1 Laptops",
-              products: twoInOneLaptops,
               isWeb: false,
               screenWidth: screenWidth,
             ),
@@ -563,35 +621,12 @@ class _HomeScreenState extends State<HomeScreen> {
               screenWidth: screenWidth,
             ),
             ProductSection(
-              title: "Gaming Laptops",
-              products: gamingLaptops,
-              isWeb: true,
-              screenWidth: screenWidth,
-            ),
-            ProductSection(
-              title: "Ultrabooks",
-              products: ultrabooks,
-              isWeb: true,
-              screenWidth: screenWidth,
-            ),
-            ProductSection(
-              title: "Workstations",
-              products: workstations,
-              isWeb: true,
-              screenWidth: screenWidth,
-            ),
-            ProductSection(
               title: "Budget Laptops",
               products: budgetLaptops,
               isWeb: true,
               screenWidth: screenWidth,
             ),
-            ProductSection(
-              title: "2-in-1 Laptops",
-              products: twoInOneLaptops,
-              isWeb: true,
-              screenWidth: screenWidth,
-            ),
+
             Footer(),
           ],
         ),

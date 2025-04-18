@@ -1,26 +1,34 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using MongoDB.Bson.Serialization.Attributes;
+
 
 namespace UserManagementService.Models
 {
     public class Address
     {
-        public int Id { get; set; }
+        [BsonElement("addressLine1")]
+        public string AddressLine1 { get; set; } = null!;
 
-        [Required]
-        public int UserId { get; set; }
-        public User User { get; set; }
+        [BsonElement("addressLine2")]
+        public string? AddressLine2 { get; set; }
 
-        [Required]
-        public string AddressLine1 { get; set; }
+        [BsonElement("city")]
+        public string? City { get; set; }
 
-        public string AddressLine2 { get; set; }
-        public string City { get; set; }
-        public string State { get; set; }
-        public string ZipCode { get; set; }
-        public string Country { get; set; }
+        [BsonElement("state")]
+        public string? State { get; set; }
+
+        [BsonElement("zipCode")]
+        public string? ZipCode { get; set; }
+
+        [BsonElement("country")]
+        public string? Country { get; set; }
+
+        [BsonElement("isDefault")]
         public bool IsDefault { get; set; } = false;
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        [BsonElement("createdAt")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
+
 
 }

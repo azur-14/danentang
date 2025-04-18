@@ -17,6 +17,7 @@ class CouponManagementScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -83,7 +84,7 @@ class CouponManagementScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: isMobile ? BottomNavigationBar(
         selectedItemColor: Colors.purple,
         unselectedItemColor: Colors.black,
         showSelectedLabels: false,
@@ -95,7 +96,8 @@ class CouponManagementScreen extends StatelessWidget {
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
-      ),
+      )
+      : null,
     );
   }
 }

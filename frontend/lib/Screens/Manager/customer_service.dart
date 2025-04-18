@@ -131,10 +131,16 @@ class BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    if (!isMobile) return const SizedBox.shrink();
+
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
+      selectedItemColor: Colors.purple,
+      unselectedItemColor: Colors.black,
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home, color: Colors.purple), label: "Home"),
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
         BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
         BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Notifications"),
         BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
