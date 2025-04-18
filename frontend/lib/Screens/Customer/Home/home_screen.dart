@@ -22,24 +22,28 @@ class _HomeScreenState extends State<HomeScreen> {
       price: "1299",
       discount: "10%",
       imageUrl: "https://example.com/images/dell_xps13.jpg",
+      rating: 5,
     ),
     Product(
       name: "MacBook Air M2",
       price: "1199",
       discount: "5%",
       imageUrl: "https://example.com/images/macbook_air_m2.jpg",
+      rating: 4,
     ),
     Product(
       name: "HP Spectre x360",
       price: "1399",
       discount: "15%",
       imageUrl: "https://example.com/images/hp_spectre.jpg",
+      rating: 3,
     ),
     Product(
       name: "Asus ZenBook 14",
       price: "999",
       discount: "8%",
       imageUrl: "https://example.com/images/asus_zenbook14.jpg",
+      rating: 5,
     ),
   ];
   final List<Product> budgetLaptops = [
@@ -48,12 +52,14 @@ class _HomeScreenState extends State<HomeScreen> {
       price: "499",
       discount: "12%",
       imageUrl: "https://example.com/images/acer_aspire5.jpg",
+      rating: 5,
     ),
     Product(
       name: "Lenovo IdeaPad 3",
       price: "449",
       discount: "10%",
       imageUrl: "https://example.com/images/lenovo_ideapad3.jpg",
+      rating: 4,
     ),
   ];
   final List<Product> promotionalProducts = [
@@ -62,12 +68,14 @@ class _HomeScreenState extends State<HomeScreen> {
       price: "1099",
       discount: "20%",
       imageUrl: "https://example.com/images/lenovo_legion5.jpg",
+      rating: 5,
     ),
     Product(
       name: "Asus TUF Gaming F15",
       price: "999",
       discount: "25%",
       imageUrl: "https://example.com/images/asus_tuf_f15.jpg",
+      rating: 3
     ),
   ];
   final List<Product> newProducts = [
@@ -76,12 +84,14 @@ class _HomeScreenState extends State<HomeScreen> {
       price: "1999",
       discount: "5%",
       imageUrl: "https://example.com/images/macbook_pro_m3.jpg",
+      rating: 3,
     ),
     Product(
       name: "HP Envy 14 2025",
       price: "1249",
       discount: "10%",
       imageUrl: "https://example.com/images/hp_envy14.jpg",
+      rating: 3,
     ),
   ];
   final List<Product> bestSellers = [
@@ -90,12 +100,14 @@ class _HomeScreenState extends State<HomeScreen> {
       price: "749",
       discount: "15%",
       imageUrl: "https://example.com/images/dell_inspiron15.jpg",
+      rating: 3,
     ),
     Product(
       name: "Acer Swift 3",
       price: "699",
       discount: "12%",
       imageUrl: "https://example.com/images/acer_swift3.jpg",
+      rating: 5,
     ),
   ];
 
@@ -545,7 +557,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  
+
                   _buildPromoItem(Icons.local_shipping, "Giao Hỏa Tốc"),
                   SizedBox(width: 40),
                   _buildPromoItem(Icons.discount, "Mã Giảm Giá"),

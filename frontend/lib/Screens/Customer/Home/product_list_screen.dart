@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../models/product.dart';
-import '../../../widgets/product_card.dart';
+import 'package:danentang/models/product.dart';
+import 'package:danentang/widgets/product_card.dart';
 
 class ProductListScreen extends StatelessWidget {
   final String title;

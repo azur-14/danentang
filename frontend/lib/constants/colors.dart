@@ -28,4 +28,20 @@ class AppColors {
   static const Color discountBadge = Colors.purple;
   static const Color bannerGradientStart = Colors.purple;
   static const Color bannerGradientEnd = Color(0xFFE1BEE7);
+
+  static const String purple = '#8204FF'; // Colors.purple
+  static const String white = '#FFFFFF'; // Colors.white
+  static const String grey = '#9E9E9E'; // Colors.grey
+  static const String grey300 = '#E0E0E0'; // Colors.grey.shade300
+  static const String yellow = '#FFFF00'; // Colors.yellow (for star rating)
+  static const String black = '#000000'; // Colors.black (for text)
+
+  // Utility function to convert hex string to Color
+  static Color hexToColor(String hex) {
+    hex = hex.replaceAll('#', '');
+    if (hex.length == 6) {
+      hex = 'FF$hex'; // Add alpha value if not present
+    }
+    return Color(int.parse(hex, radix: 16));
+  }
 }
