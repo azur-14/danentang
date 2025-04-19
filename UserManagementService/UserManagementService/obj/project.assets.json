@@ -2244,29 +2244,30 @@
     "net8.0": [
       "BCrypt.Net-Next >= 4.0.3",
       "Microsoft.IdentityModel.Tokens >= 6.29.0",
+      "MongoDB.Bson >= 3.3.0",
       "MongoDB.Driver >= 3.3.0",
       "Swashbuckle.AspNetCore >= 8.1.1",
       "System.IdentityModel.Tokens.Jwt >= 6.29.0"
     ]
   },
   "packageFolders": {
-    "C:\\Users\\ADMIN\\.nuget\\packages\\": {},
+    "C:\\Users\\noob\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\UserManagementService.csproj",
+      "projectUniqueName": "D:\\nam3 hk2\\DaNenTang\\Cuoiki3\\danentang\\UserManagementService\\UserManagementService\\UserManagementService.csproj",
       "projectName": "UserManagementService",
-      "projectPath": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\UserManagementService.csproj",
-      "packagesPath": "C:\\Users\\ADMIN\\.nuget\\packages\\",
-      "outputPath": "D:\\microservices\\danentang\\UserManagementService\\UserManagementService\\obj\\",
+      "projectPath": "D:\\nam3 hk2\\DaNenTang\\Cuoiki3\\danentang\\UserManagementService\\UserManagementService\\UserManagementService.csproj",
+      "packagesPath": "C:\\Users\\noob\\.nuget\\packages\\",
+      "outputPath": "D:\\nam3 hk2\\DaNenTang\\Cuoiki3\\danentang\\UserManagementService\\UserManagementService\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\ADMIN\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\noob\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -2275,7 +2276,6 @@
       ],
       "sources": {
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-        "C:\\Program Files\\dotnet\\library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -2293,7 +2293,8 @@
         "enableAudit": "true",
         "auditLevel": "low",
         "auditMode": "direct"
-      }
+      },
+      "SdkAnalysisLevel": "9.0.200"
     },
     "frameworks": {
       "net8.0": {
@@ -2306,6 +2307,10 @@
           "Microsoft.IdentityModel.Tokens": {
             "target": "Package",
             "version": "[6.29.0, )"
+          },
+          "MongoDB.Bson": {
+            "target": "Package",
+            "version": "[3.3.0, )"
           },
           "MongoDB.Driver": {
             "target": "Package",
@@ -2334,15 +2339,15 @@
         "downloadDependencies": [
           {
             "name": "Microsoft.AspNetCore.App.Runtime.win-x64",
-            "version": "[8.0.8, 8.0.8]"
+            "version": "[8.0.15, 8.0.15]"
           },
           {
             "name": "Microsoft.NETCore.App.Runtime.win-x64",
-            "version": "[8.0.8, 8.0.8]"
+            "version": "[8.0.15, 8.0.15]"
           },
           {
             "name": "Microsoft.WindowsDesktop.App.Runtime.win-x64",
-            "version": "[8.0.8, 8.0.8]"
+            "version": "[8.0.15, 8.0.15]"
           }
         ],
         "frameworkReferences": {
@@ -2353,7 +2358,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.400/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.203/PortableRuntimeIdentifierGraph.json"
       }
     },
     "runtimes": {

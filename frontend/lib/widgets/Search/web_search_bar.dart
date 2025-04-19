@@ -30,7 +30,7 @@ class WebSearchBar extends StatelessWidget {
                 prefixIcon: Container(
                   margin: EdgeInsets.only(left: 8, right: 8),
                   child: CircleAvatar(
-                    radius: 16,
+                    radius: 20,
                     child: Icon(
                       Icons.search,
                       color: AppColors.primaryPurple,
@@ -50,7 +50,7 @@ class WebSearchBar extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.shopping_cart, size: 32),
             onPressed: () {
-              context.go('/cart', extra: isLoggedIn);
+              context.go('/checkout', extra: isLoggedIn);
             },
           ),
         ],

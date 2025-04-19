@@ -27,7 +27,7 @@ class MobileNavigationBar extends StatelessWidget {
       onTap: (index) {
         onItemTapped(index);
         if (index == 1) {
-          context.go('/cart', extra: isLoggedIn);
+          context.go('/checkout', extra: isLoggedIn);
         } else if (index == 0) {
           context.go('/');
         }

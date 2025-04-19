@@ -3,13 +3,15 @@ import 'package:danentang/models/product.dart';
 class CartItem {
   final Product product;
   int quantity;
-  String size;
+  final String size;
   bool isSelected;
+  final double? discountedPrice; // New field for discounted price
 
   CartItem({
     required this.product,
     required this.quantity,
     required this.size,
-    this.isSelected = false,
+    this.isSelected = true,
+    this.discountedPrice,
   });
 }
