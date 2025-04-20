@@ -1,4 +1,5 @@
 import 'package:danentang/Screens/Customer/Home/HomeScreen.dart';
+import 'package:danentang/Screens/Manager/dashboard.dart';
 import 'package:flutter/material.dart';
 import 'package:danentang/Screens/Customer/Login/Login_Screen.dart';
 import 'package:danentang/Screens/Customer/Login/Login_SignUp_Screen.dart';
@@ -21,7 +22,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       debugShowCheckedModeBanner: false,
-      home: LoginSignupScreen(),
+      home: DashBoard(),
     );
   }
 }
