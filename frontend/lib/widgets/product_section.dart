@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import '../models/product.dart';
-import '../../../Screens/Customer/Home/product_list_screen.dart';
-import 'product_card.dart';
+import 'package:danentang/models/product.dart';
+import 'package:danentang/widgets/product_card.dart';
 
 class ProductSection extends StatelessWidget {
   final String title;
@@ -11,59 +9,47 @@ class ProductSection extends StatelessWidget {
   final double screenWidth;
 
   const ProductSection({
+    Key? key,
     required this.title,
     required this.products,
     required this.isWeb,
     required this.screenWidth,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    const int crossAxisCount = 5; // For web
-    const int mobileCrossAxisCount = 2; // For mobile
-    const double productSpacing = 10;
-    const double productHorizontalPadding = 16;
-
-    int itemsPerRow = isWeb ? crossAxisCount : mobileCrossAxisCount;
+    // Tính số lượng thẻ trên mỗi hàng dựa trên kích thước màn hình
+    final double cardWidth = 180; // Chiều rộng của ProductCard
+    final double padding = isWeb ? 32 : 16; // Padding hai bên
+    final int itemsPerRow = ((screenWidth - 2 * padding) / (cardWidth + 8)).floor();
+    final int crossAxisCount = itemsPerRow > 0 ? itemsPerRow : 1; // Đảm bảo ít nhất 1 thẻ
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              GestureDetector(
-                onTap: () {
-                  context.go(
-                    '/products/$title',
-                    extra: {
-                      'products': products,
-                      'isWeb': isWeb,
-                    },
-                  );
-                },
-                child: Text("See all", style: TextStyle(color: Colors.blue)),
-              ),
-            ],
+          padding: EdgeInsets.symmetric(horizontal: isWeb ? 32 : 16, vertical: 8),
+          child: Text(
+            title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
-        GridView.builder(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: itemsPerRow,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: productSpacing,
-            childAspectRatio: 0.75,
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: isWeb ? 32 : 16),
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: const ClampingScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount, // Số lượng thẻ trên mỗi hàng
+              crossAxisSpacing: 16, // Khoảng cách ngang giữa các thẻ
+              mainAxisSpacing: 16, // Khoảng cách dọc giữa các thẻ
+              childAspectRatio: 180 / 250, // Tỷ lệ khung hình của ProductCard
+            ),
+            itemCount: products.length,
+            itemBuilder: (context, index) {
+              return ProductCard(product: products[index]);
+            },
           ),
-          itemCount: products.length > itemsPerRow ? itemsPerRow : products.length,
-          itemBuilder: (context, index) {
-            return ProductCard(product: products[index]);
-          },
         ),
       ],
     );
