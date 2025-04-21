@@ -7,6 +7,9 @@ import 'package:danentang/Screens/Customer/CheckOut/cart_screen.dart';
 import 'package:danentang/Screens/Customer/Login/Login_Screen.dart';
 import 'package:danentang/Screens/Customer/Login/Login_SignUp_Screen.dart';
 import 'package:danentang/Screens/Customer/Login/SignUp.dart';
+import 'package:danentang/Screens/Customer/User/profile_page.dart';
+import 'package:danentang/Screens/Customer/User/personal_info_screen.dart';
+import 'package:danentang/Screens/Customer/User/account_settings_screen.dart';
 
 import 'models/product.dart';
 
@@ -73,7 +76,7 @@ final GoRouter router = GoRouter(
       path: '/profile',
       builder: (context, state) {
         final isLoggedIn = state.extra as bool? ?? false;
-        return ProfileScreen(isLoggedIn: isLoggedIn);
+        return ProfilePage();
       },
     ),
     GoRoute(
@@ -125,6 +128,20 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/checkout',
       builder: (context, state) => const Placeholder(), // Replace with your checkout screen
+    ),
+
+    GoRoute(
+      path: '/',
+      builder: (context, state) => HomeScreen(),
+    ),
+
+    GoRoute(
+      path: '/personal-info',
+      builder: (context, state) => const ProfileManagementScreen(),
+    ),
+    GoRoute(
+      path: '/account-settings',
+      builder: (context, state) => const AccountSettingsScreen(),
     ),
   ],
 );

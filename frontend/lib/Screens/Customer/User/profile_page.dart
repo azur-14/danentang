@@ -1,101 +1,101 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:danentang/models/user_model.dart';
 
 class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+  const ProfilePage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<UserModel>(context);
+
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        leading: const BackButton(color: Color(0xFF333333)),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Details',
-          style: TextStyle(
-            color: Color(0xFF333333),
-            fontWeight: FontWeight.w500,
-          ),
+        title: const Text('Quản lý trang cá nhân'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'),
         ),
-        centerTitle: true,
-      ),
-      body: Column(
-        children: [
-          const SizedBox(height: 20),
-          Center(
-            child: Stack(
-              alignment: Alignment.bottomRight,
-              children: [
-                const CircleAvatar(
-                  radius: 50,
-                  backgroundImage: NetworkImage(
-                    'https://i.imgur.com/lv1wB3y.png', // Replace with actual image
-                  ),
-                ),
-                Container(
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.grey,
-                  ),
-                  padding: const EdgeInsets.all(4),
-                  child: const Icon(
-                    Icons.edit,
-                    size: 16,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'Diew Ne',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
-          const SizedBox(height: 30),
-          const Divider(height: 1, color: Color(0xFFE0E0E0)),
-          _buildMenuItem('Hồ sơ của bạn'),
-          _buildMenuItem('Phương thức thanh toán'),
-          _buildMenuItem('Đơn hàng của tôi'),
-          _buildMenuItem('Cài đặt'),
-          _buildMenuItem('Đăng xuất'),
-          const Spacer(),
-          const Padding(
-            padding: EdgeInsets.only(bottom: 12),
-            child: Text(
-              'SHOPPING APP',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 12,
-              ),
-            ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              context.push('/account-settings');
+            },
           ),
         ],
       ),
-    );
-  }
-
-  static Widget _buildMenuItem(String title) {
-    return Column(
-      children: [
-        ListTile(
-          title: Text(
-            title,
-            style: const TextStyle(
-              color: Color(0xFF333333),
-              fontSize: 16,
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            CircleAvatar(
+              radius: 50,
+              backgroundImage: user.avatarUrl != null
+                  ? NetworkImage(user.avatarUrl!)
+                  : null,
+              child: user.avatarUrl == null
+                  ? const Icon(Icons.person, size: 50)
+                  : null,
             ),
-          ),
-          trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-          onTap: () {},
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  user.userName,
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () {
+                    context.push('/personal-info');
+                  },
+                  child: const Icon(Icons.edit, size: 20, color: Colors.grey),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ListTile(
+              title: const Text('Phương thức thanh toán'),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () {
+                // TODO: Implement payment methods logic
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Payment methods feature coming soon!')),
+                );
+              },
+            ),
+            ListTile(
+              title: const Text('Đơn hàng của tôi'),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () {
+                // TODO: Implement orders logic
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Orders feature coming soon!')),
+                );
+              },
+            ),
+            ListTile(
+              title: const Text('Cài đặt'),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () {
+                context.push('/account-settings');
+              },
+            ),
+            ListTile(
+              title: const Text('Đăng xuất'),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () {
+                final user = Provider.of<UserModel>(context, listen: false);
+                user.updateUser(isLoggedIn: false);
+                context.go('/login');
+              },
+            ),
+          ],
         ),
-        const Divider(height: 1, color: Color(0xFFE0E0E0)),
-      ],
+      ),
     );
   }
 }

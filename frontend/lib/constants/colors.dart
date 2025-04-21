@@ -29,6 +29,12 @@ class AppColors {
   static const Color bannerGradientStart = Colors.purple;
   static const Color bannerGradientEnd = Color(0xFFE1BEE7);
 
+  static const Color purpleButton = Color(0xFF642FBF);
+  static const Color greyText = Colors.grey;
+  static const Color avatarBackground = Colors.grey;
+  static const Color cameraIconBackground = Colors.blue;
+  static const Color whiteIcon = Colors.white;
+
   static const String purple = '#8204FF'; // Colors.purple
   static const String white = '#FFFFFF'; // Colors.white
   static const String grey = '#9E9E9E'; // Colors.grey
