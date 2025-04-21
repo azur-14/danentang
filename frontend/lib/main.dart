@@ -1,11 +1,10 @@
-
+import 'package:danentang/Screens/Customer/Home/HomeScreen.dart';
+import 'package:danentang/Screens/Manager/dashboard.dart';
 import 'package:flutter/material.dart';
 import 'package:danentang/Screens/Customer/Login/Login_Screen.dart';
 import 'package:danentang/Screens/Customer/Login/Login_SignUp_Screen.dart';
 import 'package:danentang/Screens/Customer/Login/SignUp.dart';
 import 'package:danentang/Screens/Customer/User/profile_page.dart';
-import 'package:danentang/Screens/Customer/Home/home_screen.dart';
-import 'routes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,14 +16,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      routerConfig: router,
-      debugShowCheckedModeBanner: false,
-      title: 'E-Commerce App',
+    return MaterialApp(
+      title: 'Final',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: Color(0xFAFAFA),
       ),
+      debugShowCheckedModeBanner: false,
+      home: DashBoard(),
     );
   }
 }
