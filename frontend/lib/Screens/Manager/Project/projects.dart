@@ -42,7 +42,9 @@ class ProjectsScreen extends StatelessWidget {
         leading: isMobile
             ? IconButton(
                 icon: const Icon(Icons.arrow_back, color: Colors.blue),
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.of(context).maybePop(); // Xử lý nút back
+                },
               )
             : null,
         title: const Text("Projects",

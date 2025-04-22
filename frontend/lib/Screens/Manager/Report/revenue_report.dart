@@ -52,6 +52,15 @@ class _RevenueScreenState extends State<RevenueScreen> with SingleTickerProvider
 
           return Scaffold(
             appBar: AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () async {
+                  final shouldPop = await _showExitConfirmation(context);
+                  if (shouldPop) {
+                    Navigator.of(context).pop();
+                  }
+                },
+              ),
               title: const Text('Revenue', style: TextStyle(fontWeight: FontWeight.bold)),
               centerTitle: true,
               backgroundColor: Colors.white,

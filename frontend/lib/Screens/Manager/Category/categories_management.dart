@@ -52,41 +52,71 @@ class MobileCategoriesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text("Categories Management", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {},
-        ),
-        actions: [
-          IconButton(icon: const Icon(Icons.more_vert, color: Colors.black), onPressed: () {}),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _categoryTile("Laptop", Icons.laptop),
-            _categoryTile("Điện Thoại", Icons.phone_android),
-            _categoryTile("Phụ Kiện", Icons.build),
-            const SizedBox(height: 20),
-            const CategoryForm(),
+    return WillPopScope(
+      onWillPop: () async {
+        final shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Xác nhận'),
+            content: const Text('Bạn có muốn quay lại không?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Không'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Có'),
+              ),
+            ],
+          ),
+        );
+        return shouldPop ?? false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+          title: const Text(
+            "Categories Management",
+            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          ),
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            onPressed: () {
+              Navigator.of(context).maybePop(); // hoặc Navigator.pop(context)
+            },
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.more_vert, color: Colors.black),
+              onPressed: () {},
+            ),
           ],
         ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.purple,
-        unselectedItemColor: Colors.black,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Notifications"),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-        ],
+        body: SingleChildScrollView(
+          child: Column(
+            children: [
+              _categoryTile("Laptop", Icons.laptop),
+              _categoryTile("Điện Thoại", Icons.phone_android),
+              _categoryTile("Phụ Kiện", Icons.build),
+              const SizedBox(height: 20),
+              const CategoryForm(),
+            ],
+          ),
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          selectedItemColor: Colors.purple,
+          unselectedItemColor: Colors.black,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+            BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
+            BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Notifications"),
+            BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+          ],
+        ),
       ),
     );
   }
@@ -122,7 +152,6 @@ class WebCategoriesScreen extends StatelessWidget {
       ),
       body: Row(
         children: [
-          // Sidebar nếu bạn muốn thêm
           Expanded(
             flex: 2,
             child: Container(
@@ -136,7 +165,6 @@ class WebCategoriesScreen extends StatelessWidget {
               ),
             ),
           ),
-          // Form hiển thị bên phải
           Expanded(
             flex: 3,
             child: Padding(

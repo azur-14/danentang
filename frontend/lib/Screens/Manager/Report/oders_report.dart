@@ -35,8 +35,7 @@ class OrdersScreen extends StatefulWidget {
   State<OrdersScreen> createState() => _OrdersScreenState();
 }
 
-class _OrdersScreenState extends State<OrdersScreen>
-    with SingleTickerProviderStateMixin {
+class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderStateMixin {
   int selectedTab = 2;
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
@@ -55,13 +54,28 @@ class _OrdersScreenState extends State<OrdersScreen>
     super.dispose();
   }
 
+  Future<bool> _showExitConfirmation(BuildContext context) async {
+    return await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("Xác nhận"),
+            content: const Text("Bạn có muốn thoát khỏi màn hình này không?"),
+            actions: [
+              TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text("Không")),
+              TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text("Có")),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
   Widget _buildTabButton(String text, int index) {
     bool isSelected = selectedTab == index;
     return GestureDetector(
       onTap: () {
         setState(() {
           selectedTab = index;
-          _controller.forward(from: 0); // reset animation
+          _controller.forward(from: 0);
         });
       },
       child: AnimatedContainer(
@@ -208,18 +222,32 @@ class _OrdersScreenState extends State<OrdersScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Orders", style: TextStyle(fontWeight: FontWeight.bold)),
-        leading: widget.isMobile
-            ? IconButton(icon: const Icon(Icons.arrow_back), onPressed: () {})
-            : null,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
+    return WillPopScope(
+      onWillPop: () async {
+        return await _showExitConfirmation(context);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          centerTitle: true,
+          title: const Text("Orders", style: TextStyle(fontWeight: FontWeight.bold)),
+          leading: widget.isMobile
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () async {
+                    final shouldPop = await _showExitConfirmation(context);
+                    if (shouldPop) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                )
+              : null,
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
+        ),
+        body: widget.isMobile ? _buildMobileLayout() : _buildWebLayout(),
+        bottomNavigationBar: widget.isMobile ? _buildBottomNavigationBar() : null,
       ),
-      body: widget.isMobile ? _buildMobileLayout() : _buildWebLayout(),
-      bottomNavigationBar: widget.isMobile ? _buildBottomNavigationBar() : null,
     );
   }
 

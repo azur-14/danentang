@@ -33,49 +33,97 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Order List", style: TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {},
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.more_horiz, color: Colors.black),
-            onPressed: () {},
+    return WillPopScope(
+      onWillPop: () async {
+        final shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Xác nhận'),
+            content: const Text('Bạn có chắc chắn muốn quay lại?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Không'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Có'),
+              ),
+            ],
           ),
-        ],
+        );
+        return shouldPop ?? false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text(
+            "Order List",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          centerTitle: true,
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            onPressed: () async {
+              final shouldPop = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Xác nhận'),
+                  content: const Text('Bạn có chắc chắn muốn quay lại?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text('Không'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: const Text('Có'),
+                    ),
+                  ],
+                ),
+              );
+              if (shouldPop ?? false) {
+                Navigator.of(context).maybePop();
+              }
+            },
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.more_horiz, color: Colors.black),
+              onPressed: () {},
+            ),
+          ],
+        ),
+        backgroundColor: Colors.grey.shade100,
+        body: ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: orders.length,
+          itemBuilder: (context, index) {
+            return OrderCard(order: orders[index]);
+          },
+        ),
+        bottomNavigationBar: isMobile
+            ? BottomNavigationBar(
+                type: BottomNavigationBarType.fixed,
+                selectedItemColor: Colors.purple,
+                unselectedItemColor: Colors.grey,
+                currentIndex: _currentIndex,
+                onTap: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                items: const [
+                  BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                  BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+                  BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Notifications'),
+                  BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+                  BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+                ],
+              )
+            : null,
       ),
-      backgroundColor: Colors.grey.shade100,
-      body: ListView.builder(
-        padding: EdgeInsets.all(16),
-        itemCount: orders.length,
-        itemBuilder: (context, index) {
-          return OrderCard(order: orders[index]);
-        },
-      ),
-      bottomNavigationBar: isMobile ? BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.purple,
-        unselectedItemColor: Colors.grey,
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Notifications'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-      ) : null,
     );
   }
 }
@@ -88,8 +136,8 @@ class OrderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(bottom: 15),
-      padding: EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 15),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -100,10 +148,10 @@ class OrderCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(order.id, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Text(order.id, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               Spacer(),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
                   color: order.statusColor,
                   borderRadius: BorderRadius.circular(15),
@@ -112,18 +160,18 @@ class OrderCard extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Row(
             children: [
-              CircleAvatar(
+              const CircleAvatar(
                 backgroundImage: AssetImage('assets/Manager/Avatar/avatar.jpg'),
                 radius: 12,
               ),
-              SizedBox(width: 8),
-              Text(order.user, style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(width: 8),
+              Text(order.user, style: const TextStyle(fontWeight: FontWeight.bold)),
             ],
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           _buildInfoRow("Project", order.project),
           _buildInfoRow("Address", order.address),
           _buildInfoRow("Date", order.date),
@@ -137,7 +185,7 @@ class OrderCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
-          Text("$title: ", style: TextStyle(fontWeight: FontWeight.bold)),
+          Text("$title: ", style: const TextStyle(fontWeight: FontWeight.bold)),
           Text(value),
         ],
       ),
