@@ -1,9 +1,25 @@
-import 'dart:html' as html; // Add to use onBeforeUnload
+import 'dart:html' as html;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-class Coupon_Management extends StatelessWidget {
-  const Coupon_Management({super.key});
+class CouponManagement extends StatefulWidget {
+  const CouponManagement({super.key});
+
+  @override
+  State<CouponManagement> createState() => _CouponManagementState();
+}
+
+class _CouponManagementState extends State<CouponManagement> {
+  @override
+  void initState() {
+    super.initState();
+    if (kIsWeb) {
+      html.window.onBeforeUnload.listen((event) {
+        event.preventDefault();
+        (event as html.BeforeUnloadEvent).returnValue = '';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,9 +30,6 @@ class Coupon_Management extends StatelessWidget {
   }
 }
 
-//==================//
-// Responsive Wrapper
-//==================//
 class ResponsiveCouponScreen extends StatelessWidget {
   const ResponsiveCouponScreen({super.key});
 
@@ -32,8 +45,7 @@ class ResponsiveCouponScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        bool shouldExit = await _showExitConfirmation(context);
-        return shouldExit;
+        return await _showExitConfirmation(context);
       },
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -41,7 +53,7 @@ class ResponsiveCouponScreen extends StatelessWidget {
             return MobileCouponScreen(onBackPressed: () async {
               bool shouldExit = await _showExitConfirmation(context);
               if (shouldExit) {
-                Navigator.of(context).pop();
+                Navigator.of(context).maybePop();
               }
             });
           } else {
@@ -53,9 +65,6 @@ class ResponsiveCouponScreen extends StatelessWidget {
   }
 }
 
-//==================//
-// Exit Confirmation Dialog
-//==================//
 class ExitConfirmationDialog extends StatelessWidget {
   const ExitConfirmationDialog({super.key});
 
@@ -78,9 +87,6 @@ class ExitConfirmationDialog extends StatelessWidget {
   }
 }
 
-//==================//
-// Mobile Layout
-//==================//
 class MobileCouponScreen extends StatelessWidget {
   final VoidCallback onBackPressed;
   const MobileCouponScreen({super.key, required this.onBackPressed});
@@ -115,41 +121,8 @@ class MobileCouponScreen extends StatelessWidget {
   }
 }
 
-//==================//
-// Web Layout
-//==================//
-class WebCouponScreen extends StatefulWidget {
+class WebCouponScreen extends StatelessWidget {
   const WebCouponScreen({super.key});
-
-  @override
-  _WebCouponScreenState createState() => _WebCouponScreenState();
-}
-
-class _WebCouponScreenState extends State<WebCouponScreen> {
-  @override
-  void initState() {
-    super.initState();
-
-    // Listen to the before unload event to confirm exit
-    html.window.onBeforeUnload.listen((event) async {
-      final shouldExit = await _showExitConfirmation(context);
-      if (shouldExit) {
-        // Allow navigation
-        return;
-      } else {
-        // Prevent navigation
-        (event as html.BeforeUnloadEvent).returnValue = '';
-      }
-    });
-  }
-
-  Future<bool> _showExitConfirmation(BuildContext context) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => const ExitConfirmationDialog(),
-        ) ??
-        false;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -179,9 +152,6 @@ class _WebCouponScreenState extends State<WebCouponScreen> {
   }
 }
 
-//==================//
-// Bottom Navigation Bar
-//==================//
 class BottomNavBar extends StatelessWidget {
   const BottomNavBar({super.key});
 
@@ -203,9 +173,6 @@ class BottomNavBar extends StatelessWidget {
   }
 }
 
-//==================//
-// Nội dung chính
-//==================//
 class CouponContent extends StatelessWidget {
   const CouponContent({super.key});
 
@@ -256,9 +223,6 @@ class CouponContent extends StatelessWidget {
   }
 }
 
-//==================//
-// Coupon Item
-//==================//
 class CouponItem extends StatelessWidget {
   const CouponItem({super.key});
 
@@ -299,9 +263,6 @@ class CouponItem extends StatelessWidget {
   }
 }
 
-//==================//
-// Text Field Widget
-//==================//
 class CouponTextField extends StatelessWidget {
   final String label;
   const CouponTextField({super.key, required this.label});

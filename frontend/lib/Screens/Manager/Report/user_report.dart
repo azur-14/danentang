@@ -38,6 +38,7 @@ class _UserScreenState extends State<UserScreen> {
             "Users",
             style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
           ),
+          centerTitle: true,
           backgroundColor: Colors.white,
           elevation: 0,
           leading: (defaultTargetPlatform == TargetPlatform.android ||
@@ -51,7 +52,7 @@ class _UserScreenState extends State<UserScreen> {
                     }
                   },
                 )
-              : const SizedBox(), // Không hiển thị nút back trên Web/Desktop
+              : const SizedBox(),
         ),
         body: SingleChildScrollView(
           child: Column(

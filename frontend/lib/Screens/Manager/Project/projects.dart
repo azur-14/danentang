@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
@@ -6,11 +7,7 @@ class Projects extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData.light(),
-      home: const ResponsiveProjectsScreen(),
-    );
+    return const ResponsiveProjectsScreen();
   }
 }
 
@@ -22,10 +19,8 @@ class ResponsiveProjectsScreen extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         bool isMobile = constraints.maxWidth < 600;
-        bool canGoBack = Navigator.canPop(context);
-
-        // Chỉ hiển thị nút back nếu có thể pop (tức là đang trong navigation stack)
-        bool showBackButton = canGoBack;
+        bool isMobilePlatform = defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS;
+        bool showBackButton = !kIsWeb && isMobile && isMobilePlatform;
 
         return ProjectsScreen(isMobile: isMobile, showBackButton: showBackButton);
       },
@@ -36,6 +31,7 @@ class ResponsiveProjectsScreen extends StatelessWidget {
 class ProjectsScreen extends StatelessWidget {
   final bool isMobile;
   final bool showBackButton;
+
   const ProjectsScreen({
     super.key,
     required this.isMobile,
@@ -46,28 +42,32 @@ class ProjectsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        bool shouldExit = await _showExitConfirmation(context);
-        return shouldExit;
+        return await _showExitConfirmation(context);
       },
       child: Scaffold(
         backgroundColor: Colors.grey[100],
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,
-          leading: showBackButton
-              ? IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.blue),
-                  onPressed: () async {
-                    bool shouldExit = await _showExitConfirmation(context);
-                    if (shouldExit) {
-                      Navigator.of(context).pop();
-                    }
-                  },
-                )
-              : null,
-          title: const Text("Projects",
-              style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+          automaticallyImplyLeading: false,
           centerTitle: true,
+          title: const Text(
+            "Projects",
+            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          ),
+          actions: showBackButton
+              ? [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.blue),
+                    onPressed: () async {
+                      bool shouldExit = await _showExitConfirmation(context);
+                      if (shouldExit) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                ]
+              : null,
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -122,10 +122,7 @@ class ProjectsScreen extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.all(8),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(10),
-      ),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(10)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -278,7 +275,7 @@ class ProjectsScreen extends StatelessWidget {
   }
 
   Future<bool> _showExitConfirmation(BuildContext context) async {
-    return await showDialog(
+    return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text("Xác nhận"),

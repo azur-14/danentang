@@ -1,9 +1,9 @@
+import 'package:danentang/Screens/Manager/Coupon/coupon_management.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:danentang/Screens/Manager/Report/oders_report.dart';
 import 'package:danentang/Screens/Manager/Report/revenue_report.dart';
 import 'package:danentang/Screens/Manager/Category/categories_management.dart';
-import 'package:danentang/Screens/Manager/Coupon/coupon_management.dart';
 import 'package:danentang/Screens/Manager/Support/customer_support.dart';
 import 'package:danentang/Screens/Manager/Order/order_list.dart';
 import 'package:danentang/Screens/Manager/Product/product_management.dart';
@@ -380,7 +380,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     List<Map<String, dynamic>> managements = [
       {"title": "Projects Management", "screen": Projects()},
       {"title": "Product Management", "screen": ProductManagementScreen()},
-      {"title": "Coupon Management", "screen": Coupon_Management()},
+      {"title": "Coupon Management", "screen": CouponManagement()},
       {"title": "Manage Categories", "screen": Categories_Management()},
       {"title": "User Management", "screen": UserListScreen()},
       {"title": "Orders Management", "screen": OrdersListScreen()},
