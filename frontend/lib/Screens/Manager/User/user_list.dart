@@ -1,17 +1,6 @@
+import 'package:flutter/foundation.dart'; // To use defaultTargetPlatform
 import 'package:flutter/material.dart';
 import 'package:danentang/Screens/Manager/User/user_details.dart';
-
-class User_List extends StatelessWidget {
-  const User_List({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: UserListScreen(),
-    );
-  }
-}
 
 class UserListScreen extends StatefulWidget {
   const UserListScreen({super.key});
@@ -31,102 +20,120 @@ class _UserListScreenState extends State<UserListScreen> {
     User("Andi Lane", "brian@exchange.com", "Nest Lane Olivette", "Feb 2, 2024", "assets/Manager/Avatar/avatar05.jpg"),
   ];
 
+  Future<bool> confirmBackDialog() async {
+    final shouldPop = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xác nhận'),
+        content: const Text('Bạn có chắc chắn muốn quay lại?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Không'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Có'),
+          ),
+        ],
+      ),
+    );
+    return shouldPop ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
+    final isMobile = defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android;
+
     return WillPopScope(
       onWillPop: () async {
-        final shouldPop = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Xác nhận'),
-            content: const Text('Bạn có chắc chắn muốn quay lại?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Không'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Có'),
-              ),
-            ],
-          ),
-        );
-        return shouldPop ?? false;
+        if (await confirmBackDialog()) {
+          return true;
+        }
+        return false;
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text(
-            "User List",
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
-          ),
-          centerTitle: true,
           backgroundColor: Colors.white,
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: () async {
-              final shouldPop = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Xác nhận'),
-                  content: const Text('Bạn có chắc chắn muốn quay lại?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      child: const Text('Không'),
+          automaticallyImplyLeading: false,
+          flexibleSpace: SafeArea(
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                const Center(
+                  child: Text(
+                    "User List",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                      color: Colors.black,
                     ),
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      child: const Text('Có'),
-                    ),
-                  ],
+                  ),
                 ),
-              );
-              if (shouldPop ?? false) {
-                Navigator.of(context).maybePop();
-              }
-            },
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.info_outline, color: Colors.black),
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text("Thông tin"),
-                    content: const Text("Đây là danh sách người dùng với thông tin chi tiết của họ."),
-                    actions: [
-                      TextButton(
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: (defaultTargetPlatform == TargetPlatform.android ||
+                          defaultTargetPlatform == TargetPlatform.iOS)
+                      ? IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.black),
+                          onPressed: () async {
+                            if (await confirmBackDialog()) {
+                              Navigator.of(context).maybePop();
+                            }
+                          },
+                        )
+                      : const SizedBox(),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.info_outline, color: Colors.black),
                         onPressed: () {
-                          Navigator.pop(context);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const UserDetailsScreen()),
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text("Thông tin"),
+                              content: const Text("Đây là danh sách người dùng với thông tin chi tiết của họ."),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => const UserDetailsScreen()),
+                                    );
+                                  },
+                                  child: const Text("OK"),
+                                ),
+                              ],
+                            ),
                           );
                         },
-                        child: const Text("OK"),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.more_horiz, color: Colors.black),
+                        onPressed: () {},
                       ),
                     ],
                   ),
-                );
-              },
+                ),
+              ],
             ),
-            IconButton(
-              icon: const Icon(Icons.more_horiz, color: Colors.black),
-              onPressed: () {},
-            ),
-          ],
+          ),
         ),
         backgroundColor: Colors.grey.shade100,
-        body: ListView.builder(
+        body: Padding(
           padding: const EdgeInsets.all(16),
-          itemCount: users.length,
-          itemBuilder: (context, index) {
-            return UserCard(user: users[index]);
-          },
+          child: ListView.builder(
+            itemCount: users.length,
+            itemBuilder: (context, index) {
+              return UserCard(user: users[index]);
+            },
+          ),
         ),
         bottomNavigationBar: isMobile
             ? BottomNavigationBar(
@@ -147,7 +154,7 @@ class _UserListScreenState extends State<UserListScreen> {
                   BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
                 ],
               )
-            : null,
+            : null, // Ẩn BottomNavigationBar trên web
       ),
     );
   }

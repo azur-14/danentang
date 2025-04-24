@@ -22,7 +22,12 @@ class ResponsiveProjectsScreen extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         bool isMobile = constraints.maxWidth < 600;
-        return ProjectsScreen(isMobile: isMobile);
+        bool canGoBack = Navigator.canPop(context);
+
+        // Chỉ hiển thị nút back nếu có thể pop (tức là đang trong navigation stack)
+        bool showBackButton = canGoBack;
+
+        return ProjectsScreen(isMobile: isMobile, showBackButton: showBackButton);
       },
     );
   }
@@ -30,57 +35,71 @@ class ResponsiveProjectsScreen extends StatelessWidget {
 
 class ProjectsScreen extends StatelessWidget {
   final bool isMobile;
-  const ProjectsScreen({super.key, required this.isMobile});
+  final bool showBackButton;
+  const ProjectsScreen({
+    super.key,
+    required this.isMobile,
+    required this.showBackButton,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: isMobile
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.blue),
-                onPressed: () {
-                  Navigator.of(context).maybePop(); // Xử lý nút back
-                },
-              )
-            : null,
-        title: const Text("Projects",
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _buildOverviewCards(isMobile ? 2 : 4),
-            const SizedBox(height: 16),
-            isMobile
-                ? Column(
-                    children: [
-                      _buildProjectStatusChart(),
-                      const SizedBox(height: 16),
-                      _buildTaskList(),
-                      const SizedBox(height: 16),
-                      _buildTasksOverviewChart(),
-                    ],
-                  )
-                : Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: _buildProjectStatusChart()),
-                      const SizedBox(width: 16),
-                      Expanded(child: _buildTasksOverviewChart()),
-                    ],
-                  ),
-            if (!isMobile) const SizedBox(height: 16),
-            if (!isMobile) _buildTaskList(),
-          ],
+    return WillPopScope(
+      onWillPop: () async {
+        bool shouldExit = await _showExitConfirmation(context);
+        return shouldExit;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.grey[100],
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          leading: showBackButton
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.blue),
+                  onPressed: () async {
+                    bool shouldExit = await _showExitConfirmation(context);
+                    if (shouldExit) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                )
+              : null,
+          title: const Text("Projects",
+              style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+          centerTitle: true,
         ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              _buildOverviewCards(isMobile ? 2 : 4),
+              const SizedBox(height: 16),
+              isMobile
+                  ? Column(
+                      children: [
+                        _buildProjectStatusChart(),
+                        const SizedBox(height: 16),
+                        _buildTaskList(),
+                        const SizedBox(height: 16),
+                        _buildTasksOverviewChart(),
+                      ],
+                    )
+                  : Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: _buildProjectStatusChart()),
+                        const SizedBox(width: 16),
+                        Expanded(child: _buildTasksOverviewChart()),
+                      ],
+                    ),
+              if (!isMobile) const SizedBox(height: 16),
+              if (!isMobile) _buildTaskList(),
+            ],
+          ),
+        ),
+        bottomNavigationBar: isMobile ? _buildBottomNavigationBar() : null,
       ),
-      bottomNavigationBar: isMobile ? _buildBottomNavigationBar() : null,
     );
   }
 
@@ -256,5 +275,20 @@ class ProjectsScreen extends StatelessWidget {
         BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
       ],
     );
+  }
+
+  Future<bool> _showExitConfirmation(BuildContext context) async {
+    return await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("Xác nhận"),
+            content: const Text("Bạn có muốn thoát khỏi màn hình này không?"),
+            actions: [
+              TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text("Không")),
+              TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text("Có")),
+            ],
+          ),
+        ) ??
+        false;
   }
 }

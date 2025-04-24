@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 class Order_List extends StatelessWidget {
   const Order_List({super.key});
@@ -63,31 +64,34 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
           centerTitle: true,
           backgroundColor: Colors.white,
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: () async {
-              final shouldPop = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Xác nhận'),
-                  content: const Text('Bạn có chắc chắn muốn quay lại?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      child: const Text('Không'),
-                    ),
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      child: const Text('Có'),
-                    ),
-                  ],
-                ),
-              );
-              if (shouldPop ?? false) {
-                Navigator.of(context).maybePop();
-              }
-            },
-          ),
+          leading: (defaultTargetPlatform == TargetPlatform.android ||
+                    defaultTargetPlatform == TargetPlatform.iOS)
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.black),
+                  onPressed: () async {
+                    final shouldPop = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Xác nhận'),
+                        content: const Text('Bạn có chắc chắn muốn quay lại?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text('Không'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: const Text('Có'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (shouldPop ?? false) {
+                      Navigator.of(context).maybePop();
+                    }
+                  },
+                )
+              : const SizedBox(),
           actions: [
             IconButton(
               icon: const Icon(Icons.more_horiz, color: Colors.black),

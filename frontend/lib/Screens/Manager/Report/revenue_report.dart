@@ -1,5 +1,10 @@
+import 'package:danentang/Screens/Manager/dashboard.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+
+void main() {
+  runApp(const RevenueReport());
+}
 
 class RevenueReport extends StatelessWidget {
   const RevenueReport({super.key});
@@ -40,11 +45,32 @@ class _RevenueScreenState extends State<RevenueScreen> with SingleTickerProvider
     super.dispose();
   }
 
+  Future<bool> _showExitConfirmation(BuildContext context) async {
+    return await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("Xác nhận"),
+            content: const Text("Bạn có muốn thoát khỏi màn hình này không?"),
+            actions: [
+              TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text("Không")),
+              TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text("Có")),
+            ],
+          ),
+        ) ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        return await _showExitConfirmation(context);
+        final shouldExit = await _showExitConfirmation(context);
+        if (shouldExit) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const DashBoard()),
+          );
+        }
+        return false;
       },
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -52,15 +78,20 @@ class _RevenueScreenState extends State<RevenueScreen> with SingleTickerProvider
 
           return Scaffold(
             appBar: AppBar(
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () async {
-                  final shouldPop = await _showExitConfirmation(context);
-                  if (shouldPop) {
-                    Navigator.of(context).pop();
-                  }
-                },
-              ),
+              leading: isMobile
+                  ? IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: () async {
+                        final shouldExit = await _showExitConfirmation(context);
+                        if (shouldExit) {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (_) => const DashBoard()),
+                          );
+                        }
+                      },
+                    )
+                  : null,
               title: const Text('Revenue', style: TextStyle(fontWeight: FontWeight.bold)),
               centerTitle: true,
               backgroundColor: Colors.white,
@@ -94,21 +125,6 @@ class _RevenueScreenState extends State<RevenueScreen> with SingleTickerProvider
         },
       ),
     );
-  }
-
-  Future<bool> _showExitConfirmation(BuildContext context) async {
-    return await showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text("Xác nhận"),
-            content: const Text("Bạn có muốn thoát khỏi màn hình này không?"),
-            actions: [
-              TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text("Không")),
-              TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text("Có")),
-            ],
-          ),
-        ) ??
-        false;
   }
 
   Widget _buildFilterButtons(bool isMobile) {

@@ -1,21 +1,68 @@
 import 'package:flutter/material.dart';
+import 'package:animations/animations.dart';
+import 'package:flutter/foundation.dart';
 
 class Categories_Management extends StatelessWidget {
   const Categories_Management({super.key});
 
+  Future<bool> _showExitConfirmation(BuildContext context) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Xác nhận'),
+            content: const Text('Bạn có muốn quay lại không?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Không'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Có'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth < 600) {
-            return const MobileCategoriesScreen();
-          } else {
-            return const WebCategoriesScreen();
-          }
-        },
+    return WillPopScope(
+      onWillPop: () => _showExitConfirmation(context),
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: const ResponsiveCategoriesScreen(),
       ),
+    );
+  }
+}
+
+//================================//
+//       Responsive Wrapper       //
+//================================//
+class ResponsiveCategoriesScreen extends StatelessWidget {
+  const ResponsiveCategoriesScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
+
+        return PageTransitionSwitcher(
+          duration: const Duration(milliseconds: 400),
+          transitionBuilder: (child, animation, secondaryAnimation) =>
+              FadeThroughTransition(
+            animation: animation,
+            secondaryAnimation: secondaryAnimation,
+            child: child,
+          ),
+          child: isMobile
+              ? const MobileCategoriesScreen(key: ValueKey("Mobile"))
+              : const WebCategoriesScreen(key: ValueKey("Web")),
+        );
+      },
     );
   }
 }
@@ -50,11 +97,8 @@ class MobileCategoriesScreen extends StatelessWidget {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        final shouldPop = await showDialog<bool>(
+  Future<bool> _showExitConfirmation(BuildContext context) async {
+    return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Xác nhận'),
@@ -70,9 +114,14 @@ class MobileCategoriesScreen extends StatelessWidget {
               ),
             ],
           ),
-        );
-        return shouldPop ?? false;
-      },
+        ) ??
+        false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () => _showExitConfirmation(context),
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.white,
@@ -84,8 +133,10 @@ class MobileCategoriesScreen extends StatelessWidget {
           ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: () {
-              Navigator.of(context).maybePop(); // hoặc Navigator.pop(context)
+            onPressed: () async {
+              if (await _showExitConfirmation(context)) {
+                Navigator.of(context).pop();
+              }
             },
           ),
           actions: [

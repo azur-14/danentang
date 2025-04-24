@@ -26,58 +26,103 @@ class _NewProductScreenState extends State<NewProductScreen> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("New Product", style: TextStyle(fontWeight: FontWeight.bold)),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              buildInputField("Tên Sản Phẩm"),
-              buildInputField("Mã Số Sản Phẩm"),
-              buildInputField("Số Lô Sản Phẩm"),
-              buildInputField("Dòng Máy / Chip / RAM"),
-              buildInputField("Màu Sắc"),
-              buildDropdownField("Danh Mục Sản Phẩm"),
-              SizedBox(height: 20),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Xử lý khi nhấn nút Lưu
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purpleAccent,
-                    padding: EdgeInsets.symmetric(horizontal: 100, vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text("Lưu", style: TextStyle(fontSize: 18, color: Colors.white)),
-                ),
+    return WillPopScope(
+      onWillPop: () async {
+        final shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Xác nhận'),
+            content: const Text('Bạn có chắc chắn muốn quay lại?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Không'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Có'),
               ),
             ],
           ),
+        );
+        return shouldPop ?? false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text("New Product", style: TextStyle(fontWeight: FontWeight.bold)),
+          leading: isMobile
+              ? IconButton(
+                  icon: Icon(Icons.arrow_back),
+                  onPressed: () async {
+                    final shouldPop = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Xác nhận'),
+                        content: const Text('Bạn có chắc chắn muốn quay lại?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text('Không'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: const Text('Có'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (shouldPop ?? false) {
+                      Navigator.of(context).maybePop();
+                    }
+                  },
+                )
+              : null, // Hide back button on web
         ),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                buildInputField("Tên Sản Phẩm"),
+                buildInputField("Mã Số Sản Phẩm"),
+                buildInputField("Số Lô Sản Phẩm"),
+                buildInputField("Dòng Máy / Chip / RAM"),
+                buildInputField("Màu Sắc"),
+                buildDropdownField("Danh Mục Sản Phẩm"),
+                SizedBox(height: 20),
+                Center(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Xử lý khi nhấn nút Lưu
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.purpleAccent,
+                      padding: EdgeInsets.symmetric(horizontal: 100, vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text("Lưu", style: TextStyle(fontSize: 18, color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        bottomNavigationBar: isMobile ? BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: Colors.purpleAccent,
+          unselectedItemColor: Colors.black54,
+          items: [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: ""),
+            BottomNavigationBarItem(icon: Icon(Icons.history), label: ""),
+            BottomNavigationBarItem(icon: Icon(Icons.notifications), label: ""),
+            BottomNavigationBarItem(icon: Icon(Icons.settings), label: ""),
+            BottomNavigationBarItem(icon: Icon(Icons.person), label: ""),
+          ],
+        ) : null,
       ),
-      bottomNavigationBar: isMobile ? BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.purpleAccent,
-        unselectedItemColor: Colors.black54,
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: ""),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: ""),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications), label: ""),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: ""),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: ""),
-        ],
-      ) : null,
     );
   }
 

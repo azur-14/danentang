@@ -1,6 +1,7 @@
 import 'package:danentang/Screens/Manager/User/user_list.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/foundation.dart';
 
 class User_Report extends StatelessWidget {
   const User_Report({super.key});
@@ -33,18 +34,24 @@ class _UserScreenState extends State<UserScreen> {
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          title: const Text("Users", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+          title: const Text(
+            "Users",
+            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+          ),
           backgroundColor: Colors.white,
           elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: () async {
-              bool shouldPop = await _showExitConfirmation(context);
-              if (shouldPop) {
-                Navigator.pop(context);
-              }
-            },
-          ),
+          leading: (defaultTargetPlatform == TargetPlatform.android ||
+                    defaultTargetPlatform == TargetPlatform.iOS)
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.black),
+                  onPressed: () async {
+                    bool shouldPop = await _showExitConfirmation(context);
+                    if (shouldPop) {
+                      Navigator.pop(context);
+                    }
+                  },
+                )
+              : const SizedBox(), // Không hiển thị nút back trên Web/Desktop
         ),
         body: SingleChildScrollView(
           child: Column(
@@ -82,8 +89,7 @@ class _UserScreenState extends State<UserScreen> {
               TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text("Có")),
             ],
           ),
-        ) ??
-        false;
+        ) ?? false;
   }
 
   Widget _buildSegmentedControl() {
@@ -259,7 +265,7 @@ class _UserScreenState extends State<UserScreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => User_List()),
+            MaterialPageRoute(builder: (context) => UserListScreen()),
           );
         },
         style: ElevatedButton.styleFrom(

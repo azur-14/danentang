@@ -1,3 +1,5 @@
+import 'dart:html' as html; // Add to use onBeforeUnload
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class Coupon_Management extends StatelessWidget {
@@ -7,10 +9,41 @@ class Coupon_Management extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: LayoutBuilder(
+      home: const ResponsiveCouponScreen(),
+    );
+  }
+}
+
+//==================//
+// Responsive Wrapper
+//==================//
+class ResponsiveCouponScreen extends StatelessWidget {
+  const ResponsiveCouponScreen({super.key});
+
+  Future<bool> _showExitConfirmation(BuildContext context) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => const ExitConfirmationDialog(),
+        ) ??
+        false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async {
+        bool shouldExit = await _showExitConfirmation(context);
+        return shouldExit;
+      },
+      child: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth < 600) {
-            return const MobileCouponScreen();
+            return MobileCouponScreen(onBackPressed: () async {
+              bool shouldExit = await _showExitConfirmation(context);
+              if (shouldExit) {
+                Navigator.of(context).pop();
+              }
+            });
           } else {
             return const WebCouponScreen();
           }
@@ -21,53 +54,63 @@ class Coupon_Management extends StatelessWidget {
 }
 
 //==================//
-// Mobile Layout
+// Exit Confirmation Dialog
 //==================//
-class MobileCouponScreen extends StatelessWidget {
-  const MobileCouponScreen({super.key});
+class ExitConfirmationDialog extends StatelessWidget {
+  const ExitConfirmationDialog({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        Navigator.of(context).maybePop();
-        return false;
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: () {
-              Navigator.of(context).maybePop();
-            },
-          ),
-          title: const Text(
-            "Coupon Management",
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
-          ),
-          actions: const [
-            Icon(Icons.more_horiz, color: Colors.black),
-            SizedBox(width: 10),
-          ],
+    return AlertDialog(
+      title: const Text('Xác nhận'),
+      content: const Text('Bạn có chắc chắn muốn thoát khỏi màn hình này không?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('Không'),
         ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          child: const Text('Có'),
+        ),
+      ],
+    );
+  }
+}
+
+//==================//
+// Mobile Layout
+//==================//
+class MobileCouponScreen extends StatelessWidget {
+  final VoidCallback onBackPressed;
+  const MobileCouponScreen({super.key, required this.onBackPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
         backgroundColor: Colors.white,
-        body: const CouponContent(),
-        bottomNavigationBar: BottomNavigationBar(
-          selectedItemColor: Colors.purple,
-          unselectedItemColor: Colors.black,
-          showSelectedLabels: false,
-          showUnselectedLabels: false,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-            BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
-            BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Notifications"),
-            BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-          ],
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: onBackPressed,
         ),
+        title: const Text(
+          "Coupon Management",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        centerTitle: true,
+        actions: const [
+          Icon(Icons.more_horiz, color: Colors.black),
+          SizedBox(width: 10),
+        ],
       ),
+      backgroundColor: Colors.white,
+      body: const CouponContent(),
+      bottomNavigationBar: const BottomNavBar(),
     );
   }
 }
@@ -75,8 +118,38 @@ class MobileCouponScreen extends StatelessWidget {
 //==================//
 // Web Layout
 //==================//
-class WebCouponScreen extends StatelessWidget {
+class WebCouponScreen extends StatefulWidget {
   const WebCouponScreen({super.key});
+
+  @override
+  _WebCouponScreenState createState() => _WebCouponScreenState();
+}
+
+class _WebCouponScreenState extends State<WebCouponScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    // Listen to the before unload event to confirm exit
+    html.window.onBeforeUnload.listen((event) async {
+      final shouldExit = await _showExitConfirmation(context);
+      if (shouldExit) {
+        // Allow navigation
+        return;
+      } else {
+        // Prevent navigation
+        (event as html.BeforeUnloadEvent).returnValue = '';
+      }
+    });
+  }
+
+  Future<bool> _showExitConfirmation(BuildContext context) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => const ExitConfirmationDialog(),
+        ) ??
+        false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,6 +161,7 @@ class WebCouponScreen extends StatelessWidget {
           "Coupon Management",
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
         ),
+        centerTitle: true,
         actions: const [
           Icon(Icons.more_horiz, color: Colors.black),
           SizedBox(width: 10),
@@ -101,6 +175,30 @@ class WebCouponScreen extends StatelessWidget {
           child: const CouponContent(),
         ),
       ),
+    );
+  }
+}
+
+//==================//
+// Bottom Navigation Bar
+//==================//
+class BottomNavBar extends StatelessWidget {
+  const BottomNavBar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return BottomNavigationBar(
+      selectedItemColor: Colors.purple,
+      unselectedItemColor: Colors.black,
+      showSelectedLabels: false,
+      showUnselectedLabels: false,
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+        BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
+        BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Notifications"),
+        BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
+        BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+      ],
     );
   }
 }

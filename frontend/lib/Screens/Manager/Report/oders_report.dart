@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/foundation.dart';
 
 class OrdersReport extends StatelessWidget {
   const OrdersReport({super.key});
@@ -20,7 +21,8 @@ class ResponsiveOrdersScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        bool isMobile = constraints.maxWidth < 600;
+        bool isMobile = defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.android;
         return OrdersScreen(isMobile: isMobile);
       },
     );
@@ -55,18 +57,24 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
   }
 
   Future<bool> _showExitConfirmation(BuildContext context) async {
-    return await showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text("Xác nhận"),
-            content: const Text("Bạn có muốn thoát khỏi màn hình này không?"),
-            actions: [
-              TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text("Không")),
-              TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text("Có")),
-            ],
+    final shouldPop = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Xác nhận'),
+        content: const Text('Bạn có chắc chắn muốn quay lại?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Không'),
           ),
-        ) ??
-        false;
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Có'),
+          ),
+        ],
+      ),
+    );
+    return shouldPop ?? false;
   }
 
   Widget _buildTabButton(String text, int index) {
@@ -224,23 +232,25 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        return await _showExitConfirmation(context);
+        final shouldExit = await _showExitConfirmation(context);
+        return shouldExit;
       },
       child: Scaffold(
         appBar: AppBar(
           centerTitle: true,
           title: const Text("Orders", style: TextStyle(fontWeight: FontWeight.bold)),
-          leading: widget.isMobile
+          leading: (defaultTargetPlatform == TargetPlatform.android ||
+                    defaultTargetPlatform == TargetPlatform.iOS)
               ? IconButton(
                   icon: const Icon(Icons.arrow_back),
                   onPressed: () async {
                     final shouldPop = await _showExitConfirmation(context);
                     if (shouldPop) {
-                      Navigator.of(context).pop();
+                      Navigator.of(context).maybePop();
                     }
                   },
                 )
-              : null,
+              : const SizedBox(), // Ẩn trên Web/Desktop
           backgroundColor: Colors.white,
           foregroundColor: Colors.black,
           elevation: 0,
