@@ -56,27 +56,6 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
     super.dispose();
   }
 
-  Future<bool> _showExitConfirmation(BuildContext context) async {
-    final shouldPop = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Xác nhận'),
-        content: const Text('Bạn có chắc chắn muốn quay lại?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Không'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Có'),
-          ),
-        ],
-      ),
-    );
-    return shouldPop ?? false;
-  }
-
   Widget _buildTabButton(String text, int index) {
     bool isSelected = selectedTab == index;
     return GestureDetector(
@@ -230,34 +209,25 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        final shouldExit = await _showExitConfirmation(context);
-        return shouldExit;
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          centerTitle: true,
-          title: const Text("Orders", style: TextStyle(fontWeight: FontWeight.bold)),
-          leading: (defaultTargetPlatform == TargetPlatform.android ||
+    return Scaffold(
+      appBar: AppBar(
+        centerTitle: true,
+        title: const Text("Orders", style: TextStyle(fontWeight: FontWeight.bold)),
+        leading: (defaultTargetPlatform == TargetPlatform.android ||
                     defaultTargetPlatform == TargetPlatform.iOS)
-              ? IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () async {
-                    final shouldPop = await _showExitConfirmation(context);
-                    if (shouldPop) {
-                      Navigator.of(context).maybePop();
-                    }
-                  },
-                )
-              : const SizedBox(), // Ẩn trên Web/Desktop
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          elevation: 0,
-        ),
-        body: widget.isMobile ? _buildMobileLayout() : _buildWebLayout(),
-        bottomNavigationBar: widget.isMobile ? _buildBottomNavigationBar() : null,
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  Navigator.of(context).maybePop();
+                },
+              )
+            : const SizedBox(), // Ẩn trên Web/Desktop
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
       ),
+      body: widget.isMobile ? _buildMobileLayout() : _buildWebLayout(),
+      bottomNavigationBar: widget.isMobile ? _buildBottomNavigationBar() : null,
     );
   }
 

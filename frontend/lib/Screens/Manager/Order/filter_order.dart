@@ -28,59 +28,54 @@ class _OrderListScreenState extends State<OrderListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        return await _showExitConfirmation(context);
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text("Order List"),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.filter_list),
-              onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  builder: (context) => FilterSheet(
-                    onSelectFilter: (selectedFilter) {
-                      setState(() {
-                        filter = selectedFilter;
-                      });
-                    },
-                  ),
-                );
-              },
-            )
-          ],
-          leading: _buildBackButton(context),
-        ),
-        body: StreamBuilder(
-          stream: FirebaseFirestore.instance.collection('orders').snapshots(),
-          builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-            if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
-            return ListView(
-              children: snapshot.data!.docs.map((doc) {
-                return OrderCard(
-                  orderId: doc['id'],
-                  user: doc['user'],
-                  project: doc['project'],
-                  address: doc['address'],
-                  status: doc['status'],
-                  date: doc['date'],
-                );
-              }).toList(),
-            );
-          },
-        ),
-        bottomNavigationBar: BottomNavigationBar(
-          items: [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-            BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
-            BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Notifications"),
-            BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
-            BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-          ],
-        ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Order List"),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.filter_list),
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                builder: (context) => FilterSheet(
+                  onSelectFilter: (selectedFilter) {
+                    setState(() {
+                      filter = selectedFilter;
+                    });
+                  },
+                ),
+              );
+            },
+          )
+        ],
+        leading: _buildBackButton(context),
+      ),
+      body: StreamBuilder(
+        stream: FirebaseFirestore.instance.collection('orders').snapshots(),
+        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
+          return ListView(
+            children: snapshot.data!.docs.map((doc) {
+              return OrderCard(
+                orderId: doc['id'],
+                user: doc['user'],
+                project: doc['project'],
+                address: doc['address'],
+                status: doc['status'],
+                date: doc['date'],
+              );
+            }).toList(),
+          );
+        },
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
+          BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Notifications"),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+        ],
       ),
     );
   }
@@ -93,11 +88,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
         if (isMobile) {
           return IconButton(
             icon: Icon(Icons.arrow_back),
-            onPressed: () async {
-              bool shouldPop = await _showExitConfirmation(context);
-              if (shouldPop) {
-                Navigator.pop(context);
-              }
+            onPressed: () {
+              Navigator.pop(context);  // Directly pop without confirmation
             },
           );
         } else {
@@ -105,26 +97,6 @@ class _OrderListScreenState extends State<OrderListScreen> {
         }
       },
     );
-  }
-
-  Future<bool> _showExitConfirmation(BuildContext context) async {
-    return await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Xác nhận"),
-        content: Text("Bạn có muốn thoát khỏi màn hình này không?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text("Không"),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text("Có"),
-          ),
-        ],
-      ),
-    ) ?? false;
   }
 }
 

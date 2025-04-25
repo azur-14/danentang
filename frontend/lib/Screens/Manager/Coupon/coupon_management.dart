@@ -1,88 +1,46 @@
-import 'dart:html' as html;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-class CouponManagement extends StatefulWidget {
+class CouponManagement extends StatelessWidget {
   const CouponManagement({super.key});
 
   @override
-  State<CouponManagement> createState() => _CouponManagementState();
-}
-
-class _CouponManagementState extends State<CouponManagement> {
-  @override
-  void initState() {
-    super.initState();
-    if (kIsWeb) {
-      html.window.onBeforeUnload.listen((event) {
-        event.preventDefault();
-        (event as html.BeforeUnloadEvent).returnValue = '';
-      });
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const ResponsiveCouponScreen(),
+      home: ResponsiveCouponScreen(),
     );
   }
 }
 
-class ResponsiveCouponScreen extends StatelessWidget {
+class ResponsiveCouponScreen extends StatefulWidget {
   const ResponsiveCouponScreen({super.key});
 
-  Future<bool> _showExitConfirmation(BuildContext context) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => const ExitConfirmationDialog(),
-        ) ??
-        false;
-  }
+  @override
+  State<ResponsiveCouponScreen> createState() => _ResponsiveCouponScreenState();
+}
 
+class _ResponsiveCouponScreenState extends State<ResponsiveCouponScreen> {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        return await _showExitConfirmation(context);
+        // Không hiển thị dialog xác nhận khi back
+        return true;  // Quay lại ngay lập tức mà không hỏi
       },
       child: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth < 600) {
-            return MobileCouponScreen(onBackPressed: () async {
-              bool shouldExit = await _showExitConfirmation(context);
-              if (shouldExit) {
-                Navigator.of(context).maybePop();
-              }
-            });
+            return MobileCouponScreen(
+              onBackPressed: () {
+                Navigator.of(context).pop();  // Trở lại ngay mà không hỏi
+              },
+            );
           } else {
             return const WebCouponScreen();
           }
         },
       ),
-    );
-  }
-}
-
-class ExitConfirmationDialog extends StatelessWidget {
-  const ExitConfirmationDialog({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Xác nhận'),
-      content: const Text('Bạn có chắc chắn muốn thoát khỏi màn hình này không?'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Không'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(true),
-          child: const Text('Có'),
-        ),
-      ],
     );
   }
 }
@@ -103,10 +61,7 @@ class MobileCouponScreen extends StatelessWidget {
         ),
         title: const Text(
           "Coupon Management",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
         ),
         centerTitle: true,
         actions: const [
@@ -130,6 +85,7 @@ class WebCouponScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        automaticallyImplyLeading: false, // Ẩn nút back trên web
         title: const Text(
           "Coupon Management",
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
@@ -179,45 +135,43 @@ class CouponContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Column(
-              children: List.generate(3, (index) => const CouponItem()),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              "New Coupon",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            const SizedBox(height: 10),
-            const CouponTextField(label: "Tên Mã Giảm Giá"),
-            const CouponTextField(label: "Giá Trị Mã Giảm Giá"),
-            const CouponTextField(label: "Ngày Tạo"),
-            const CouponTextField(label: "Ký Tự Mã Giảm"),
-            const CouponTextField(label: "Số Lần Sử Dụng"),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: const Text(
-                  "Tạo Mã Giảm Giá",
-                  style: TextStyle(fontSize: 16, color: Colors.white),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            children: List.generate(3, (index) => const CouponItem()),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            "New Coupon",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          const SizedBox(height: 10),
+          const CouponTextField(label: "Tên Mã Giảm Giá"),
+          const CouponTextField(label: "Giá Trị Mã Giảm Giá"),
+          const CouponTextField(label: "Ngày Tạo"),
+          const CouponTextField(label: "Ký Tự Mã Giảm"),
+          const CouponTextField(label: "Số Lần Sử Dụng"),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.purple,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
+              child: const Text(
+                "Tạo Mã Giảm Giá",
+                style: TextStyle(fontSize: 16, color: Colors.white),
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -1,150 +1,103 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class BanUserScreen extends StatelessWidget {
+  const BanUserScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: MainScreen(),
+      home: BannedSuccessScreen(),
     );
   }
 }
 
-class MainScreen extends StatefulWidget {
+class BannedSuccessScreen extends StatelessWidget {
+  const BannedSuccessScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF9F9F9),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                )
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.block, color: Colors.redAccent, size: 64),
+                const SizedBox(height: 20),
+                const Text(
+                  'User đã bị ban thành công!',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Người dùng sẽ không thể truy cập hệ thống nữa.',
+                  style: TextStyle(fontSize: 16, color: Colors.black54),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 30),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.arrow_back),
+                  label: const Text("Quay lại"),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class MainScreen extends StatelessWidget {
   const MainScreen({super.key});
 
   @override
-  State<MainScreen> createState() => _MainScreenState();
-}
-
-class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0;
-
-  final List<Widget> _screens = const [
-    HomeScreen(),
-    HistoryScreen(),
-    NotificationsScreen(),
-    SettingsScreen(),
-    ProfileScreen(),
-  ];
-
-  @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isMobile = constraints.maxWidth < 600;
-
-        return Scaffold(
-          appBar: isMobile
-              ? null
-              : AppBar(
-                  title: const Text('Dashboard'),
-                  backgroundColor: Colors.purple,
-                ),
-          body: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 700),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 500),
-                transitionBuilder: (child, animation) => FadeTransition(
-                  opacity: animation,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0.0, 0.1),
-                      end: Offset.zero,
-                    ).animate(animation),
-                    child: child,
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: ElevatedButton(
+            onPressed: () {
+              // Đưa vào một hiệu ứng chuyển cảnh
+              Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) =>
+                      FadeTransition(
+                    opacity: animation,
+                    child: BannedSuccessScreen(),
                   ),
                 ),
-                child: _screens[_currentIndex],
-              ),
-            ),
+              );
+            },
+            child: const Text("Ban User"),
           ),
-          bottomNavigationBar: isMobile
-              ? BottomNavigationBar(
-                  type: BottomNavigationBarType.fixed,
-                  selectedItemColor: Colors.purple,
-                  unselectedItemColor: Colors.black,
-                  currentIndex: _currentIndex,
-                  onTap: (index) {
-                    setState(() {
-                      _currentIndex = index;
-                    });
-                  },
-                  items: const [
-                    BottomNavigationBarItem(
-                        icon: Icon(Icons.home), label: 'Home'),
-                    BottomNavigationBarItem(
-                        icon: Icon(Icons.history), label: 'History'),
-                    BottomNavigationBarItem(
-                        icon: Icon(LucideIcons.bell), label: 'Notifications'),
-                    BottomNavigationBarItem(
-                        icon: Icon(LucideIcons.settings), label: 'Settings'),
-                    BottomNavigationBarItem(
-                        icon: Icon(Icons.person_outline), label: 'Profile'),
-                  ],
-                )
-              : null,
-        );
-      },
-    );
-  }
-}
-
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const _CenteredContent(title: 'Home Screen');
-  }
-}
-
-class HistoryScreen extends StatelessWidget {
-  const HistoryScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const _CenteredContent(title: 'History Screen');
-  }
-}
-
-class NotificationsScreen extends StatelessWidget {
-  const NotificationsScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const _CenteredContent(title: 'Notifications Screen');
-  }
-}
-
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const _CenteredContent(title: 'Settings Screen');
-  }
-}
-
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const _CenteredContent(title: 'Profile Screen');
-  }
-}
-
-// Widget dùng chung cho các màn
-class _CenteredContent extends StatelessWidget {
-  final String title;
-  const _CenteredContent({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        title,
-        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }

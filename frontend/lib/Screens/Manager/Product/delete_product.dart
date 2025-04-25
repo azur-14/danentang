@@ -28,8 +28,8 @@ class _SuccessScreenState extends State<SuccessScreen> with SingleTickerProvider
   void initState() {
     super.initState();
 
-    _controller =
-        AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 800));
 
     _scaleAnimation = CurvedAnimation(
       parent: _controller,
@@ -51,24 +51,8 @@ class _SuccessScreenState extends State<SuccessScreen> with SingleTickerProvider
   }
 
   Future<bool> _onWillPop() async {
-    final shouldPop = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Xác nhận'),
-        content: const Text('Bạn có chắc chắn muốn quay lại?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Không'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Có'),
-          ),
-        ],
-      ),
-    );
-    return shouldPop ?? false;
+    Navigator.pop(context);  // Directly pop without confirmation
+    return false;
   }
 
   @override

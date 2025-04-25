@@ -34,7 +34,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> with SingleTicker
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000));
     _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
     _controller.forward();
   }
@@ -74,7 +74,15 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> with SingleTicker
                 return ListView.builder(
                   itemCount: users.length,
                   itemBuilder: (context, index) {
-                    return UserCard(user: users[index]);
+                    return AnimatedUserCard(
+                      user: users[index],
+                      animation: Tween<double>(begin: 0, end: 1).animate(
+                        CurvedAnimation(
+                          parent: _controller,
+                          curve: Interval((index / users.length), 1.0, curve: Curves.easeOut),
+                        ),
+                      ),
+                    );
                   },
                 );
               } else {
@@ -87,7 +95,15 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> with SingleTicker
                     mainAxisSpacing: 10,
                   ),
                   itemBuilder: (context, index) {
-                    return UserCard(user: users[index]);
+                    return AnimatedUserCard(
+                      user: users[index],
+                      animation: Tween<double>(begin: 0, end: 1).animate(
+                        CurvedAnimation(
+                          parent: _controller,
+                          curve: Interval((index / users.length), 1.0, curve: Curves.easeOut),
+                        ),
+                      ),
+                    );
                   },
                 );
               }
@@ -109,6 +125,30 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> with SingleTicker
               ],
             )
           : null,
+    );
+  }
+}
+
+class AnimatedUserCard extends StatelessWidget {
+  final User user;
+  final Animation<double> animation;
+
+  const AnimatedUserCard({super.key, required this.user, required this.animation});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: animation.value,
+          child: Transform.translate(
+            offset: Offset(0, 30 * (1 - animation.value)),
+            child: child,
+          ),
+        );
+      },
+      child: UserCard(user: user),
     );
   }
 }

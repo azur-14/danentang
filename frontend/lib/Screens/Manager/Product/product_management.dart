@@ -24,113 +24,113 @@ class ProductManagementScreen extends StatefulWidget {
       _ProductManagementScreenState();
 }
 
-class _ProductManagementScreenState extends State<ProductManagementScreen> {
+class _ProductManagementScreenState extends State<ProductManagementScreen>
+    with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
 
-  Future<bool> _showExitConfirmation(BuildContext context) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Xác nhận'),
-            content: const Text('Bạn có chắc chắn muốn thoát khỏi màn hình này không?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('Không'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('Có'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
+
+    _controller.forward();
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        bool shouldExit = await _showExitConfirmation(context);
-        return shouldExit;
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: false, // Ngăn AppBar tự thêm nút back
-          leading: !kIsWeb &&
-                  (defaultTargetPlatform == TargetPlatform.iOS ||
-                      defaultTargetPlatform == TargetPlatform.android)
-              ? IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.black),
-                  onPressed: () async {
-                    bool shouldExit = await _showExitConfirmation(context);
-                    if (shouldExit) {
-                      Navigator.pop(context);
-                    }
-                  },
-                )
-              : null,
-          title: const Text(
-            'Product Management',
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-          ),
-          centerTitle: true,
-          backgroundColor: Colors.white,
-          elevation: 0,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.edit, color: Colors.black),
-              onPressed: () {},
-            ),
-          ],
-        ),
-        body: Column(
-          children: [
-            _buildProductSection('Latest Product', 'View All'),
-            _buildProductItem('Laptop ASUS', 'Color: Grey, AA - 07 - 902', 200),
-            const SizedBox(height: 10),
-            _buildProductSection('Danh Sách Sản Phẩm Được Bổ Sung', ''),
-            Expanded(
-              child: ListView(
-                children: [
-                  _buildProductItem(
-                      'Laptop Dell', 'Color: Black, BB - 12 - 345', 300),
-                  _buildProductItem(
-                      'MacBook Pro', 'Color: Silver, CC - 78 - 910', 1500),
-                ],
-              ),
-            ),
-            _buildActionButtons(context),
-          ],
-        ),
-        bottomNavigationBar: !kIsWeb &&
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false, // Ngăn AppBar tự thêm nút back
+        leading: !kIsWeb &&
                 (defaultTargetPlatform == TargetPlatform.iOS ||
                     defaultTargetPlatform == TargetPlatform.android)
-            ? BottomNavigationBar(
-                type: BottomNavigationBarType.fixed,
-                selectedItemColor: Colors.purple,
-                unselectedItemColor: Colors.grey,
-                currentIndex: _currentIndex,
-                onTap: (index) {
-                  setState(() {
-                    _currentIndex = index;
-                  });
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                onPressed: () {
+                  Navigator.pop(context); // Quay lại trang trước
                 },
-                items: const [
-                  BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-                  BottomNavigationBarItem(
-                      icon: Icon(Icons.history), label: 'History'),
-                  BottomNavigationBarItem(
-                      icon: Icon(Icons.notifications), label: 'Notifications'),
-                  BottomNavigationBarItem(
-                      icon: Icon(Icons.settings), label: 'Settings'),
-                  BottomNavigationBarItem(
-                      icon: Icon(Icons.person), label: 'Profile'),
-                ],
               )
             : null,
+        title: const Text(
+          'Product Management',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit, color: Colors.black),
+            onPressed: () {},
+          ),
+        ],
       ),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: ScaleTransition(
+          scale: _scaleAnimation,
+          child: Column(
+            children: [
+              _buildProductSection('Latest Product', 'View All'),
+              _buildProductItem('Laptop ASUS', 'Color: Grey, AA - 07 - 902', 200),
+              const SizedBox(height: 10),
+              _buildProductSection('Danh Sách Sản Phẩm Được Bổ Sung', ''),
+              Expanded(
+                child: ListView(
+                  children: [
+                    _buildProductItem(
+                        'Laptop Dell', 'Color: Black, BB - 12 - 345', 300),
+                    _buildProductItem(
+                        'MacBook Pro', 'Color: Silver, CC - 78 - 910', 1500),
+                  ],
+                ),
+              ),
+              _buildActionButtons(context),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: !kIsWeb &&
+              (defaultTargetPlatform == TargetPlatform.iOS ||
+                  defaultTargetPlatform == TargetPlatform.android)
+          ? BottomNavigationBar(
+              type: BottomNavigationBarType.fixed,
+              selectedItemColor: Colors.purple,
+              unselectedItemColor: Colors.grey,
+              currentIndex: _currentIndex,
+              onTap: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.history), label: 'History'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.notifications), label: 'Notifications'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.settings), label: 'Settings'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.person), label: 'Profile'),
+              ],
+            )
+          : null,
     );
   }
 
@@ -192,6 +192,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
     return Column(
       children: [
         _buildActionButton('New Product', FontAwesomeIcons.boxOpen, () {
+          // Sử dụng Navigator.push() để giữ lại lịch sử navigation
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => NewProductScreen()),

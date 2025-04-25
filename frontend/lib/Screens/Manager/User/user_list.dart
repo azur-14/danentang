@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart'; // To use defaultTargetPlatform
+import 'package:danentang/Screens/Manager/User/user_information.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:danentang/Screens/Manager/User/user_details.dart';
 
@@ -20,143 +21,171 @@ class _UserListScreenState extends State<UserListScreen> {
     User("Andi Lane", "brian@exchange.com", "Nest Lane Olivette", "Feb 2, 2024", "assets/Manager/Avatar/avatar05.jpg"),
   ];
 
-  Future<bool> confirmBackDialog() async {
-    final shouldPop = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Xác nhận'),
-        content: const Text('Bạn có chắc chắn muốn quay lại?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Không'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Có'),
-          ),
-        ],
-      ),
-    );
-    return shouldPop ?? false;
-  }
-
   @override
   Widget build(BuildContext context) {
     final isMobile = defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android;
 
-    return WillPopScope(
-      onWillPop: () async {
-        if (await confirmBackDialog()) {
-          return true;
-        }
-        return false;
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          automaticallyImplyLeading: false,
-          flexibleSpace: SafeArea(
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                const Center(
-                  child: Text(
-                    "User List",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                      color: Colors.black,
-                    ),
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        flexibleSpace: SafeArea(
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              const Center(
+                child: Text(
+                  "User List",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    color: Colors.black,
                   ),
                 ),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: (defaultTargetPlatform == TargetPlatform.android ||
-                          defaultTargetPlatform == TargetPlatform.iOS)
-                      ? IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.black),
-                          onPressed: () async {
-                            if (await confirmBackDialog()) {
-                              Navigator.of(context).maybePop();
-                            }
-                          },
-                        )
-                      : const SizedBox(),
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.info_outline, color: Colors.black),
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: (defaultTargetPlatform == TargetPlatform.android ||
+                        defaultTargetPlatform == TargetPlatform.iOS)
+                    ? IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.black),
                         onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text("Thông tin"),
-                              content: const Text("Đây là danh sách người dùng với thông tin chi tiết của họ."),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => const UserDetailsScreen()),
-                                    );
-                                  },
-                                  child: const Text("OK"),
-                                ),
-                              ],
-                            ),
-                          );
+                          Navigator.of(context).pop();
                         },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.more_horiz, color: Colors.black),
-                        onPressed: () {},
-                      ),
-                    ],
-                  ),
+                      )
+                    : const SizedBox(),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.info_outline, color: Colors.black),
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text("Thông tin"),
+                            content: const Text("Đây là danh sách người dùng với thông tin chi tiết của họ."),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const UserDetailsScreen()),
+                                  );
+                                },
+                                child: const Text("OK"),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.more_horiz, color: Colors.black),
+                      onPressed: () {},
+                    ),
+                  ],
                 ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      backgroundColor: Colors.grey.shade100,
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: ListView.builder(
+          itemCount: users.length,
+          itemBuilder: (context, index) {
+            return AnimatedUserCard(user: users[index], delay: index * 150);
+          },
+        ),
+      ),
+      bottomNavigationBar: isMobile
+          ? BottomNavigationBar(
+              type: BottomNavigationBarType.fixed,
+              selectedItemColor: Colors.purple,
+              unselectedItemColor: Colors.grey,
+              currentIndex: _currentIndex,
+              onTap: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+                BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Notifications'),
+                BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+                BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
               ],
-            ),
-          ),
+            )
+          : null, // Hide BottomNavigationBar on Web
+    );
+  }
+}
+
+class AnimatedUserCard extends StatefulWidget {
+  final User user;
+  final int delay;
+
+  const AnimatedUserCard({super.key, required this.user, required this.delay});
+
+  @override
+  _AnimatedUserCardState createState() => _AnimatedUserCardState();
+}
+
+class _AnimatedUserCardState extends State<AnimatedUserCard> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Offset> _offsetAnimation;
+  late Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    _offsetAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
+    _opacity = Tween<double>(begin: 0, end: 1).animate(_controller);
+
+    Future.delayed(Duration(milliseconds: widget.delay), () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SlideTransition(
+      position: _offsetAnimation,
+      child: FadeTransition(
+        opacity: _opacity,
+        child: GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => User_Infomartion()),
+            );
+          },
+          child: UserCard(user: widget.user),
         ),
-        backgroundColor: Colors.grey.shade100,
-        body: Padding(
-          padding: const EdgeInsets.all(16),
-          child: ListView.builder(
-            itemCount: users.length,
-            itemBuilder: (context, index) {
-              return UserCard(user: users[index]);
-            },
-          ),
-        ),
-        bottomNavigationBar: isMobile
-            ? BottomNavigationBar(
-                type: BottomNavigationBarType.fixed,
-                selectedItemColor: Colors.purple,
-                unselectedItemColor: Colors.grey,
-                currentIndex: _currentIndex,
-                onTap: (index) {
-                  setState(() {
-                    _currentIndex = index;
-                  });
-                },
-                items: const [
-                  BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-                  BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-                  BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Notifications'),
-                  BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-                  BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-                ],
-              )
-            : null, // Ẩn BottomNavigationBar trên web
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 }
 

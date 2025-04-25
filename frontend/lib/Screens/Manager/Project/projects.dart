@@ -28,7 +28,7 @@ class ResponsiveProjectsScreen extends StatelessWidget {
   }
 }
 
-class ProjectsScreen extends StatelessWidget {
+class ProjectsScreen extends StatefulWidget {
   final bool isMobile;
   final bool showBackButton;
 
@@ -39,67 +39,92 @@ class ProjectsScreen extends StatelessWidget {
   });
 
   @override
+  _ProjectsScreenState createState() => _ProjectsScreenState();
+}
+
+class _ProjectsScreenState extends State<ProjectsScreen> with TickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
+
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+
+    _controller.forward();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        return await _showExitConfirmation(context);
-      },
-      child: Scaffold(
-        backgroundColor: Colors.grey[100],
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
-          automaticallyImplyLeading: false,
-          centerTitle: true,
-          title: const Text(
-            "Projects",
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-          ),
-          actions: showBackButton
-              ? [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.blue),
-                    onPressed: () async {
-                      bool shouldExit = await _showExitConfirmation(context);
-                      if (shouldExit) {
-                        Navigator.of(context).pop();
-                      }
-                    },
-                  ),
-                ]
-              : null,
+    return Scaffold(
+      backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        centerTitle: true,
+        title: const Text(
+          "Projects",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              _buildOverviewCards(isMobile ? 2 : 4),
-              const SizedBox(height: 16),
-              isMobile
-                  ? Column(
-                      children: [
-                        _buildProjectStatusChart(),
-                        const SizedBox(height: 16),
-                        _buildTaskList(),
-                        const SizedBox(height: 16),
-                        _buildTasksOverviewChart(),
-                      ],
-                    )
-                  : Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(child: _buildProjectStatusChart()),
-                        const SizedBox(width: 16),
-                        Expanded(child: _buildTasksOverviewChart()),
-                      ],
-                    ),
-              if (!isMobile) const SizedBox(height: 16),
-              if (!isMobile) _buildTaskList(),
-            ],
-          ),
-        ),
-        bottomNavigationBar: isMobile ? _buildBottomNavigationBar() : null,
+        actions: widget.showBackButton
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.blue),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ]
+            : null,
       ),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _buildOverviewCards(widget.isMobile ? 2 : 4),
+                const SizedBox(height: 16),
+                widget.isMobile
+                    ? Column(
+                        children: [
+                          _buildProjectStatusChart(),
+                          const SizedBox(height: 16),
+                          _buildTaskList(),
+                          const SizedBox(height: 16),
+                          _buildTasksOverviewChart(),
+                        ],
+                      )
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: _buildProjectStatusChart()),
+                          const SizedBox(width: 16),
+                          Expanded(child: _buildTasksOverviewChart()),
+                        ],
+                      ),
+                if (!widget.isMobile) const SizedBox(height: 16),
+                if (!widget.isMobile) _buildTaskList(),
+              ],
+            ),
+          ),
+        ),
+      ),
+      bottomNavigationBar: widget.isMobile ? _buildBottomNavigationBar() : null,
     );
   }
 
@@ -272,20 +297,5 @@ class ProjectsScreen extends StatelessWidget {
         BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
       ],
     );
-  }
-
-  Future<bool> _showExitConfirmation(BuildContext context) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text("Xác nhận"),
-            content: const Text("Bạn có muốn thoát khỏi màn hình này không?"),
-            actions: [
-              TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text("Không")),
-              TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text("Có")),
-            ],
-          ),
-        ) ??
-        false;
   }
 }
