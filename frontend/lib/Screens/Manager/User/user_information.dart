@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'ban_user.dart'; // Đảm bảo đã import màn BanUserScreen
 
 class User_Infomartion extends StatelessWidget {
   const User_Infomartion({super.key});
@@ -26,6 +25,8 @@ class _UserDetailScreenState extends State<UserDetailScreen> with SingleTickerPr
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _scaleAnimation;
+
+  bool _isBanned = false;
 
   @override
   void initState() {
@@ -59,9 +60,9 @@ class _UserDetailScreenState extends State<UserDetailScreen> with SingleTickerPr
               child: const Text("Hủy"),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(context);
-                Navigator.push(
+                final result = await Navigator.push(
                   context,
                   PageRouteBuilder(
                     transitionDuration: const Duration(milliseconds: 600),
@@ -80,6 +81,11 @@ class _UserDetailScreenState extends State<UserDetailScreen> with SingleTickerPr
                     },
                   ),
                 );
+                if (result == true) {
+                  setState(() {
+                    _isBanned = true;
+                  });
+                }
               },
               child: const Text(
                 "Ban",
@@ -133,6 +139,14 @@ class _UserDetailScreenState extends State<UserDetailScreen> with SingleTickerPr
                   "ByeWind",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
+                if (_isBanned)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 6),
+                    child: Text(
+                      "Đã bị Ban",
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600),
+                    ),
+                  ),
                 const SizedBox(height: 20),
                 _userInfoTile("Serial", "#CM9801", false),
                 _userInfoTile("Name", "ByeWind", false),
@@ -197,6 +211,87 @@ class _UserDetailScreenState extends State<UserDetailScreen> with SingleTickerPr
                 : Text(value, style: const TextStyle(fontSize: 16, color: Colors.grey)),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class BanUserScreen extends StatelessWidget {
+  const BanUserScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4F6F8),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: TweenAnimationBuilder<double>(
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeOutBack,
+            tween: Tween<double>(begin: 0.8, end: 1),
+            builder: (context, scale, child) {
+              return Transform.scale(
+                scale: scale,
+                child: child,
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  )
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: const BoxDecoration(
+                      color: Colors.redAccent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.block, color: Colors.white, size: 48),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'User đã bị ban thành công!',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Người dùng sẽ không thể truy cập hệ thống nữa.',
+                    style: TextStyle(fontSize: 16, color: Colors.black54),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 4,
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pop(true);
+                    },
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text("Quay lại"),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
