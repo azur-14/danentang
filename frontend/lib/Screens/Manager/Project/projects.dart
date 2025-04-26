@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
@@ -6,11 +7,7 @@ class Projects extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData.light(),
-      home: const ResponsiveProjectsScreen(),
-    );
+    return const ResponsiveProjectsScreen();
   }
 }
 
@@ -22,15 +19,53 @@ class ResponsiveProjectsScreen extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         bool isMobile = constraints.maxWidth < 600;
-        return ProjectsScreen(isMobile: isMobile);
+        bool isMobilePlatform = defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS;
+        bool showBackButton = !kIsWeb && isMobile && isMobilePlatform;
+
+        return ProjectsScreen(isMobile: isMobile, showBackButton: showBackButton);
       },
     );
   }
 }
 
-class ProjectsScreen extends StatelessWidget {
+class ProjectsScreen extends StatefulWidget {
   final bool isMobile;
-  const ProjectsScreen({super.key, required this.isMobile});
+  final bool showBackButton;
+
+  const ProjectsScreen({
+    super.key,
+    required this.isMobile,
+    required this.showBackButton,
+  });
+
+  @override
+  _ProjectsScreenState createState() => _ProjectsScreenState();
+}
+
+class _ProjectsScreenState extends State<ProjectsScreen> with TickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
+
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+
+    _controller.forward();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,46 +74,57 @@ class ProjectsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: isMobile
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.blue),
-                onPressed: () {},
-              )
-            : null,
-        title: const Text("Projects",
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        automaticallyImplyLeading: false,
         centerTitle: true,
+        title: const Text(
+          "Projects",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+        actions: widget.showBackButton
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.blue),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ]
+            : null,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _buildOverviewCards(isMobile ? 2 : 4),
-            const SizedBox(height: 16),
-            isMobile
-                ? Column(
-                    children: [
-                      _buildProjectStatusChart(),
-                      const SizedBox(height: 16),
-                      _buildTaskList(),
-                      const SizedBox(height: 16),
-                      _buildTasksOverviewChart(),
-                    ],
-                  )
-                : Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(child: _buildProjectStatusChart()),
-                      const SizedBox(width: 16),
-                      Expanded(child: _buildTasksOverviewChart()),
-                    ],
-                  ),
-            if (!isMobile) const SizedBox(height: 16),
-            if (!isMobile) _buildTaskList(),
-          ],
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _buildOverviewCards(widget.isMobile ? 2 : 4),
+                const SizedBox(height: 16),
+                widget.isMobile
+                    ? Column(
+                        children: [
+                          _buildProjectStatusChart(),
+                          const SizedBox(height: 16),
+                          _buildTaskList(),
+                          const SizedBox(height: 16),
+                          _buildTasksOverviewChart(),
+                        ],
+                      )
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(child: _buildProjectStatusChart()),
+                          const SizedBox(width: 16),
+                          Expanded(child: _buildTasksOverviewChart()),
+                        ],
+                      ),
+                if (!widget.isMobile) const SizedBox(height: 16),
+                if (!widget.isMobile) _buildTaskList(),
+              ],
+            ),
+          ),
         ),
       ),
-      bottomNavigationBar: isMobile ? _buildBottomNavigationBar() : null,
+      bottomNavigationBar: widget.isMobile ? _buildBottomNavigationBar() : null,
     );
   }
 
@@ -101,10 +147,7 @@ class ProjectsScreen extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.all(8),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(10),
-      ),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(10)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

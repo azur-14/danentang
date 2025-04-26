@@ -42,6 +42,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
             },
           )
         ],
+        leading: _buildBackButton(context),
       ),
       body: StreamBuilder(
         stream: FirebaseFirestore.instance.collection('orders').snapshots(),
@@ -70,6 +71,25 @@ class _OrderListScreenState extends State<OrderListScreen> {
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ) : null,
+    );
+  }
+
+  // Function to build the back button only on mobile devices
+  Widget _buildBackButton(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
+        if (isMobile) {
+          return IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pop(context);  // Directly pop without confirmation
+            },
+          );
+        } else {
+          return SizedBox();  // Do not show back button on web
+        }
+      },
     );
   }
 }

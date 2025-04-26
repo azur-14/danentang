@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 class Order_List extends StatelessWidget {
   const Order_List({super.key});
@@ -35,99 +36,139 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
     final isMobile = MediaQuery.of(context).size.width < 600;
     return Scaffold(
       appBar: AppBar(
-        title: Text("Order List", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Order List",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {},
-        ),
+        leading: (defaultTargetPlatform == TargetPlatform.android ||
+                defaultTargetPlatform == TargetPlatform.iOS)
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                onPressed: () {
+                  Navigator.pop(context);  // Directly pop without confirmation
+                },
+              )
+            : const SizedBox(),
         actions: [
           IconButton(
-            icon: Icon(Icons.more_horiz, color: Colors.black),
+            icon: const Icon(Icons.more_horiz, color: Colors.black),
             onPressed: () {},
           ),
         ],
       ),
       backgroundColor: Colors.grey.shade100,
       body: ListView.builder(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         itemCount: orders.length,
         itemBuilder: (context, index) {
-          return OrderCard(order: orders[index]);
+          return FadeInOrderCard(order: orders[index], index: index);
         },
       ),
-      bottomNavigationBar: isMobile ? BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.purple,
-        unselectedItemColor: Colors.grey,
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Notifications'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-      ) : null,
+      bottomNavigationBar: isMobile
+          ? BottomNavigationBar(
+              type: BottomNavigationBarType.fixed,
+              selectedItemColor: Colors.purple,
+              unselectedItemColor: Colors.grey,
+              currentIndex: _currentIndex,
+              onTap: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+                BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Notifications'),
+                BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+                BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+              ],
+            )
+          : null,
     );
   }
 }
 
-class OrderCard extends StatelessWidget {
+class FadeInOrderCard extends StatefulWidget {
   final Order order;
+  final int index;
 
-  const OrderCard({super.key, required this.order});
+  const FadeInOrderCard({super.key, required this.order, required this.index});
+
+  @override
+  _FadeInOrderCardState createState() => _FadeInOrderCardState();
+}
+
+class _FadeInOrderCardState extends State<FadeInOrderCard> with TickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: Duration(milliseconds: 500),
+      vsync: this,
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeIn,
+    )..addListener(() {
+        setState(() {});
+      });
+    Future.delayed(Duration(milliseconds: widget.index * 100), () {
+      _controller.forward();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 15),
-      padding: EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(order.id, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              Spacer(),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: order.statusColor,
-                  borderRadius: BorderRadius.circular(15),
+    return Opacity(
+      opacity: _fadeAnimation.value,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 15),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(widget.order.id, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: widget.order.statusColor,
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Text(widget.order.status, style: TextStyle(color: widget.order.statusTextColor, fontWeight: FontWeight.bold)),
                 ),
-                child: Text(order.status, style: TextStyle(color: order.statusTextColor, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-          SizedBox(height: 8),
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundImage: AssetImage('assets/Manager/Avatar/avatar.jpg'),
-                radius: 12,
-              ),
-              SizedBox(width: 8),
-              Text(order.user, style: TextStyle(fontWeight: FontWeight.bold)),
-            ],
-          ),
-          SizedBox(height: 8),
-          _buildInfoRow("Project", order.project),
-          _buildInfoRow("Address", order.address),
-          _buildInfoRow("Date", order.date),
-        ],
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const CircleAvatar(
+                  backgroundImage: AssetImage('assets/Manager/Avatar/avatar.jpg'),
+                  radius: 12,
+                ),
+                const SizedBox(width: 8),
+                Text(widget.order.user, style: const TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _buildInfoRow("Project", widget.order.project),
+            _buildInfoRow("Address", widget.order.address),
+            _buildInfoRow("Date", widget.order.date),
+          ],
+        ),
       ),
     );
   }
@@ -137,11 +178,17 @@ class OrderCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
-          Text("$title: ", style: TextStyle(fontWeight: FontWeight.bold)),
+          Text("$title: ", style: const TextStyle(fontWeight: FontWeight.bold)),
           Text(value),
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 }
 

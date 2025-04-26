@@ -1,6 +1,7 @@
 import 'package:danentang/Screens/Manager/User/user_list.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/foundation.dart';
 
 class User_Report extends StatelessWidget {
   const User_Report({super.key});
@@ -24,66 +25,73 @@ class UserScreen extends StatefulWidget {
 class _UserScreenState extends State<UserScreen> {
   String _selectedPeriod = "Month";
 
+  // Animation Variables
+  double _opacity = 0.0;
+  double _scale = 0.8;
+
   @override
-  Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        return await _showExitConfirmation(context);
-      },
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          title: const Text("Users", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-          backgroundColor: Colors.white,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: () async {
-              bool shouldPop = await _showExitConfirmation(context);
-              if (shouldPop) {
-                Navigator.pop(context);
-              }
-            },
-          ),
-        ),
-        body: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSegmentedControl(),
-              _buildLineChart(context),
-              _buildDetailButton(context),  // Nút "Xem Chi Tiết"
-              _buildUserSection(title: "New user", users: [
-                {"name": "ByeWind", "date": "Jun 24, 2024", "avatar": "assets/Manager/Avartar/avatar01.jpg"},
-                {"name": "Natali Craig", "date": "Mar 10, 2024", "avatar": "assets/Manager/Avatar/avatar02.jpg"},
-                {"name": "Drew Cano", "date": "Nov 10, 2024", "avatar": "assets/Manager/Avatar/avatar03.jpg"},
-                {"name": "Orlando Diggs", "date": "Dec 20, 2024", "avatar": "assets/Manager/Avatar/avatar04.jpg"},
-                {"name": "Andi Lane", "date": "Jul 25, 2024", "avatar": "assets/Manager/Avatar/avatar05.jpg"},
-              ]),
-              _buildUserSection(title: "User List", users: [
-                {"name": "ByeWind", "date": "Jun 24, 2024", "avatar": "assets/Manager/Avatar/avatar.jpg"},
-              ]),
-            ],
-          ),
-        ),
-        bottomNavigationBar: _buildBottomNavigationBar(),
-      ),
-    );
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(milliseconds: 100), () {
+      setState(() {
+        _opacity = 1.0;
+        _scale = 1.0;
+      });
+    });
   }
 
-  Future<bool> _showExitConfirmation(BuildContext context) async {
-    return await showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text("Xác nhận"),
-            content: const Text("Bạn có muốn thoát khỏi màn hình này không?"),
-            actions: [
-              TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text("Không")),
-              TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text("Có")),
-            ],
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text(
+          "Users",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: (defaultTargetPlatform == TargetPlatform.android ||
+                defaultTargetPlatform == TargetPlatform.iOS)
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                onPressed: () {
+                  Navigator.pop(context); // Không cần hỏi xác nhận khi quay lại
+                },
+              )
+            : const SizedBox(),
+      ),
+      body: AnimatedOpacity(
+        opacity: _opacity,
+        duration: const Duration(milliseconds: 500),
+        child: AnimatedScale(
+          scale: _scale,
+          duration: const Duration(milliseconds: 500),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSegmentedControl(),
+                _buildLineChart(context),
+                _buildDetailButton(context),  // Nút "Xem Chi Tiết"
+                _buildUserSection(title: "New user", users: [
+                  {"name": "ByeWind", "date": "Jun 24, 2024", "avatar": "assets/Manager/Avartar/avatar01.jpg"},
+                  {"name": "Natali Craig", "date": "Mar 10, 2024", "avatar": "assets/Manager/Avatar/avatar02.jpg"},
+                  {"name": "Drew Cano", "date": "Nov 10, 2024", "avatar": "assets/Manager/Avatar/avatar03.jpg"},
+                  {"name": "Orlando Diggs", "date": "Dec 20, 2024", "avatar": "assets/Manager/Avatar/avatar04.jpg"},
+                  {"name": "Andi Lane", "date": "Jul 25, 2024", "avatar": "assets/Manager/Avatar/avatar05.jpg"},
+                ]),
+                _buildUserSection(title: "User List", users: [
+                  {"name": "ByeWind", "date": "Jun 24, 2024", "avatar": "assets/Manager/Avatar/avatar.jpg"},
+                ]),
+              ],
+            ),
           ),
-        ) ??
-        false;
+        ),
+      ),
+      bottomNavigationBar: _buildBottomNavigationBar(),
+    );
   }
 
   Widget _buildSegmentedControl() {
@@ -259,7 +267,7 @@ class _UserScreenState extends State<UserScreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => User_List()),
+            MaterialPageRoute(builder: (context) => UserListScreen()),
           );
         },
         style: ElevatedButton.styleFrom(
@@ -269,7 +277,7 @@ class _UserScreenState extends State<UserScreen> {
         ),
         child: const Text(
           "Xem Chi Tiết",
-          style: TextStyle(fontSize: 12),
+          style: TextStyle(fontSize: 12, color: Colors.purple, fontWeight: FontWeight.bold),
         ),
       ),
     );

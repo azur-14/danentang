@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:danentang/Screens/Manager/Support/customer_service.dart';
 
 class Customer_Support extends StatelessWidget {
@@ -18,15 +19,23 @@ class CustomerSupportScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS;
+
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
+        centerTitle: true,
+        leading: isMobile
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                onPressed: () {
+                  Navigator.of(context).pop(); // Quay lại mà không hỏi xác nhận
+                },
+              )
+            : const SizedBox(), // Ẩn trên Web/Desktop
         title: const Text(
           "Customer Support",
           style: TextStyle(
@@ -46,7 +55,6 @@ class CustomerSupportScreen extends StatelessWidget {
           return AnimatedSupportTicketItem(delay: index * 200);
         },
       ),
-      // Ẩn BottomNavigationBar trên web, chỉ hiển thị trên mobile
       bottomNavigationBar: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth < 600) {

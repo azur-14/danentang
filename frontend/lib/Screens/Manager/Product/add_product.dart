@@ -29,10 +29,14 @@ class _NewProductScreenState extends State<NewProductScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text("New Product", style: TextStyle(fontWeight: FontWeight.bold)),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: isMobile
+            ? IconButton(
+                icon: Icon(Icons.arrow_back),
+                onPressed: () {
+                  Navigator.pop(context);  // Directly pop without confirmation
+                },
+              )
+            : null, // Hide back button on web
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -66,18 +70,20 @@ class _NewProductScreenState extends State<NewProductScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: isMobile ? BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.purpleAccent,
-        unselectedItemColor: Colors.black54,
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: ""),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: ""),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications), label: ""),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: ""),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: ""),
-        ],
-      ) : null,
+      bottomNavigationBar: isMobile
+          ? BottomNavigationBar(
+              type: BottomNavigationBarType.fixed,
+              selectedItemColor: Colors.purpleAccent,
+              unselectedItemColor: Colors.black54,
+              items: [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: ""),
+                BottomNavigationBarItem(icon: Icon(Icons.history), label: ""),
+                BottomNavigationBarItem(icon: Icon(Icons.notifications), label: ""),
+                BottomNavigationBarItem(icon: Icon(Icons.settings), label: ""),
+                BottomNavigationBarItem(icon: Icon(Icons.person), label: ""),
+              ],
+            )
+          : null,
     );
   }
 

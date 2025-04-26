@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/foundation.dart';
 
 class OrdersReport extends StatelessWidget {
   const OrdersReport({super.key});
@@ -20,7 +21,8 @@ class ResponsiveOrdersScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        bool isMobile = constraints.maxWidth < 600;
+        bool isMobile = defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.android;
         return OrdersScreen(isMobile: isMobile);
       },
     );
@@ -35,8 +37,7 @@ class OrdersScreen extends StatefulWidget {
   State<OrdersScreen> createState() => _OrdersScreenState();
 }
 
-class _OrdersScreenState extends State<OrdersScreen>
-    with SingleTickerProviderStateMixin {
+class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderStateMixin {
   int selectedTab = 2;
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
@@ -61,7 +62,7 @@ class _OrdersScreenState extends State<OrdersScreen>
       onTap: () {
         setState(() {
           selectedTab = index;
-          _controller.forward(from: 0); // reset animation
+          _controller.forward(from: 0);
         });
       },
       child: AnimatedContainer(
@@ -210,10 +211,17 @@ class _OrdersScreenState extends State<OrdersScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
         title: const Text("Orders", style: TextStyle(fontWeight: FontWeight.bold)),
-        leading: widget.isMobile
-            ? IconButton(icon: const Icon(Icons.arrow_back), onPressed: () {})
-            : null,
+        leading: (defaultTargetPlatform == TargetPlatform.android ||
+                    defaultTargetPlatform == TargetPlatform.iOS)
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () {
+                  Navigator.of(context).maybePop();
+                },
+              )
+            : const SizedBox(), // Ẩn trên Web/Desktop
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,

@@ -1,16 +1,41 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-class Coupon_Management extends StatelessWidget {
-  const Coupon_Management({super.key});
+class CouponManagement extends StatelessWidget {
+  const CouponManagement({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: LayoutBuilder(
+      home: ResponsiveCouponScreen(),
+    );
+  }
+}
+
+class ResponsiveCouponScreen extends StatefulWidget {
+  const ResponsiveCouponScreen({super.key});
+
+  @override
+  State<ResponsiveCouponScreen> createState() => _ResponsiveCouponScreenState();
+}
+
+class _ResponsiveCouponScreenState extends State<ResponsiveCouponScreen> {
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async {
+        // Không hiển thị dialog xác nhận khi back
+        return true;  // Quay lại ngay lập tức mà không hỏi
+      },
+      child: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth < 600) {
-            return const MobileCouponScreen();
+            return MobileCouponScreen(
+              onBackPressed: () {
+                Navigator.of(context).pop();  // Trở lại ngay mà không hỏi
+              },
+            );
           } else {
             return const WebCouponScreen();
           }
@@ -20,45 +45,57 @@ class Coupon_Management extends StatelessWidget {
   }
 }
 
-//==================//
-// Mobile Layout
-//==================//
 class MobileCouponScreen extends StatelessWidget {
-  const MobileCouponScreen({super.key});
+  final VoidCallback onBackPressed;
+  const MobileCouponScreen({super.key, required this.onBackPressed});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: buildAppBar(),
-      backgroundColor: Colors.white,
-      body: const CouponContent(),
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.purple,
-        unselectedItemColor: Colors.black,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Notifications"),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: onBackPressed,
+        ),
+        title: const Text(
+          "Coupon Management",
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+        ),
+        centerTitle: true,
+        actions: const [
+          Icon(Icons.more_horiz, color: Colors.black),
+          SizedBox(width: 10),
         ],
       ),
+      backgroundColor: Colors.white,
+      body: const CouponContent(),
+      bottomNavigationBar: const BottomNavBar(),
     );
   }
 }
 
-//==================//
-// Web Layout
-//==================//
 class WebCouponScreen extends StatelessWidget {
   const WebCouponScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: buildAppBar(),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        automaticallyImplyLeading: false, // Ẩn nút back trên web
+        title: const Text(
+          "Coupon Management",
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+        ),
+        centerTitle: true,
+        actions: const [
+          Icon(Icons.more_horiz, color: Colors.black),
+          SizedBox(width: 10),
+        ],
+      ),
       backgroundColor: Colors.white,
       body: Center(
         child: Container(
@@ -71,63 +108,75 @@ class WebCouponScreen extends StatelessWidget {
   }
 }
 
-//==================//
-// Nội dung chính
-//==================//
+class BottomNavBar extends StatelessWidget {
+  const BottomNavBar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return BottomNavigationBar(
+      selectedItemColor: Colors.purple,
+      unselectedItemColor: Colors.black,
+      showSelectedLabels: false,
+      showUnselectedLabels: false,
+      items: const [
+        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+        BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
+        BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Notifications"),
+        BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
+        BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+      ],
+    );
+  }
+}
+
 class CouponContent extends StatelessWidget {
   const CouponContent({super.key});
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Danh sách mã giảm giá
-            Column(
-              children: List.generate(3, (index) => const CouponItem()),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              "New Coupon",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-            ),
-            const SizedBox(height: 10),
-            const CouponTextField(label: "Tên Mã Giảm Giá"),
-            const CouponTextField(label: "Giá Trị Mã Giảm Giá"),
-            const CouponTextField(label: "Ngày Tạo"),
-            const CouponTextField(label: "Ký Tự Mã Giảm"),
-            const CouponTextField(label: "Số Lần Sử Dụng"),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: const Text(
-                  "Tạo Mã Giảm Giá",
-                  style: TextStyle(fontSize: 16, color: Colors.white),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            children: List.generate(3, (index) => const CouponItem()),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            "New Coupon",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          const SizedBox(height: 10),
+          const CouponTextField(label: "Tên Mã Giảm Giá"),
+          const CouponTextField(label: "Giá Trị Mã Giảm Giá"),
+          const CouponTextField(label: "Ngày Tạo"),
+          const CouponTextField(label: "Ký Tự Mã Giảm"),
+          const CouponTextField(label: "Số Lần Sử Dụng"),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.purple,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
+              child: const Text(
+                "Tạo Mã Giảm Giá",
+                style: TextStyle(fontSize: 16, color: Colors.white),
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-//==================//
-// Coupon Item
-//==================//
 class CouponItem extends StatelessWidget {
   const CouponItem({super.key});
 
@@ -168,9 +217,6 @@ class CouponItem extends StatelessWidget {
   }
 }
 
-//==================//
-// Text Field Widget
-//==================//
 class CouponTextField extends StatelessWidget {
   final String label;
   const CouponTextField({super.key, required this.label});
@@ -187,23 +233,4 @@ class CouponTextField extends StatelessWidget {
       ),
     );
   }
-}
-
-//==================//
-// AppBar Widget
-//==================//
-AppBar buildAppBar() {
-  return AppBar(
-    backgroundColor: Colors.white,
-    elevation: 0,
-    leading: const Icon(Icons.arrow_back, color: Colors.black),
-    title: const Text(
-      "Coupon Management",
-      style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
-    ),
-    actions: const [
-      Icon(Icons.more_horiz, color: Colors.black),
-      SizedBox(width: 10),
-    ],
-  );
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:animations/animations.dart';
 
 class Categories_Management extends StatelessWidget {
   const Categories_Management({super.key});
@@ -7,15 +8,36 @@ class Categories_Management extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth < 600) {
-            return const MobileCategoriesScreen();
-          } else {
-            return const WebCategoriesScreen();
-          }
-        },
-      ),
+      home: const ResponsiveCategoriesScreen(),
+    );
+  }
+}
+
+//================================//
+//       Responsive Wrapper       //
+//================================//
+class ResponsiveCategoriesScreen extends StatelessWidget {
+  const ResponsiveCategoriesScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
+
+        return PageTransitionSwitcher(
+          duration: const Duration(milliseconds: 400),
+          transitionBuilder: (child, animation, secondaryAnimation) =>
+              FadeThroughTransition(
+            animation: animation,
+            secondaryAnimation: secondaryAnimation,
+            child: child,
+          ),
+          child: isMobile
+              ? const MobileCategoriesScreen(key: ValueKey("Mobile"))
+              : const WebCategoriesScreen(key: ValueKey("Web")),
+        );
+      },
     );
   }
 }
@@ -57,13 +79,19 @@ class MobileCategoriesScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: const Text("Categories Management", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Categories Management",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {},
+          onPressed: () => Navigator.of(context).pop(), // Không hiển thị hộp thoại xác nhận
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.more_vert, color: Colors.black), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.more_vert, color: Colors.black),
+            onPressed: () {},
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -122,7 +150,6 @@ class WebCategoriesScreen extends StatelessWidget {
       ),
       body: Row(
         children: [
-          // Sidebar nếu bạn muốn thêm
           Expanded(
             flex: 2,
             child: Container(
@@ -136,7 +163,6 @@ class WebCategoriesScreen extends StatelessWidget {
               ),
             ),
           ),
-          // Form hiển thị bên phải
           Expanded(
             flex: 3,
             child: Padding(

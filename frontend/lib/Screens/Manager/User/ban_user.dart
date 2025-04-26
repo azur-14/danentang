@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class BanUserScreen extends StatelessWidget {
+  const BanUserScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -13,138 +12,144 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
-
-  @override
-  State<MainScreen> createState() => _MainScreenState();
-}
-
-class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0;
-
-  final List<Widget> _screens = const [
-    HomeScreen(),
-    HistoryScreen(),
-    NotificationsScreen(),
-    SettingsScreen(),
-    ProfileScreen(),
-  ];
+class BannedSuccessScreen extends StatelessWidget {
+  const BannedSuccessScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isMobile = constraints.maxWidth < 600;
-
-        return Scaffold(
-          appBar: isMobile
-              ? null
-              : AppBar(
-                  title: const Text('Dashboard'),
-                  backgroundColor: Colors.purple,
-                ),
-          body: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 700),
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 500),
-                transitionBuilder: (child, animation) => FadeTransition(
-                  opacity: animation,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0.0, 0.1),
-                      end: Offset.zero,
-                    ).animate(animation),
-                    child: child,
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4F6F8),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: TweenAnimationBuilder<double>(
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeOutBack,
+            tween: Tween<double>(begin: 0.8, end: 1),
+            builder: (context, scale, child) {
+              return Transform.scale(
+                scale: scale,
+                child: child,
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  )
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Hero(
+                    tag: "ban-icon",
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: const BoxDecoration(
+                        color: Colors.redAccent,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.block,
+                        color: Colors.white,
+                        size: 48,
+                      ),
+                    ),
                   ),
-                ),
-                child: _screens[_currentIndex],
+                  const SizedBox(height: 24),
+                  const Text(
+                    'User đã bị ban thành công!',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Người dùng sẽ không thể truy cập hệ thống nữa.',
+                    style: TextStyle(fontSize: 16, color: Colors.black54),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      elevation: 4,
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text("Quay lại"),
+                  ),
+                ],
               ),
             ),
           ),
-          bottomNavigationBar: isMobile
-              ? BottomNavigationBar(
-                  type: BottomNavigationBarType.fixed,
-                  selectedItemColor: Colors.purple,
-                  unselectedItemColor: Colors.black,
-                  currentIndex: _currentIndex,
-                  onTap: (index) {
-                    setState(() {
-                      _currentIndex = index;
-                    });
-                  },
-                  items: const [
-                    BottomNavigationBarItem(
-                        icon: Icon(Icons.home), label: 'Home'),
-                    BottomNavigationBarItem(
-                        icon: Icon(Icons.history), label: 'History'),
-                    BottomNavigationBarItem(
-                        icon: Icon(LucideIcons.bell), label: 'Notifications'),
-                    BottomNavigationBarItem(
-                        icon: Icon(LucideIcons.settings), label: 'Settings'),
-                    BottomNavigationBarItem(
-                        icon: Icon(Icons.person_outline), label: 'Profile'),
-                  ],
-                )
-              : null,
-        );
-      },
+        ),
+      ),
     );
   }
 }
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const _CenteredContent(title: 'Home Screen');
-  }
-}
-
-class HistoryScreen extends StatelessWidget {
-  const HistoryScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const _CenteredContent(title: 'History Screen');
-  }
-}
-
-class NotificationsScreen extends StatelessWidget {
-  const NotificationsScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const _CenteredContent(title: 'Notifications Screen');
-  }
-}
-
-class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const _CenteredContent(title: 'Settings Screen');
-  }
-}
-
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return const _CenteredContent(title: 'Profile Screen');
-  }
-}
-
-// Widget dùng chung cho các màn
-class _CenteredContent extends StatelessWidget {
-  final String title;
-  const _CenteredContent({required this.title});
+class MainScreen extends StatelessWidget {
+  const MainScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        title,
-        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+    return Scaffold(
+      backgroundColor: const Color(0xFFF9FAFB),
+      body: Center(
+        child: ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.redAccent,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            elevation: 2,
+          ),
+          onPressed: () {
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                transitionDuration: const Duration(milliseconds: 600),
+                pageBuilder: (context, animation, secondaryAnimation) =>
+                    FadeTransition(
+                  opacity: animation,
+                  child: const BannedSuccessScreen(),
+                ),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return ScaleTransition(
+                    scale: CurvedAnimation(
+                      parent: animation,
+                      curve: Curves.easeOutBack,
+                    ),
+                    child: FadeTransition(
+                      opacity: animation,
+                      child: child,
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+          icon: const Icon(Icons.block),
+          label: const Text("Ban User"),
+        ),
       ),
     );
   }
