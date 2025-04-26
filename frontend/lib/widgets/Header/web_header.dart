@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:danentang/models/user_model.dart';
 import 'package:danentang/constants/colors.dart';
 
 class WebHeader extends StatelessWidget {
-  final bool isLoggedIn;
-
-  const WebHeader({
-    Key? key,
-    required this.isLoggedIn,
-  }) : super(key: key);
+  const WebHeader({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<UserModel>(context);
+
     return Container(
       color: AppColors.primaryPurple,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -30,14 +30,23 @@ class WebHeader extends StatelessWidget {
               const SizedBox(width: 16),
               Row(
                 children: [
-                  const CircleAvatar(
-                    radius: 16,
-                    backgroundImage: NetworkImage('https://via.placeholder.com/150'),
-                    child: Icon(Icons.person, color: Colors.white),
+                  GestureDetector(
+                    onTap: () {
+                      context.go('/profile');
+                    },
+                    child: CircleAvatar(
+                      radius: 16,
+                      backgroundImage: user.avatarUrl != null
+                          ? NetworkImage(user.avatarUrl!)
+                          : null,
+                      child: user.avatarUrl == null
+                          ? const Icon(Icons.person, color: Colors.white)
+                          : null,
+                    ),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
-                    "je3mlgb384",
+                  Text(
+                    user.userName,
                     style: TextStyle(color: Colors.white, fontSize: 14),
                   ),
                 ],

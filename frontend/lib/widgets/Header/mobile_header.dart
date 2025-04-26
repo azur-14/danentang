@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:danentang/models/user_model.dart';
 
 class MobileHeader extends StatelessWidget implements PreferredSizeWidget {
-  final bool isLoggedIn;
-  final String userName;
-
-  const MobileHeader({
-    Key? key,
-    required this.isLoggedIn,
-    required this.userName,
-  }) : super(key: key);
+  const MobileHeader({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final user = Provider.of<UserModel>(context);
+
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
@@ -21,7 +18,7 @@ class MobileHeader extends StatelessWidget implements PreferredSizeWidget {
           Icon(Icons.diamond, color: Colors.purple, size: 20),
           SizedBox(width: 8),
           Text(
-            "Hello $userName",
+            "Hello ${user.userName}",
             style: TextStyle(color: Colors.black, fontSize: 18),
           ),
         ],
@@ -32,7 +29,7 @@ class MobileHeader extends StatelessWidget implements PreferredSizeWidget {
             IconButton(
               icon: Icon(Icons.shopping_cart, color: Colors.black),
               onPressed: () {
-                context.go('/checkout', extra: isLoggedIn);
+                context.go('/checkout', extra: user.isLoggedIn);
               },
             ),
             Positioned(

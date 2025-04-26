@@ -122,7 +122,7 @@ class _CartScreenState extends State<CartScreenCheckOut> {
     return Scaffold(
       body: Column(
         children: [
-          WebHeader(isLoggedIn: widget.isLoggedIn),
+          const WebHeader(),
           WebSearchBar(isLoggedIn: widget.isLoggedIn),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),

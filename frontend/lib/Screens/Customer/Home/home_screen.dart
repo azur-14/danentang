@@ -9,7 +9,10 @@ import 'package:danentang/widgets/Header/web_header.dart';
 import 'package:danentang/widgets/Search/mobile_search_bar.dart';
 import 'package:danentang/widgets/Search/web_search_bar.dart';
 import 'package:danentang/widgets/Footer/mobile_navigation_bar.dart';
-import 'package:danentang/widgets/banner_section.dart'; // Import BannerSection
+import 'package:danentang/widgets/banner_section.dart';
+import 'package:provider/provider.dart';
+import 'package:danentang/models/user_model.dart';
+import 'package:danentang/data/product_data.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -20,139 +23,11 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int selectedIndex = 0;
-  bool isLoggedIn = true;
-  String userName = "JohnDoe";
   bool showAllCategories = false;
 
-  final List<Product> laptops = [
-    Product(
-      name: "Dell XPS 13",
-      price: "1299",
-      discount: "10%",
-      imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a0a6",
-      rating: 4.5,
-    ),
-    Product(
-      name: "MacBook Air M2",
-      price: "1199",
-      discount: "5%",
-      imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a0a6",
-      rating: 4.8,
-    ),
-    Product(
-      name: "HP Spectre x360",
-      price: "1399",
-      discount: "15%",
-      imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a0a6",
-      rating: 4.7,
-    ),
-    Product(
-      name: "Asus ZenBook 14",
-      price: "999",
-      discount: "8%",
-      imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a0a6",
-      rating: 4.3,
-    ),
-  ];
-
-  final List<Product> budgetLaptops = [
-    Product(
-      name: "Acer Aspire 5",
-      price: "499",
-      discount: "12%",
-      imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a0a6",
-      rating: 4.0,
-    ),
-    Product(
-      name: "Lenovo IdeaPad 3",
-      price: "449",
-      discount: "10%",
-      imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a0a6",
-      rating: 4.1,
-    ),
-    Product(
-      name: "HP 14",
-      price: "399",
-      discount: "5%",
-      imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a0a6",
-      rating: 3.9,
-    ),
-  ];
-
-  final List<Product> promotionalProducts = [
-    Product(
-      name: "Lenovo Legion 5",
-      price: "1099",
-      discount: "20%",
-      imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a0a6",
-      rating: 4.6,
-    ),
-    Product(
-      name: "Asus TUF Gaming F15",
-      price: "999",
-      discount: "25%",
-      imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a0a6",
-      rating: 4.4,
-    ),
-    Product(
-      name: "MSI Katana GF66",
-      price: "1199",
-      discount: "22%",
-      imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a0a6",
-      rating: 4.5,
-    ),
-  ];
-
-  final List<Product> newProducts = [
-    Product(
-      name: "MacBook Pro M3",
-      price: "1999",
-      discount: "5%",
-      imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a0a6",
-      rating: 4.9,
-    ),
-    Product(
-      name: "HP Envy 14 2025",
-      price: "1249",
-      discount: "10%",
-      imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a0a6",
-      rating: 4.7,
-    ),
-    Product(
-      name: "Dell Inspiron 16",
-      price: "899",
-      discount: "8%",
-      imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a0a6",
-      rating: 4.4,
-    ),
-  ];
-
-  final List<Product> bestSellers = [
-    Product(
-      name: "Dell Inspiron 15",
-      price: "749",
-      discount: "15%",
-      imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a0a6",
-      rating: 4.3,
-    ),
-    Product(
-      name: "Acer Swift 3",
-      price: "699",
-      discount: "12%",
-      imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a0a6",
-      rating: 4.2,
-    ),
-    Product(
-      name: "Lenovo ThinkPad E14",
-      price: "799",
-      discount: "10%",
-      imageUrl: "https://images.unsplash.com/photo-1496181133206-80ce9b88a0a6",
-      rating: 4.5,
-    ),
-  ];
-
   void _onItemTapped(int index, BuildContext context) {
-    if (!isLoggedIn) {
+    final user = Provider.of<UserModel>(context, listen: false);
+    if (!user.isLoggedIn) {
       context.go('/login');
       return;
     }
@@ -164,10 +39,10 @@ class _HomeScreenState extends State<HomeScreen> {
         context.go('/');
         break;
       case 1:
-        context.go('/cart', extra: isLoggedIn);
+        context.go('/cart', extra: user.isLoggedIn);
         break;
       case 2:
-        context.go('/profile', extra: isLoggedIn);
+        context.go('/profile', extra: user.isLoggedIn);
         break;
       case 3:
         context.go('/chat');
@@ -187,6 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMobileLayout(BuildContext context, double screenWidth) {
+    final user = Provider.of<UserModel>(context);
     const double categoryItemWidth = 80;
     const double categorySpacing = 4;
     const double categoryHorizontalPadding = 16;
@@ -213,7 +89,7 @@ class _HomeScreenState extends State<HomeScreen> {
         : (categoryItemsPerRow < categories.length ? categoryItemsPerRow : categories.length);
 
     return Scaffold(
-      appBar: MobileHeader(isLoggedIn: isLoggedIn, userName: userName),
+      appBar: const MobileHeader(),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,31 +141,31 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             ProductSection(
               title: "Promotional Products",
-              products: promotionalProducts,
+              products: ProductData.promotionalProducts,
               isWeb: false,
               screenWidth: screenWidth,
             ),
             ProductSection(
               title: "New Products",
-              products: newProducts,
+              products: ProductData.newProducts,
               isWeb: false,
               screenWidth: screenWidth,
             ),
             ProductSection(
               title: "Best Sellers",
-              products: bestSellers,
+              products: ProductData.bestSellers,
               isWeb: false,
               screenWidth: screenWidth,
             ),
             ProductSection(
               title: "Laptops",
-              products: laptops,
+              products: ProductData.laptops,
               isWeb: false,
               screenWidth: screenWidth,
             ),
             ProductSection(
               title: "Budget Laptops",
-              products: budgetLaptops,
+              products: ProductData.budgetLaptops,
               isWeb: false,
               screenWidth: screenWidth,
             ),
@@ -299,12 +175,13 @@ class _HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: MobileNavigationBar(
         selectedIndex: selectedIndex,
         onItemTapped: (index) => _onItemTapped(index, context),
-        isLoggedIn: isLoggedIn,
+        isLoggedIn: user.isLoggedIn,
       ),
     );
   }
 
   Widget _buildWebLayout(BuildContext context, double screenWidth) {
+    final user = Provider.of<UserModel>(context);
     const double categoryItemWidth = 80;
     const double categorySpacing = 4;
     const double categoryHorizontalPadding = 32;
@@ -334,8 +211,8 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            WebHeader(isLoggedIn: isLoggedIn),
-            WebSearchBar(isLoggedIn: isLoggedIn),
+            const WebHeader(),
+            WebSearchBar(isLoggedIn: user.isLoggedIn),
             BannerSection(
               isWeb: true,
               screenWidth: screenWidth,
@@ -397,35 +274,35 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             ProductSection(
               title: "Promotional Products",
-              products: promotionalProducts,
+              products: ProductData.promotionalProducts,
               isWeb: true,
               screenWidth: screenWidth,
             ),
             ProductSection(
               title: "New Products",
-              products: newProducts,
+              products: ProductData.newProducts,
               isWeb: true,
               screenWidth: screenWidth,
             ),
             ProductSection(
               title: "Best Sellers",
-              products: bestSellers,
+              products: ProductData.bestSellers,
               isWeb: true,
               screenWidth: screenWidth,
             ),
             ProductSection(
               title: "Laptops",
-              products: laptops,
+              products: ProductData.laptops,
               isWeb: true,
               screenWidth: screenWidth,
             ),
             ProductSection(
               title: "Budget Laptops",
-              products: budgetLaptops,
+              products: ProductData.budgetLaptops,
               isWeb: true,
               screenWidth: screenWidth,
             ),
-             Footer(),
+            Footer(),
           ],
         ),
       ),
