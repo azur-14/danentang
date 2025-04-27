@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:animations/animations.dart';
+import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
 class Categories_Management extends StatelessWidget {
   const Categories_Management({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: const ResponsiveCategoriesScreen(),
-    );
+    return const ResponsiveCategoriesScreen();
   }
 }
 
@@ -27,8 +25,7 @@ class ResponsiveCategoriesScreen extends StatelessWidget {
 
         return PageTransitionSwitcher(
           duration: const Duration(milliseconds: 400),
-          transitionBuilder: (child, animation, secondaryAnimation) =>
-              FadeThroughTransition(
+          transitionBuilder: (child, animation, secondaryAnimation) => FadeThroughTransition(
             animation: animation,
             secondaryAnimation: secondaryAnimation,
             child: child,
@@ -45,8 +42,64 @@ class ResponsiveCategoriesScreen extends StatelessWidget {
 //===========================//
 //        Mobile Layout      //
 //===========================//
-class MobileCategoriesScreen extends StatelessWidget {
+class MobileCategoriesScreen extends StatefulWidget {
   const MobileCategoriesScreen({super.key});
+
+  @override
+  _MobileCategoriesScreenState createState() => _MobileCategoriesScreenState();
+}
+
+class _MobileCategoriesScreenState extends State<MobileCategoriesScreen> {
+  int _selectedIndex = 0; // Default selected index
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index; // Update the selected index
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          "Categories Management",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            Navigator.of(context).maybePop();
+          },
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.more_vert, color: Colors.black),
+            onPressed: () {},
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            _categoryTile("Laptop", Icons.laptop),
+            _categoryTile("Điện Thoại", Icons.phone_android),
+            _categoryTile("Phụ Kiện", Icons.build),
+            const SizedBox(height: 20),
+            const CategoryForm(),
+          ],
+        ),
+      ),
+      bottomNavigationBar: MobileNavigationBar(
+        selectedIndex: _selectedIndex,
+        onItemTapped: _onItemTapped,
+        isLoggedIn: true, // Pass this based on your app logic
+      ),
+    );
+  }
 
   Widget _categoryTile(String title, IconData icon) {
     return Container(
@@ -67,53 +120,6 @@ class MobileCategoriesScreen extends StatelessWidget {
             ],
           ),
           const Text("Xem Chi Tiết", style: TextStyle(fontSize: 14)),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          "Categories Management",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.of(context).pop(), // Không hiển thị hộp thoại xác nhận
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.black),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _categoryTile("Laptop", Icons.laptop),
-            _categoryTile("Điện Thoại", Icons.phone_android),
-            _categoryTile("Phụ Kiện", Icons.build),
-            const SizedBox(height: 20),
-            const CategoryForm(),
-          ],
-        ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.purple,
-        unselectedItemColor: Colors.black,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Notifications"),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
     );

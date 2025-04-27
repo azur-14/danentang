@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../widgets/Footer/mobile_navigation_bar.dart';
 
 class NoInternet extends StatelessWidget {
   const NoInternet({super.key});
@@ -15,6 +16,8 @@ class NoInternet extends StatelessWidget {
 class NoInternetScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600; // Check if the screen is mobile-sized
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -24,7 +27,7 @@ class NoInternetScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: const Text(
-          'No date',
+          'No data',
           style: TextStyle(color: Colors.black),
         ),
         centerTitle: true,
@@ -63,15 +66,16 @@ class NoInternetScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth < 600) {
-            return const BottomNavBar();
-          } else {
-            return SizedBox.shrink(); // Ẩn BottomNavigationBar trên web
-          }
+      bottomNavigationBar: isMobile
+          ? MobileNavigationBar(
+        selectedIndex: 0, // Adjust the selected index based on your needs
+        onItemTapped: (index) {
+          // Handle navigation or state change when tapping on an item
+          print("Tapped on item: $index");
         },
-      ),
+        isLoggedIn: true, // Set based on your app's login status
+      )
+          : null,
     );
   }
 }
@@ -159,28 +163,6 @@ class OptionCard extends StatelessWidget {
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(subtitle, style: const TextStyle(color: Colors.grey)),
       ),
-    );
-  }
-}
-
-class BottomNavBar extends StatelessWidget {
-  const BottomNavBar({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    const currentIndex = 0;
-    return BottomNavigationBar(
-      currentIndex: currentIndex,
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: Colors.purple,
-      unselectedItemColor: Colors.black54,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-        BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
-        BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Notifications"),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-      ],
     );
   }
 }

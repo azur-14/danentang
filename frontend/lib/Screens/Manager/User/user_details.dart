@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
 class User_Details extends StatelessWidget {
   const User_Details({super.key});
@@ -112,18 +113,14 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> with SingleTicker
         ),
       ),
       bottomNavigationBar: isMobile
-          ? BottomNavigationBar(
-              type: BottomNavigationBarType.fixed,
-              selectedItemColor: Colors.purple,
-              unselectedItemColor: Colors.grey,
-              currentIndex: 0,
-              onTap: (index) {},
-              items: const [
-                BottomNavigationBarItem(icon: Icon(Icons.add), label: ''),
-                BottomNavigationBarItem(icon: Icon(Icons.filter_list), label: ''),
-                BottomNavigationBarItem(icon: Icon(Icons.swap_vert), label: ''),
-              ],
-            )
+          ? MobileNavigationBar(
+        selectedIndex: 0, // Adjust the selected index based on your needs
+        onItemTapped: (index) {
+          // Handle navigation or state change when tapping on an item
+          print("Tapped on item: $index");
+        },
+        isLoggedIn: true, // Set based on your app's login status
+      )
           : null,
     );
   }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
 class Customer_Service extends StatelessWidget {
   const Customer_Service({super.key});
@@ -12,8 +14,23 @@ class Customer_Service extends StatelessWidget {
   }
 }
 
-class CustomerServiceScreen extends StatelessWidget {
+class CustomerServiceScreen extends StatefulWidget {
   const CustomerServiceScreen({super.key});
+
+  @override
+  _CustomerServiceScreenState createState() => _CustomerServiceScreenState();
+}
+
+class _CustomerServiceScreenState extends State<CustomerServiceScreen> {
+  // Initialize selectedIndex
+  int _selectedIndex = 0;
+
+  // Handle navigation item tap
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +86,11 @@ class CustomerServiceScreen extends StatelessWidget {
       bottomNavigationBar: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth < 600) {
-            return const BottomNavBar();
+            return MobileNavigationBar(
+              selectedIndex: _selectedIndex, // Pass selectedIndex
+              onItemTapped: _onItemTapped, // Pass the callback for item taps
+              isLoggedIn: true, // Set the login status (you can update this based on your actual logic)
+            );
           } else {
             return SizedBox.shrink(); // Ẩn BottomNavigationBar trên web
           }
@@ -136,7 +157,8 @@ class ChatInputField extends StatelessWidget {
                 hintText: "Nhập tin nhắn...",
                 filled: true,
                 fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 12),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(25),
                   borderSide: BorderSide.none,
@@ -161,28 +183,6 @@ class ChatInputField extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class BottomNavBar extends StatelessWidget {
-  const BottomNavBar({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    const currentIndex = 0;
-    return BottomNavigationBar(
-      currentIndex: currentIndex,
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: Colors.purple,
-      unselectedItemColor: Colors.black54,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-        BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
-        BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Notifications"),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-      ],
     );
   }
 }

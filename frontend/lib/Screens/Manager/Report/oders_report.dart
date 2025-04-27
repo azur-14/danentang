@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart';
+import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
 class OrdersReport extends StatelessWidget {
   const OrdersReport({super.key});
@@ -39,6 +40,7 @@ class OrdersScreen extends StatefulWidget {
 
 class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderStateMixin {
   int selectedTab = 2;
+  int _currentIndex = 0;
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
 
@@ -54,6 +56,12 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
   }
 
   Widget _buildTabButton(String text, int index) {
@@ -214,37 +222,26 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
         centerTitle: true,
         title: const Text("Orders", style: TextStyle(fontWeight: FontWeight.bold)),
         leading: (defaultTargetPlatform == TargetPlatform.android ||
-                    defaultTargetPlatform == TargetPlatform.iOS)
+            defaultTargetPlatform == TargetPlatform.iOS)
             ? IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () {
-                  Navigator.of(context).maybePop();
-                },
-              )
-            : const SizedBox(), // Ẩn trên Web/Desktop
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).maybePop();
+          },
+        )
+            : const SizedBox(),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
       ),
       body: widget.isMobile ? _buildMobileLayout() : _buildWebLayout(),
-      bottomNavigationBar: widget.isMobile ? _buildBottomNavigationBar() : null,
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      currentIndex: 0,
-      onTap: (index) {},
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: Colors.purple,
-      unselectedItemColor: Colors.black54,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-        BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
-        BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Notifications"),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-      ],
+      bottomNavigationBar: widget.isMobile
+          ? MobileNavigationBar(
+        selectedIndex: _currentIndex,
+        onItemTapped: _onItemTapped,
+        isLoggedIn: true,  // Assuming user is logged in
+      )
+          : null,
     );
   }
 }

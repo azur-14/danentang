@@ -2,6 +2,7 @@ import 'package:danentang/Screens/Manager/User/user_list.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart';
+import '../../../widgets/Footer/mobile_navigation_bar.dart';  // Thêm import cho MobileNavigationBar
 
 class User_Report extends StatelessWidget {
   const User_Report({super.key});
@@ -53,13 +54,13 @@ class _UserScreenState extends State<UserScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: (defaultTargetPlatform == TargetPlatform.android ||
-                defaultTargetPlatform == TargetPlatform.iOS)
+            defaultTargetPlatform == TargetPlatform.iOS)
             ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
-                onPressed: () {
-                  Navigator.pop(context); // Không cần hỏi xác nhận khi quay lại
-                },
-              )
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            Navigator.pop(context); // Không cần hỏi xác nhận khi quay lại
+          },
+        )
             : const SizedBox(),
       ),
       body: AnimatedOpacity(
@@ -90,7 +91,11 @@ class _UserScreenState extends State<UserScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      bottomNavigationBar: MobileNavigationBar(
+        selectedIndex: 0,  // Chỉnh lại chỉ mục được chọn nếu cần
+        onItemTapped: (index) {},  // Xử lý khi người dùng nhấn vào một item
+        isLoggedIn: true,  // Cập nhật trạng thái đăng nhập nếu cần
+      ),
     );
   }
 
@@ -143,26 +148,26 @@ class _UserScreenState extends State<UserScreen> {
           height: 180,
           child: LineChart(
             LineChartData(
-                gridData: FlGridData(show: false),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      interval: 1,
-                      getTitlesWidget: (value, meta) {
-                        List<String> months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-                        if (value.toInt() >= 0 && value.toInt() < months.length) {
-                          return Text(months[value.toInt()]);
-                        } else {
-                          return const Text('');
-                        }
-                      },
-                    ),
+              gridData: FlGridData(show: false),
+              titlesData: FlTitlesData(
+                leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    interval: 1,
+                    getTitlesWidget: (value, meta) {
+                      List<String> months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+                      if (value.toInt() >= 0 && value.toInt() < months.length) {
+                        return Text(months[value.toInt()]);
+                      } else {
+                        return const Text('');
+                      }
+                    },
                   ),
                 ),
+              ),
               borderData: FlBorderData(show: false),
               lineBarsData: [
                 LineChartBarData(
@@ -235,31 +240,7 @@ class _UserScreenState extends State<UserScreen> {
     );
   }
 
-  // Xây dựng thanh điều hướng dưới cùng
-  Widget _buildBottomNavigationBar() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isMobile = constraints.maxWidth < 600;
-        return isMobile
-            ? BottomNavigationBar(
-                currentIndex: 0,
-                onTap: (index) {},
-                items: const [
-                  BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-                  BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
-                  BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Notifications"),
-                  BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
-                  BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-                ],
-                selectedItemColor: Colors.purple,
-                unselectedItemColor: Colors.black54,
-                type: BottomNavigationBarType.fixed,
-              )
-            : const SizedBox();
-      },
-    );
-  }
-
+  // Nút "Xem Chi Tiết"
   Widget _buildDetailButton(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),

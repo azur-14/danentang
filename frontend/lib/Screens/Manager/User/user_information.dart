@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 
-class User_Infomartion extends StatelessWidget {
-  const User_Infomartion({super.key});
+class UserInformation extends StatelessWidget {
+  const UserInformation({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: UserDetailScreen(),
-    );
+    return const UserDetailScreen();
   }
 }
 
@@ -110,13 +107,10 @@ class _UserDetailScreenState extends State<UserDetailScreen> with SingleTickerPr
           "User Information",
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
-        leading: (defaultTargetPlatform == TargetPlatform.android ||
-                defaultTargetPlatform == TargetPlatform.iOS)
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
-                onPressed: () => Navigator.pop(context),
-              )
-            : const SizedBox(),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: FadeTransition(
         opacity: _fadeAnimation,
@@ -202,12 +196,12 @@ class _UserDetailScreenState extends State<UserDetailScreen> with SingleTickerPr
           Expanded(
             child: isEditable
                 ? TextField(
-                    decoration: InputDecoration(
-                      hintText: value,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    ),
-                  )
+              decoration: InputDecoration(
+                hintText: value,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+            )
                 : Text(value, style: const TextStyle(fontSize: 16, color: Colors.grey)),
           ),
         ],

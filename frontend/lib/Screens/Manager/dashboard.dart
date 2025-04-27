@@ -1,37 +1,33 @@
-import 'package:danentang/Screens/Manager/Coupon/coupon_management.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:danentang/Screens/Manager/Report/oders_report.dart';
+import '../../widgets/Footer/mobile_navigation_bar.dart';
+import 'package:danentang/Screens/Manager/User/user_list.dart';
 import 'package:danentang/Screens/Manager/Report/revenue_report.dart';
+import 'package:danentang/Screens/Manager/Report/oders_report.dart';
+import 'package:danentang/Screens/Manager/Report/user_report.dart';
+import 'package:danentang/Screens/Manager/Project/projects.dart';
+import 'package:danentang/Screens/Manager/Product/product_management.dart';
+import 'package:danentang/Screens/Manager/Coupon/coupon_management.dart';
 import 'package:danentang/Screens/Manager/Category/categories_management.dart';
 import 'package:danentang/Screens/Manager/Support/customer_support.dart';
 import 'package:danentang/Screens/Manager/Order/order_list.dart';
-import 'package:danentang/Screens/Manager/Product/product_management.dart';
-import 'package:danentang/Screens/Manager/Project/projects.dart';
-import 'package:danentang/Screens/Manager/User/user_list.dart';
-import 'package:danentang/Screens/Manager/Report/user_report.dart';
 
-class DashBoard extends StatelessWidget {
+class DashBoard extends StatefulWidget {
   const DashBoard({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: const DashboardScreen(),
-    );
-  }
+  State<DashBoard> createState() => _DashBoardState();
 }
 
-class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
-
-  @override
-  _DashboardScreenState createState() => _DashboardScreenState();
-}
-
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashBoardState extends State<DashBoard> {
   int _currentIndex = 0;
+  bool _isLoggedIn = true;
+
+  void _onNavBarTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,13 +37,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         backgroundColor: Colors.deepPurple,
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        child: Column(
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.only(bottom: 80),
           children: [
             _buildStatCards(),
             _buildChartCard('Users Report', _buildLineChartUsers(context)),
             _buildChartCard('Revenue Report', _buildRevenueChart(context)),
-            _buildChartCard('Orders Report', _buildOrdersChart()),
+            _buildChartCard('Orders Report', _buildOrdersChart(context)),
             _buildChartCard('Best-Selling Products Report', _buildBarChart()),
             _buildChartCard('Total Sales Report', _buildPieChart()),
             _buildManagementSections(context),
@@ -57,16 +54,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       bottomNavigationBar: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth < 600) {
-            return AnimatedBottomNavBar(
-              currentIndex: _currentIndex,
-              onTap: (index) {
-                setState(() {
-                  _currentIndex = index;
-                });
-              },
+            return MobileNavigationBar(
+              selectedIndex: _currentIndex,
+              onItemTapped: _onNavBarTapped,
+              isLoggedIn: _isLoggedIn,
             );
           } else {
-            return SizedBox.shrink();
+            return const SizedBox.shrink();
           }
         },
       ),
@@ -134,7 +128,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
-            SizedBox(height: 200, child: chart),
+            chart,
           ],
         ),
       ),
@@ -142,236 +136,163 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildLineChartUsers(BuildContext context) {
-    return Stack(
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 30),
-          child: LineChart(
-            LineChartData(
-              gridData: FlGridData(show: false),
-              titlesData: FlTitlesData(
-                leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    interval: 1,
-                    getTitlesWidget: (value, meta) {
-                      List<String> months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-                      if (value.toInt() >= 0 && value.toInt() < months.length) {
-                        return Text(months[value.toInt()]);
-                      } else {
-                        return const Text('');
-                      }
-                    },
-                  ),
-                ),
-              ),
-              borderData: FlBorderData(show: false),
-              lineBarsData: [
-                LineChartBarData(
-                  spots: const [
-                    FlSpot(0, 1),
-                    FlSpot(1, 3),
-                    FlSpot(2, 2),
-                    FlSpot(3, 5),
-                    FlSpot(4, 4),
-                    FlSpot(5, 6),
-                  ],
-                  isCurved: true,
-                  color: Colors.purple,
-                  barWidth: 3,
-                  belowBarData: BarAreaData(show: false),
-                  dotData: FlDotData(show: true),
-                ),
-              ],
-            ),
-          ),
-        ),
-        Positioned(
-          top: 0,
-          right: 8,
-          child: TextButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                PageRouteBuilder(
-                  transitionDuration: const Duration(milliseconds: 500),
-                  pageBuilder: (_, __, ___) => const UserScreen(),
-                  transitionsBuilder: (_, animation, __, child) {
-                    return SlideTransition(
-                      position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero).animate(animation),
-                      child: child,
-                    );
-                  },
-                ),
-              );
-            },
-            label: const Text("Xem Chi Tiết", style: TextStyle(color: Colors.deepPurple)),
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              minimumSize: const Size(0, 0),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRevenueChart(BuildContext context) {
-    return Stack(
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 40),
-          child: SizedBox(
-            height: 250,
+    return SizedBox(
+      height: 220,
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 30),
             child: LineChart(
               LineChartData(
                 gridData: FlGridData(show: false),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      interval: 1,
-                      getTitlesWidget: (value, meta) {
-                        List<String> months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-                        if (value.toInt() >= 0 && value.toInt() < months.length) {
-                          return Text(months[value.toInt()]);
-                        } else {
-                          return const Text('');
-                        }
-                      },
-                    ),
-                  ),
-                ),
+                titlesData: FlTitlesData(show: false),
+                borderData: FlBorderData(show: false),
                 lineBarsData: [
                   LineChartBarData(
-                    spots: const [FlSpot(0, 50), FlSpot(1, 55), FlSpot(2, 60), FlSpot(3, 62)],
+                    spots: const [
+                      FlSpot(0, 1),
+                      FlSpot(1, 3),
+                      FlSpot(2, 2),
+                      FlSpot(3, 5),
+                      FlSpot(4, 4),
+                      FlSpot(5, 6),
+                    ],
                     isCurved: true,
-                    color: Colors.red,
+                    color: Colors.purple,
                     barWidth: 3,
-                    dotData: FlDotData(show: true),
-                  ),
-                  LineChartBarData(
-                    spots: const [FlSpot(0, 48), FlSpot(1, 52), FlSpot(2, 58), FlSpot(3, 61)],
-                    isCurved: true,
-                    color: Colors.grey,
-                    barWidth: 2,
-                    dashArray: [5, 5],
-                    dotData: FlDotData(show: true),
                   ),
                 ],
               ),
             ),
           ),
-        ),
-        Positioned(
-          top: 0,
-          right: 8,
-          child: TextButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                PageRouteBuilder(
-                  transitionDuration: const Duration(milliseconds: 500),
-                  pageBuilder: (_, __, ___) => RevenueReport(),
-                  transitionsBuilder: (_, animation, __, child) {
-                    return SlideTransition(
-                      position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero).animate(animation),
-                      child: child,
-                    );
-                  },
-                ),
-              );
-            },
-            label: const Text("Xem Chi Tiết", style: TextStyle(color: Colors.deepPurple)),
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              minimumSize: const Size(0, 0),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: TextButton(
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const UserScreen()));
+              },
+              child: const Text("Xem chi tiết", style: TextStyle(color: Colors.deepPurple)),
             ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildOrdersChart() {
-    return Stack(
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 40),
-          child: LineChart(
-            LineChartData(
-              lineBarsData: [
-                LineChartBarData(
-                  spots: const [FlSpot(0, 30), FlSpot(1, 35), FlSpot(2, 50), FlSpot(3, 40)],
-                  isCurved: true,
-                  color: Colors.blue,
-                  barWidth: 3,
-                ),
-              ],
-            ),
-          ),
-        ),
-        Positioned(
-          top: 0,
-          right: 8,
-          child: TextButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                PageRouteBuilder(
-                  transitionDuration: Duration(milliseconds: 500),
-                  pageBuilder: (_, __, ___) => OrdersReport(),
-                  transitionsBuilder: (_, animation, __, child) {
-                    return SlideTransition(
-                      position: Tween<Offset>(begin: Offset(1, 0), end: Offset.zero).animate(animation),
-                      child: child,
-                    );
-                  },
-                ),
-              );
-            },
-            label: Text("Xem Chi Tiết", style: TextStyle(color: Colors.deepPurple)),
-            style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                minimumSize: Size(0, 0),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBarChart() {
-    return BarChart(
-      BarChartData(
-        barGroups: [
-          BarChartGroupData(x: 0, barRods: [BarChartRodData(fromY: 0, toY: 20, color: Colors.grey)]),
-          BarChartGroupData(x: 1, barRods: [BarChartRodData(fromY: 0, toY: 30, color: Colors.grey)]),
-          BarChartGroupData(x: 2, barRods: [BarChartRodData(fromY: 0, toY: 25, color: Colors.grey)]),
-          BarChartGroupData(x: 3, barRods: [BarChartRodData(fromY: 0, toY: 28, color: Colors.grey)]),
         ],
       ),
     );
   }
 
-  Widget _buildPieChart() {
-    return PieChart(
-      PieChartData(
-        sections: [
-          PieChartSectionData(value: 30, color: Colors.green, title: 'Direct'),
-          PieChartSectionData(value: 20, color: Colors.blue, title: 'Affiliate'),
-          PieChartSectionData(value: 15, color: Colors.orange, title: 'Sponsored'),
-          PieChartSectionData(value: 10, color: Colors.yellow, title: 'Email'),
+  Widget _buildRevenueChart(BuildContext context) {
+    return SizedBox(
+      height: 220,
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 30),
+            child: LineChart(
+              LineChartData(
+                gridData: FlGridData(show: false),
+                titlesData: FlTitlesData(show: false),
+                borderData: FlBorderData(show: false),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: const [
+                      FlSpot(0, 50),
+                      FlSpot(1, 55),
+                      FlSpot(2, 60),
+                      FlSpot(3, 62),
+                    ],
+                    isCurved: true,
+                    color: Colors.red,
+                    barWidth: 3,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: TextButton(
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => RevenueReport()));
+              },
+              child: const Text("Xem chi tiết", style: TextStyle(color: Colors.deepPurple)),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildOrdersChart(BuildContext context) {
+    return SizedBox(
+      height: 220,
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 30),
+            child: LineChart(
+              LineChartData(
+                gridData: FlGridData(show: false),
+                titlesData: FlTitlesData(show: false),
+                borderData: FlBorderData(show: false),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: const [
+                      FlSpot(0, 30),
+                      FlSpot(1, 35),
+                      FlSpot(2, 50),
+                      FlSpot(3, 40),
+                    ],
+                    isCurved: true,
+                    color: Colors.blue,
+                    barWidth: 3,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: TextButton(
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => OrdersReport()));
+              },
+              child: const Text("Xem chi tiết", style: TextStyle(color: Colors.deepPurple)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBarChart() {
+    return SizedBox(
+      height: 200,
+      child: BarChart(
+        BarChartData(
+          barGroups: [
+            BarChartGroupData(x: 0, barRods: [BarChartRodData(fromY: 0, toY: 20, color: Colors.grey)]),
+            BarChartGroupData(x: 1, barRods: [BarChartRodData(fromY: 0, toY: 30, color: Colors.grey)]),
+            BarChartGroupData(x: 2, barRods: [BarChartRodData(fromY: 0, toY: 25, color: Colors.grey)]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPieChart() {
+    return SizedBox(
+      height: 200,
+      child: PieChart(
+        PieChartData(
+          sections: [
+            PieChartSectionData(value: 30, color: Colors.green, title: 'Direct'),
+            PieChartSectionData(value: 20, color: Colors.blue, title: 'Affiliate'),
+            PieChartSectionData(value: 15, color: Colors.orange, title: 'Sponsored'),
+            PieChartSectionData(value: 10, color: Colors.yellow, title: 'Email'),
+          ],
+        ),
       ),
     );
   }
@@ -388,56 +309,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ];
 
     return Column(
-      children: managements.map((item) => Card(
-        child: ListTile(
-          title: Text(item["title"]),
-          trailing: const Icon(Icons.arrow_forward_ios),
-          onTap: () {
-            if (item["screen"] != null) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => item["screen"]),
-              );
-            }
-          },
-        ),
-      )).toList(),
-    );
-  }
-}
-
-class AnimatedBottomNavBar extends StatelessWidget {
-  final int currentIndex;
-  final Function(int) onTap;
-
-  const AnimatedBottomNavBar({super.key, required this.currentIndex, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      height: 60,
-      child: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.purple,
-        unselectedItemColor: Colors.grey,
-        currentIndex: currentIndex,
-        onTap: onTap,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
+      children: managements.map((item) {
+        return Card(
+          child: ListTile(
+            title: Text(item["title"]),
+            trailing: const Icon(Icons.arrow_forward_ios),
+            onTap: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => item["screen"]));
+            },
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: 'Charts',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
-      ),
+        );
+      }).toList(),
     );
   }
 }

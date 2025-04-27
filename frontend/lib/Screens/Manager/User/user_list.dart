@@ -2,6 +2,7 @@ import 'package:danentang/Screens/Manager/User/user_information.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:danentang/Screens/Manager/User/user_details.dart';
+import '../../../widgets/Footer/mobile_navigation_bar.dart';  // Đảm bảo rằng bạn đã import đúng
 
 class UserListScreen extends StatefulWidget {
   const UserListScreen({super.key});
@@ -47,13 +48,13 @@ class _UserListScreenState extends State<UserListScreen> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: (defaultTargetPlatform == TargetPlatform.android ||
-                        defaultTargetPlatform == TargetPlatform.iOS)
+                    defaultTargetPlatform == TargetPlatform.iOS)
                     ? IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.black),
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                      )
+                  icon: const Icon(Icons.arrow_back, color: Colors.black),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                )
                     : const SizedBox(),
               ),
               Align(
@@ -107,25 +108,16 @@ class _UserListScreenState extends State<UserListScreen> {
         ),
       ),
       bottomNavigationBar: isMobile
-          ? BottomNavigationBar(
-              type: BottomNavigationBarType.fixed,
-              selectedItemColor: Colors.purple,
-              unselectedItemColor: Colors.grey,
-              currentIndex: _currentIndex,
-              onTap: (index) {
-                setState(() {
-                  _currentIndex = index;
-                });
-              },
-              items: const [
-                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-                BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-                BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Notifications'),
-                BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-                BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-              ],
-            )
-          : null, // Hide BottomNavigationBar on Web
+          ? MobileNavigationBar(
+        selectedIndex: _currentIndex,
+        onItemTapped: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        isLoggedIn: true,
+      )
+          : null,
     );
   }
 }
@@ -173,7 +165,7 @@ class _AnimatedUserCardState extends State<AnimatedUserCard> with SingleTickerPr
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => User_Infomartion()),
+              MaterialPageRoute(builder: (context) => UserInformation()),
             );
           },
           child: UserCard(user: widget.user),
