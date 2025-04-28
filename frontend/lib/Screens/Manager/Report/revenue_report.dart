@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:danentang/Screens/Manager/dashboard.dart';
-
-void main() {
-  runApp(const RevenueReport());
-}
+import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
 class RevenueReport extends StatelessWidget {
   const RevenueReport({super.key});
@@ -47,85 +44,65 @@ class _RevenueScreenState extends State<RevenueScreen> with SingleTickerProvider
     super.dispose();
   }
 
-  Future<bool> _showExitConfirmation(BuildContext context) async {
-    return await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Xác nhận"),
-        content: const Text("Bạn có muốn thoát khỏi màn hình này không?"),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(context).pop(false), child: const Text("Không")),
-          TextButton(onPressed: () => Navigator.of(context).pop(true), child: const Text("Có")),
-        ],
-      ),
-    ) ?? false;
-  }
-
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        final shouldExit = await _showExitConfirmation(context);
-        if (shouldExit) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const DashBoard()),
-          );
-        }
-        return false;
-      },
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final isMobile = constraints.maxWidth < 600;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
 
-          return Scaffold(
-            appBar: AppBar(
-              leading: isMobile
-                  ? IconButton(
-                      icon: const Icon(Icons.arrow_back),
-                      onPressed: () async {
-                        final shouldExit = await _showExitConfirmation(context);
-                        if (shouldExit) {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (_) => const DashBoard()),
-                          );
-                        }
-                      },
-                    )
-                  : null,
-              title: const Text('Revenue', style: TextStyle(fontWeight: FontWeight.bold)),
-              centerTitle: true,
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black,
-              elevation: 1,
-            ),
-            body: FadeTransition(
-              opacity: _fadeAnimation,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildFilterButtons(isMobile),
-                    const SizedBox(height: 10),
-                    _buildRevenueChart(isMobile),
-                    const Padding(
-                      padding: EdgeInsets.all(8.0),
-                      child: Text(
-                        'Income',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
+        return Scaffold(
+          appBar: AppBar(
+            leading: isMobile
+                ? IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const DashBoard()),
+                );
+              },
+            )
+                : null,
+            title: const Text('Revenue', style: TextStyle(fontWeight: FontWeight.bold)),
+            centerTitle: true,
+            backgroundColor: Colors.white,
+            foregroundColor: Colors.black,
+            elevation: 1,
+          ),
+          body: FadeTransition(
+            opacity: _fadeAnimation,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(12.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildFilterButtons(isMobile),
+                  const SizedBox(height: 10),
+                  _buildRevenueChart(isMobile),
+                  const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Text(
+                      'Income',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
-                    _buildIncomeList(),
-                  ],
-                ),
+                  ),
+                  _buildIncomeList(),
+                ],
               ),
             ),
-            bottomNavigationBar: isMobile ? _buildBottomNavigationBar() : null,
-          );
-        },
-      ),
+          ),
+          bottomNavigationBar: isMobile
+              ? MobileNavigationBar(
+            selectedIndex: 0,
+            onItemTapped: (index) {
+              print("Tapped item: $index");
+            },
+            isLoggedIn: true,
+            role: 'manager',
+          )
+              : null,
+        );
+      },
     );
   }
 
@@ -135,7 +112,7 @@ class _RevenueScreenState extends State<RevenueScreen> with SingleTickerProvider
       mainAxisAlignment: isMobile ? MainAxisAlignment.spaceAround : MainAxisAlignment.start,
       children: List.generate(
         labels.length,
-        (index) => Padding(
+            (index) => Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: ChoiceChip(
             label: Text(labels[index]),
@@ -162,9 +139,52 @@ class _RevenueScreenState extends State<RevenueScreen> with SingleTickerProvider
             aspectRatio: aspectRatio,
             child: LineChart(
               LineChartData(
-                gridData: FlGridData(show: false),
-                titlesData: FlTitlesData(show: false),
-                borderData: FlBorderData(show: false),
+                gridData: FlGridData(
+                  show: true, // Hiển thị các gridlines
+                  drawVerticalLine: true, // Hiển thị các đường dọc
+                  drawHorizontalLine: true, // Hiển thị các đường ngang
+                  getDrawingHorizontalLine: (value) {
+                    return FlLine(
+                      color: Colors.grey,
+                      strokeWidth: 0.5,
+                    );
+                  },
+                  getDrawingVerticalLine: (value) {
+                    return FlLine(
+                      color: Colors.grey,
+                      strokeWidth: 0.5,
+                    );
+                  },
+                ),
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: true, reservedSize: 30),
+                  ),
+                  rightTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  topTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      interval: 1,
+                      getTitlesWidget: (value, meta) {
+                        List<String> months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+                        if (value.toInt() >= 0 && value.toInt() < months.length) {
+                          return Text(months[value.toInt()]);
+                        } else {
+                          return const Text('');
+                        }
+                      },
+                    ),
+                  ),
+                ),
+                borderData: FlBorderData(
+                  show: true, // Hiển thị khung biên
+                  border: Border.all(color: Colors.black, width: 1), // Đặt màu và độ dày của đường viền
+                ),
                 lineBarsData: [
                   LineChartBarData(
                     spots: const [
@@ -254,23 +274,6 @@ class _RevenueScreenState extends State<RevenueScreen> with SingleTickerProvider
           ),
         );
       },
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      currentIndex: 0,
-      onTap: (index) {},
-      selectedItemColor: Colors.purple,
-      unselectedItemColor: Colors.black54,
-      type: BottomNavigationBarType.fixed,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-        BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
-        BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Notifications"),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-      ],
     );
   }
 }

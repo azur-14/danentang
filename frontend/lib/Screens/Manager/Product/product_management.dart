@@ -3,16 +3,14 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:danentang/Screens/Manager/Product/add_product.dart';
 import 'package:danentang/Screens/Manager/Product/delete_product.dart';
 import 'package:flutter/foundation.dart';
+import 'package:danentang/widgets/Footer/mobile_navigation_bar.dart';
 
 class Product_Management extends StatelessWidget {
   const Product_Management({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: ProductManagementScreen(),
-    );
+    return const ProductManagementScreen();
   }
 }
 
@@ -20,17 +18,14 @@ class ProductManagementScreen extends StatefulWidget {
   const ProductManagementScreen({super.key});
 
   @override
-  _ProductManagementScreenState createState() =>
-      _ProductManagementScreenState();
+  _ProductManagementScreenState createState() => _ProductManagementScreenState();
 }
 
-class _ProductManagementScreenState extends State<ProductManagementScreen>
-    with SingleTickerProviderStateMixin {
-  int _currentIndex = 0;
-
+class _ProductManagementScreenState extends State<ProductManagementScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+  int _currentIndex = 0;
 
   @override
   void initState() {
@@ -52,19 +47,24 @@ class _ProductManagementScreenState extends State<ProductManagementScreen>
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false, // Ngăn AppBar tự thêm nút back
+        automaticallyImplyLeading: false,
         leading: !kIsWeb &&
-                (defaultTargetPlatform == TargetPlatform.iOS ||
-                    defaultTargetPlatform == TargetPlatform.android)
+            (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android)
             ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
-                onPressed: () {
-                  Navigator.pop(context); // Quay lại trang trước
-                },
-              )
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        )
             : null,
         title: const Text(
           'Product Management',
@@ -84,52 +84,39 @@ class _ProductManagementScreenState extends State<ProductManagementScreen>
         opacity: _fadeAnimation,
         child: ScaleTransition(
           scale: _scaleAnimation,
-          child: Column(
-            children: [
-              _buildProductSection('Latest Product', 'View All'),
-              _buildProductItem('Laptop ASUS', 'Color: Grey, AA - 07 - 902', 200),
-              const SizedBox(height: 10),
-              _buildProductSection('Danh Sách Sản Phẩm Được Bổ Sung', ''),
-              Expanded(
-                child: ListView(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildProductSection('Latest Product', 'View All'),
+                _buildProductItem('Laptop ASUS', 'Color: Grey, AA - 07 - 902', 200),
+                const SizedBox(height: 10),
+                _buildProductSection('Danh Sách Sản Phẩm Được Bổ Sung', ''),
+                ListView(
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
                   children: [
-                    _buildProductItem(
-                        'Laptop Dell', 'Color: Black, BB - 12 - 345', 300),
-                    _buildProductItem(
-                        'MacBook Pro', 'Color: Silver, CC - 78 - 910', 1500),
+                    _buildProductItem('Laptop Dell', 'Color: Black, BB - 12 - 345', 300),
+                    _buildProductItem('MacBook Pro', 'Color: Silver, CC - 78 - 910', 1500),
                   ],
                 ),
-              ),
-              _buildActionButtons(context),
-            ],
+                _buildActionButtons(context),
+              ],
+            ),
           ),
         ),
       ),
       bottomNavigationBar: !kIsWeb &&
-              (defaultTargetPlatform == TargetPlatform.iOS ||
-                  defaultTargetPlatform == TargetPlatform.android)
-          ? BottomNavigationBar(
-              type: BottomNavigationBarType.fixed,
-              selectedItemColor: Colors.purple,
-              unselectedItemColor: Colors.grey,
-              currentIndex: _currentIndex,
-              onTap: (index) {
-                setState(() {
-                  _currentIndex = index;
-                });
-              },
-              items: const [
-                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.history), label: 'History'),
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.notifications), label: 'Notifications'),
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.settings), label: 'Settings'),
-                BottomNavigationBarItem(
-                    icon: Icon(Icons.person), label: 'Profile'),
-              ],
-            )
+          (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android)
+          ? MobileNavigationBar(
+        selectedIndex: _currentIndex,
+        onItemTapped: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        isLoggedIn: true,
+        role:'manager',
+      )
           : null,
     );
   }
@@ -181,8 +168,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen>
               ],
             ),
           ),
-          Text('\$${price.toStringAsFixed(1)}',
-              style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text('\$${price.toStringAsFixed(1)}', style: const TextStyle(fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -192,19 +178,18 @@ class _ProductManagementScreenState extends State<ProductManagementScreen>
     return Column(
       children: [
         _buildActionButton('New Product', FontAwesomeIcons.boxOpen, () {
-          // Sử dụng Navigator.push() để giữ lại lịch sử navigation
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => NewProductScreen()),
+            MaterialPageRoute(builder: (context) => const NewProductScreen()),
           );
         }),
         _buildActionButton('Edit Product', FontAwesomeIcons.pen, () {
-          // Logic edit
+          // TODO: xử lý edit product
         }),
         _buildActionButton('Delete Product', FontAwesomeIcons.trash, () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => SuccessScreen()),
+            MaterialPageRoute(builder: (context) => const SuccessScreen()),
           );
         }),
       ],

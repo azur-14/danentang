@@ -1,162 +1,168 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
-class Filter_Order extends StatelessWidget {
+class NoInternet extends StatelessWidget {
+  const NoInternet({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: OrderListScreen(),
+      home: NoInternetScreen(),
     );
   }
 }
 
-class OrderListScreen extends StatefulWidget {
-  @override
-  _OrderListScreenState createState() => _OrderListScreenState();
-}
-
-class _OrderListScreenState extends State<OrderListScreen> {
-  String filter = "Day";
-
+class NoInternetScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("Order List"),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.filter_list),
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                builder: (context) => FilterSheet(
-                  onSelectFilter: (selectedFilter) {
-                    setState(() {
-                      filter = selectedFilter;
-                    });
-                  },
-                ),
-              );
-            },
-          )
-        ],
-        leading: _buildBackButton(context),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {},
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          'No data',
+          style: TextStyle(color: Colors.black),
+        ),
+        centerTitle: true,
       ),
-      body: StreamBuilder(
-        stream: FirebaseFirestore.instance.collection('orders').snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-          if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
-          return ListView(
-            children: snapshot.data!.docs.map((doc) {
-              return OrderCard(
-                orderId: doc['id'],
-                user: doc['user'],
-                project: doc['project'],
-                address: doc['address'],
-                status: doc['status'],
-                date: doc['date'],
-              );
-            }).toList(),
-          );
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const SizedBox(height: 50),
+            Image.asset('assets/no_data.png', height: 100),
+            const SizedBox(height: 20),
+            const Text(
+              'You may need',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 20),
+            AnimatedOptionCard(
+              delay: 200,
+              icon: Icons.rocket_launch_outlined,
+              title: 'Launch product',
+              subtitle: 'If you haven’t launched your product yet, come back when you do.',
+            ),
+            AnimatedOptionCard(
+              delay: 400,
+              icon: Icons.access_time,
+              title: 'Waiting for data',
+              subtitle: 'Wait for your product running data.',
+            ),
+            AnimatedOptionCard(
+              delay: 600,
+              icon: Icons.add,
+              title: 'Adding data',
+              subtitle: 'Please add data manually on other pages.',
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: isMobile
+          ? MobileNavigationBar(
+        selectedIndex: 0,
+        onItemTapped: (index) {
+          print("Tapped on item: $index");
         },
-      ),
-      bottomNavigationBar: isMobile ? BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
-          BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Notifications"),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-        ],
-      ) : null,
-    );
-  }
-
-  // Function to build the back button only on mobile devices
-  Widget _buildBackButton(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isMobile = constraints.maxWidth < 600;
-        if (isMobile) {
-          return IconButton(
-            icon: Icon(Icons.arrow_back),
-            onPressed: () {
-              Navigator.pop(context);  // Directly pop without confirmation
-            },
-          );
-        } else {
-          return SizedBox();  // Do not show back button on web
-        }
-      },
+        isLoggedIn: true,
+        role:'true',
+      )
+          : null,
     );
   }
 }
 
-class OrderCard extends StatelessWidget {
-  final String orderId, user, project, address, status, date;
+class AnimatedOptionCard extends StatefulWidget {
+  final int delay;
+  final IconData icon;
+  final String title;
+  final String subtitle;
 
-  OrderCard({required this.orderId, required this.user, required this.project, required this.address, required this.status, required this.date});
+  const AnimatedOptionCard({
+    required this.delay,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    super.key,
+  });
+
+  @override
+  _AnimatedOptionCardState createState() => _AnimatedOptionCardState();
+}
+
+class _AnimatedOptionCardState extends State<AnimatedOptionCard> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Offset> _offsetAnimation;
+  late Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _offsetAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _opacityAnimation = Tween<double>(begin: 0, end: 1).animate(_controller);
+
+    Future.delayed(Duration(milliseconds: widget.delay), () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SlideTransition(
+      position: _offsetAnimation,
+      child: FadeTransition(
+        opacity: _opacityAnimation,
+        child: OptionCard(
+          icon: widget.icon,
+          title: widget.title,
+          subtitle: widget.subtitle,
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+}
+
+class OptionCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const OptionCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: EdgeInsets.all(8),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: ListTile(
-        title: Text("#$orderId"),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("User: $user"),
-            Text("Project: $project"),
-            Text("Address: $address"),
-            Text("Date: $date"),
-          ],
-        ),
-        trailing: Chip(
-          label: Text(status),
-          backgroundColor: status == "Complete" ? Colors.green : Colors.purple,
-        ),
+        leading: Icon(icon, color: Colors.black),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(subtitle, style: const TextStyle(color: Colors.grey)),
       ),
-    );
-  }
-}
-
-class FilterSheet extends StatelessWidget {
-  final Function(String) onSelectFilter;
-
-  FilterSheet({required this.onSelectFilter});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FilterButton(label: "Day", onPressed: () => onSelectFilter("Day")),
-          FilterButton(label: "Week", onPressed: () => onSelectFilter("Week")),
-          FilterButton(label: "Month", onPressed: () => onSelectFilter("Month")),
-          FilterButton(label: "Year", onPressed: () => onSelectFilter("Year")),
-        ],
-      ),
-    );
-  }
-}
-
-class FilterButton extends StatelessWidget {
-  final String label;
-  final VoidCallback onPressed;
-
-  FilterButton({required this.label, required this.onPressed});
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      icon: Icon(Icons.filter_alt),
-      label: Text(label),
-      onPressed: onPressed,
     );
   }
 }

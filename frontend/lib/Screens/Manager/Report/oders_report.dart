@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart';
+import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
 class OrdersReport extends StatelessWidget {
   const OrdersReport({super.key});
@@ -39,6 +40,7 @@ class OrdersScreen extends StatefulWidget {
 
 class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderStateMixin {
   int selectedTab = 2;
+  int _currentIndex = 0;
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
 
@@ -54,6 +56,12 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
   }
 
   Widget _buildTabButton(String text, int index) {
@@ -85,12 +93,22 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
 
   Widget _buildChart() {
     return SizedBox(
-      height: 150,
+      height: 250,
       child: LineChart(
         LineChartData(
-          gridData: FlGridData(show: false),
-          titlesData: FlTitlesData(show: false),
-          borderData: FlBorderData(show: false),
+          gridData: FlGridData(show: true, horizontalInterval: 1, verticalInterval: 1),
+          titlesData: FlTitlesData(
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(showTitles: true, reservedSize: 32),
+            ),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(showTitles: true, reservedSize: 32),
+            ),
+            rightTitles: AxisTitles(
+              sideTitles: SideTitles(showTitles: true, reservedSize: 32),
+            ),
+          ),
+          borderData: FlBorderData(show: true, border: Border.all(color: Colors.grey, width: 1)),
           lineBarsData: [
             LineChartBarData(
               spots: [FlSpot(1, 3), FlSpot(2, 1), FlSpot(3, 4), FlSpot(4, 2)],
@@ -209,42 +227,37 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: const Text("Orders", style: TextStyle(fontWeight: FontWeight.bold)),
-        leading: (defaultTargetPlatform == TargetPlatform.android ||
-                    defaultTargetPlatform == TargetPlatform.iOS)
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () {
-                  Navigator.of(context).maybePop();
-                },
-              )
-            : const SizedBox(), // Ẩn trên Web/Desktop
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
+    return WillPopScope(
+      onWillPop: () async {
+        return false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          centerTitle: true,
+          title: const Text("Orders", style: TextStyle(fontWeight: FontWeight.bold)),
+          leading: (defaultTargetPlatform == TargetPlatform.android ||
+              defaultTargetPlatform == TargetPlatform.iOS)
+              ? IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              // Preventing back press
+            },
+          )
+              : const SizedBox(),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
+        ),
+        body: widget.isMobile ? _buildMobileLayout() : _buildWebLayout(),
+        bottomNavigationBar: widget.isMobile
+            ? MobileNavigationBar(
+          selectedIndex: _currentIndex,
+          onItemTapped: _onItemTapped,
+          isLoggedIn: true,
+          role: 'manager',
+        )
+            : null,
       ),
-      body: widget.isMobile ? _buildMobileLayout() : _buildWebLayout(),
-      bottomNavigationBar: widget.isMobile ? _buildBottomNavigationBar() : null,
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      currentIndex: 0,
-      onTap: (index) {},
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: Colors.purple,
-      unselectedItemColor: Colors.black54,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-        BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
-        BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Notifications"),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-      ],
     );
   }
 }

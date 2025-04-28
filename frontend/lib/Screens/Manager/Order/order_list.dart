@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
 class Order_List extends StatelessWidget {
   const Order_List({super.key});
@@ -22,6 +23,7 @@ class OrdersListScreen extends StatefulWidget {
 
 class _OrdersListScreenState extends State<OrdersListScreen> {
   int _currentIndex = 0;
+  bool _isLoggedIn = true;  // Assuming the user is logged in
 
   final List<Order> orders = [
     Order("#CM9801", "Natali Craig", "Landing Page", "Meadow Lane Oakland", "Just now", "In Progress", Colors.purple.shade100, Colors.purple),
@@ -30,6 +32,12 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
     Order("#CM9804", "Orlando Diggs", "Admin Dashboard", "Washburn Baton Rouge", "Yesterday", "Approved", Colors.yellow.shade100, Colors.yellow),
     Order("#CM9805", "Andi Lane", "App Landing Page", "Nest Lane Olivette", "Feb 2, 2024", "Rejected", Colors.grey.shade300, Colors.grey),
   ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,13 +52,13 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: (defaultTargetPlatform == TargetPlatform.android ||
-                defaultTargetPlatform == TargetPlatform.iOS)
+            defaultTargetPlatform == TargetPlatform.iOS)
             ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
-                onPressed: () {
-                  Navigator.pop(context);  // Directly pop without confirmation
-                },
-              )
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            Navigator.pop(context);  // Directly pop without confirmation
+          },
+        )
             : const SizedBox(),
         actions: [
           IconButton(
@@ -68,24 +76,12 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
         },
       ),
       bottomNavigationBar: isMobile
-          ? BottomNavigationBar(
-              type: BottomNavigationBarType.fixed,
-              selectedItemColor: Colors.purple,
-              unselectedItemColor: Colors.grey,
-              currentIndex: _currentIndex,
-              onTap: (index) {
-                setState(() {
-                  _currentIndex = index;
-                });
-              },
-              items: const [
-                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-                BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-                BottomNavigationBarItem(icon: Icon(Icons.notifications), label: 'Notifications'),
-                BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
-                BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-              ],
-            )
+          ? MobileNavigationBar(
+        selectedIndex: _currentIndex,
+        onItemTapped: _onItemTapped,
+        isLoggedIn: _isLoggedIn,
+        role:'manager',
+      )
           : null,
     );
   }
@@ -116,8 +112,8 @@ class _FadeInOrderCardState extends State<FadeInOrderCard> with TickerProviderSt
       parent: _controller,
       curve: Curves.easeIn,
     )..addListener(() {
-        setState(() {});
-      });
+      setState(() {});
+    });
     Future.delayed(Duration(milliseconds: widget.index * 100), () {
       _controller.forward();
     });
