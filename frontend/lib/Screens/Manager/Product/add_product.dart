@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
 class Add_Product extends StatelessWidget {
   const Add_Product({super.key});
@@ -31,12 +32,12 @@ class _NewProductScreenState extends State<NewProductScreen> {
         title: Text("New Product", style: TextStyle(fontWeight: FontWeight.bold)),
         leading: isMobile
             ? IconButton(
-                icon: Icon(Icons.arrow_back),
-                onPressed: () {
-                  Navigator.pop(context);  // Directly pop without confirmation
-                },
-              )
-            : null, // Hide back button on web
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        )
+            : null,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -54,7 +55,6 @@ class _NewProductScreenState extends State<NewProductScreen> {
               Center(
                 child: ElevatedButton(
                   onPressed: () {
-                    // Xử lý khi nhấn nút Lưu
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.purpleAccent,
@@ -71,18 +71,14 @@ class _NewProductScreenState extends State<NewProductScreen> {
         ),
       ),
       bottomNavigationBar: isMobile
-          ? BottomNavigationBar(
-              type: BottomNavigationBarType.fixed,
-              selectedItemColor: Colors.purpleAccent,
-              unselectedItemColor: Colors.black54,
-              items: [
-                BottomNavigationBarItem(icon: Icon(Icons.home), label: ""),
-                BottomNavigationBarItem(icon: Icon(Icons.history), label: ""),
-                BottomNavigationBarItem(icon: Icon(Icons.notifications), label: ""),
-                BottomNavigationBarItem(icon: Icon(Icons.settings), label: ""),
-                BottomNavigationBarItem(icon: Icon(Icons.person), label: ""),
-              ],
-            )
+          ? MobileNavigationBar(
+        selectedIndex: 0,
+        onItemTapped: (index) {
+          print("Tapped on item: $index");
+        },
+        isLoggedIn: true,
+        role:'manager',
+      )
           : null,
     );
   }
@@ -124,10 +120,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
               isExpanded: true,
               icon: Icon(Icons.arrow_drop_down),
               items: categories.map((String category) {
-                return DropdownMenuItem<String>(
-                  value: category,
-                  child: Text(category),
-                );
+                return DropdownMenuItem<String>(value: category, child: Text(category));
               }).toList(),
               onChanged: (newValue) {
                 setState(() {

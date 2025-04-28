@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
 class Delete_Product extends StatelessWidget {
   const Delete_Product({super.key});
@@ -51,7 +52,7 @@ class _SuccessScreenState extends State<SuccessScreen> with SingleTickerProvider
   }
 
   Future<bool> _onWillPop() async {
-    Navigator.pop(context);  // Directly pop without confirmation
+    Navigator.pop(context);
     return false;
   }
 
@@ -105,34 +106,14 @@ class _SuccessScreenState extends State<SuccessScreen> with SingleTickerProvider
           ),
         ),
         bottomNavigationBar: isMobile
-            ? BottomNavigationBar(
-                selectedItemColor: Colors.purple,
-                unselectedItemColor: Colors.black,
-                showSelectedLabels: false,
-                showUnselectedLabels: false,
-                items: const [
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.home),
-                    label: "Home",
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.history),
-                    label: "History",
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.notifications),
-                    label: "Notifications",
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.settings),
-                    label: "Settings",
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.person),
-                    label: "Profile",
-                  ),
-                ],
-              )
+            ? MobileNavigationBar(
+          selectedIndex: 0,
+          onItemTapped: (index) {
+            print("Tapped on item: $index");
+          },
+          isLoggedIn: true,
+          role:'manager',
+        )
             : null,
       ),
     );

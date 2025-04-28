@@ -1,15 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
 class CouponManagement extends StatelessWidget {
   const CouponManagement({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: ResponsiveCouponScreen(),
-    );
+    // BỎ MaterialApp ở đây
+    return const ResponsiveCouponScreen();
   }
 }
 
@@ -21,20 +20,32 @@ class ResponsiveCouponScreen extends StatefulWidget {
 }
 
 class _ResponsiveCouponScreenState extends State<ResponsiveCouponScreen> {
+  int _selectedIndex = 0;
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  Future<bool> _onWillPop() async {
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () async {
-        // Không hiển thị dialog xác nhận khi back
-        return true;  // Quay lại ngay lập tức mà không hỏi
-      },
+      onWillPop: _onWillPop,
       child: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth < 600) {
             return MobileCouponScreen(
               onBackPressed: () {
-                Navigator.of(context).pop();  // Trở lại ngay mà không hỏi
+                Navigator.of(context).maybePop();
               },
+              selectedIndex: _selectedIndex,
+              onItemTapped: _onItemTapped,
+              isLoggedIn: true,
             );
           } else {
             return const WebCouponScreen();
@@ -47,7 +58,17 @@ class _ResponsiveCouponScreenState extends State<ResponsiveCouponScreen> {
 
 class MobileCouponScreen extends StatelessWidget {
   final VoidCallback onBackPressed;
-  const MobileCouponScreen({super.key, required this.onBackPressed});
+  final int selectedIndex;
+  final Function(int) onItemTapped;
+  final bool isLoggedIn;
+
+  const MobileCouponScreen({
+    super.key,
+    required this.onBackPressed,
+    required this.selectedIndex,
+    required this.onItemTapped,
+    required this.isLoggedIn,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -71,7 +92,12 @@ class MobileCouponScreen extends StatelessWidget {
       ),
       backgroundColor: Colors.white,
       body: const CouponContent(),
-      bottomNavigationBar: const BottomNavBar(),
+      bottomNavigationBar: MobileNavigationBar(
+        selectedIndex: selectedIndex,
+        onItemTapped: onItemTapped,
+        isLoggedIn: isLoggedIn,
+        role: 'manager',
+      ),
     );
   }
 }
@@ -85,7 +111,7 @@ class WebCouponScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        automaticallyImplyLeading: false, // Ẩn nút back trên web
+        automaticallyImplyLeading: false,
         title: const Text(
           "Coupon Management",
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
@@ -104,27 +130,6 @@ class WebCouponScreen extends StatelessWidget {
           child: const CouponContent(),
         ),
       ),
-    );
-  }
-}
-
-class BottomNavBar extends StatelessWidget {
-  const BottomNavBar({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      selectedItemColor: Colors.purple,
-      unselectedItemColor: Colors.black,
-      showSelectedLabels: false,
-      showUnselectedLabels: false,
-      items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-        BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
-        BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Notifications"),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
-        BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-      ],
     );
   }
 }

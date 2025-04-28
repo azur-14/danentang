@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
 class BanUserScreen extends StatelessWidget {
   const BanUserScreen({super.key});
@@ -100,6 +101,14 @@ class BannedSuccessScreen extends StatelessWidget {
           ),
         ),
       ),
+      bottomNavigationBar: MobileNavigationBar(
+        selectedIndex: 1,
+        onItemTapped: (index) {
+          print("Tapped on item: $index");
+        },
+        isLoggedIn: true,
+        role: 'manager',
+      ),
     );
   }
 }
@@ -129,9 +138,9 @@ class MainScreen extends StatelessWidget {
                 transitionDuration: const Duration(milliseconds: 600),
                 pageBuilder: (context, animation, secondaryAnimation) =>
                     FadeTransition(
-                  opacity: animation,
-                  child: const BannedSuccessScreen(),
-                ),
+                      opacity: animation,
+                      child: const BannedSuccessScreen(),
+                    ),
                 transitionsBuilder: (context, animation, secondaryAnimation, child) {
                   return ScaleTransition(
                     scale: CurvedAnimation(
@@ -150,6 +159,15 @@ class MainScreen extends StatelessWidget {
           icon: const Icon(Icons.block),
           label: const Text("Ban User"),
         ),
+      ),
+      bottomNavigationBar: MobileNavigationBar(
+        selectedIndex: 0,
+        onItemTapped: (index) {
+          // Handle the item tap
+          print("Tapped on item: $index");
+        },
+        isLoggedIn: true,
+        role: 'manager',
       ),
     );
   }

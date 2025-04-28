@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:danentang/Screens/Manager/Support/customer_service.dart';
+import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
 class Customer_Support extends StatelessWidget {
   const Customer_Support({super.key});
@@ -14,8 +15,21 @@ class Customer_Support extends StatelessWidget {
   }
 }
 
-class CustomerSupportScreen extends StatelessWidget {
+class CustomerSupportScreen extends StatefulWidget {
   const CustomerSupportScreen({super.key});
+
+  @override
+  _CustomerSupportScreenState createState() => _CustomerSupportScreenState();
+}
+
+class _CustomerSupportScreenState extends State<CustomerSupportScreen> {
+  int _selectedIndex = 0;
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,12 +44,12 @@ class CustomerSupportScreen extends StatelessWidget {
         centerTitle: true,
         leading: isMobile
             ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
-                onPressed: () {
-                  Navigator.of(context).pop(); // Quay lại mà không hỏi xác nhận
-                },
-              )
-            : const SizedBox(), // Ẩn trên Web/Desktop
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        )
+            : const SizedBox(),
         title: const Text(
           "Customer Support",
           style: TextStyle(
@@ -58,18 +72,11 @@ class CustomerSupportScreen extends StatelessWidget {
       bottomNavigationBar: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth < 600) {
-            return BottomNavigationBar(
-              selectedItemColor: Colors.purple,
-              unselectedItemColor: Colors.black,
-              showSelectedLabels: false,
-              showUnselectedLabels: false,
-              items: [
-                BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-                BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
-                BottomNavigationBarItem(icon: Icon(Icons.notifications), label: "Notifications"),
-                BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
-                BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
-              ],
+            return MobileNavigationBar(
+              selectedIndex: _selectedIndex,
+              onItemTapped: _onItemTapped,
+              isLoggedIn: true,
+              role: 'manager',
             );
           } else {
             return SizedBox.shrink();
