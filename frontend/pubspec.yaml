@@ -82,6 +82,8 @@ flutter:
     - assets/Manager/Avatar/avatar04.jpg
     - assets/Manager/Avatar/avatar05.jpg
     - assets/images/banner2.jpg
+    - assets/images/banner1.jpg
+    - assets/images/banner3.jpg
     - assets/images/voucher1.jpg
     - assets/images/voucher2.jpg
   # An image asset can refer to one or more resolution-specific "variants", see

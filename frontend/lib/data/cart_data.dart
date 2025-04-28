@@ -4,25 +4,55 @@ import 'package:danentang/models/CartItem.dart';
 class CartData {
   static final List<Product> products = [
     Product(
+      id: '1',
       name: "Dell XPS 13",
-      price: "45000",
-      discount: "0",
-      imageUrl: 'assets/images/laptop.jpg',
-      rating: 4.8,
+      brand: "Dell",
+      description: "Powerful ultrabook",
+      price: 45000.0, // Price in VND
+      discountPercentage: 10, // Discount percentage
+      categoryId: 'laptop',
+      images: [
+        ProductImage(url: 'assets/images/laptop.jpg', sortOrder: 1),
+      ],
+      variants: [
+        ProductVariant(variantName: "13-inch", additionalPrice: 0.0, inventory: 5),
+      ],
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
     Product(
+      id: '2',
       name: "LG UltraWide Monitor",
-      price: "45000",
-      discount: "0",
-      imageUrl: 'assets/images/monitor.jpg',
-      rating: 4.7,
+      brand: "LG",
+      description: "34-inch ultrawide monitor",
+      price: 45000.0,
+      discountPercentage: 5,
+      categoryId: 'monitor',
+      images: [
+        ProductImage(url: 'assets/images/monitor.jpg', sortOrder: 1),
+      ],
+      variants: [
+        ProductVariant(variantName: "34-inch", additionalPrice: 0.0, inventory: 8),
+      ],
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
     Product(
+      id: '3',
       name: "Logitech Mechanical Keyboard",
-      price: "45000",
-      discount: "0",
-      imageUrl: 'assets/images/keyboard.jpg',
-      rating: 4.6,
+      brand: "Logitech",
+      description: "Mechanical keyboard for gamers",
+      price: 45000.0,
+      discountPercentage: 0,
+      categoryId: 'keyboard',
+      images: [
+        ProductImage(url: 'assets/images/keyboard.jpg', sortOrder: 1),
+      ],
+      variants: [
+        ProductVariant(variantName: "Mechanical", additionalPrice: 0.0, inventory: 10),
+      ],
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     ),
   ];
 

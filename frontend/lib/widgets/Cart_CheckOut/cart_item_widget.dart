@@ -19,6 +19,8 @@ class CartItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final discountedPrice = item.product.price * (1 - item.product.discountPercentage / 100);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Card(
@@ -39,7 +41,9 @@ class CartItemWidget extends StatelessWidget {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
                   image: DecorationImage(
-                    image: AssetImage(item.product.imageUrl),
+                    image: NetworkImage(item.product.images.isNotEmpty
+                        ? item.product.images[0].url
+                        : 'https://via.placeholder.com/150'), // Fallback nếu không có ảnh
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -81,9 +85,27 @@ class CartItemWidget extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          "₫${item.product.price}.000",
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "₫${discountedPrice.toStringAsFixed(0)}",
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red,
+                              ),
+                            ),
+                            if (item.product.discountPercentage > 0)
+                              Text(
+                                "₫${item.product.price.toStringAsFixed(0)}",
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  decoration: TextDecoration.lineThrough,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                          ],
                         ),
                         Row(
                           children: [

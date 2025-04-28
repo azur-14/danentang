@@ -8,8 +8,10 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const double cardWidth = 180; // Chiều rộng cố định
-    const double cardHeight = 250; // Chiều cao cố định
+    const double cardWidth = 180;
+    const double cardHeight = 250;
+
+    final discountedPrice = product.price * (1 - product.discountPercentage / 100);
 
     return SizedBox(
       width: cardWidth,
@@ -25,44 +27,40 @@ class ProductCard extends StatelessWidget {
               Stack(
                 children: [
                   Container(
-                    height: 150, // Chiều cao cố định cho hình ảnh
+                    height: 150,
                     width: double.infinity,
                     decoration: BoxDecoration(
                       borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
                       image: DecorationImage(
-                        image: NetworkImage(product.imageUrl),
+                        image: NetworkImage(
+                          product.images.isNotEmpty
+                              ? product.images[0].url
+                              : 'https://via.placeholder.com/150', // fallback nếu thiếu ảnh
+                        ),
                         fit: BoxFit.cover,
-                        onError: (exception, stackTrace) {},
-                      ),
-                    ),
-                    child: product.imageUrl.isNotEmpty
-                        ? null
-                        : Container(
-                      color: Colors.grey[300],
-                      child: const Center(
-                        child: Icon(Icons.broken_image, color: Colors.grey),
                       ),
                     ),
                   ),
-                  Positioned(
-                    top: 8,
-                    left: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.purple,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        product.discount,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                  if (product.discountPercentage > 0)
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '-${product.discountPercentage}%',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
-                  ),
                   const Positioned(
                     top: 8,
                     right: 8,
@@ -75,7 +73,7 @@ class ProductCard extends StatelessWidget {
                   padding: const EdgeInsets.all(8.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.end, // Đẩy toàn bộ nội dung xuống dưới
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Text(
                         product.name,
@@ -86,25 +84,27 @@ class ProductCard extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      const SizedBox(height: 4),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            "₦${product.price}",
+                            '₫${discountedPrice.toStringAsFixed(0)}',
                             style: const TextStyle(
-                              color: Colors.black,
+                              color: Colors.red,
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Text(
-                            _calculateOriginalPrice(product.price),
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 12,
-                              decoration: TextDecoration.lineThrough,
+                          if (product.discountPercentage > 0)
+                            Text(
+                              '₫${product.price.toStringAsFixed(0)}',
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                                decoration: TextDecoration.lineThrough,
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ],
@@ -116,16 +116,5 @@ class ProductCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _calculateOriginalPrice(String price) {
-    try {
-      final cleanPrice = price.replaceAll('₦', '').replaceAll(',', '');
-      final priceValue = int.parse(cleanPrice);
-      final originalPrice = (priceValue * 1.22).toInt();
-      return "₦$originalPrice";
-    } catch (e) {
-      return "₦0";
-    }
   }
 }

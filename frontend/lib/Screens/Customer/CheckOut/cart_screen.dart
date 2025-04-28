@@ -32,8 +32,8 @@ class _CartScreenState extends State<CartScreenCheckOut> {
   double get subtotal => cartItems
       .where((item) => item.isSelected)
       .fold(0, (sum, item) {
-    final price = double.parse(item.product.price);
-    return sum + (price * item.quantity);
+    final discountedPrice = item.product.price * (1 - item.product.discountPercentage / 100);
+    return sum + (discountedPrice * item.quantity);
   });
 
   double get discount => applyPoints ? 60000 : 0;

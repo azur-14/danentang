@@ -1,4 +1,4 @@
-using MongoDB.Bson;
+﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace ProductManagementService.Models
@@ -9,12 +9,14 @@ namespace ProductManagementService.Models
         [BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; }
 
+        // Sử dụng ObjectId thay vì string cho ProductId
         [BsonElement("product_id")]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string ProductId { get; set; }
+        public ObjectId ProductId { get; set; }
 
+        // Sử dụng ObjectId thay vì string cho TagId
         [BsonElement("tag_id")]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string TagId { get; set; }
+        public ObjectId TagId { get; set; }
     }
 }
