@@ -34,10 +34,10 @@ class _NewProductScreenState extends State<NewProductScreen> {
             ? IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.pop(context);  // Directly pop without confirmation
+            Navigator.pop(context);
           },
         )
-            : null, // Hide back button on web
+            : null,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -55,7 +55,6 @@ class _NewProductScreenState extends State<NewProductScreen> {
               Center(
                 child: ElevatedButton(
                   onPressed: () {
-                    // Xử lý khi nhấn nút Lưu
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.purpleAccent,
@@ -78,6 +77,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
           print("Tapped on item: $index");
         },
         isLoggedIn: true,
+        role:'manager',
       )
           : null,
     );

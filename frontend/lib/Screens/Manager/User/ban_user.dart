@@ -106,7 +106,8 @@ class BannedSuccessScreen extends StatelessWidget {
         onItemTapped: (index) {
           print("Tapped on item: $index");
         },
-        isLoggedIn: true, // Adjust based on login state
+        isLoggedIn: true,
+        role: 'manager',
       ),
     );
   }
@@ -166,6 +167,7 @@ class MainScreen extends StatelessWidget {
           print("Tapped on item: $index");
         },
         isLoggedIn: true,
+        role: 'manager',
       ),
     );
   }

@@ -87,12 +87,13 @@ class _CustomerServiceScreenState extends State<CustomerServiceScreen> {
         builder: (context, constraints) {
           if (constraints.maxWidth < 600) {
             return MobileNavigationBar(
-              selectedIndex: _selectedIndex, // Pass selectedIndex
-              onItemTapped: _onItemTapped, // Pass the callback for item taps
-              isLoggedIn: true, // Set the login status (you can update this based on your actual logic)
+              selectedIndex: _selectedIndex,
+              onItemTapped: _onItemTapped,
+              isLoggedIn: true,
+              role: 'manager',
             );
           } else {
-            return SizedBox.shrink(); // Ẩn BottomNavigationBar trên web
+            return SizedBox.shrink();
           }
         },
       ),

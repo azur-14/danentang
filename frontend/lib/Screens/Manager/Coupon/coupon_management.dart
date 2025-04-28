@@ -7,10 +7,8 @@ class CouponManagement extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: ResponsiveCouponScreen(),
-    );
+    // BỎ MaterialApp ở đây
+    return const ResponsiveCouponScreen();
   }
 }
 
@@ -43,7 +41,7 @@ class _ResponsiveCouponScreenState extends State<ResponsiveCouponScreen> {
           if (constraints.maxWidth < 600) {
             return MobileCouponScreen(
               onBackPressed: () {
-                Navigator.of(context).pop(); // Navigate back
+                Navigator.of(context).maybePop();
               },
               selectedIndex: _selectedIndex,
               onItemTapped: _onItemTapped,
@@ -80,7 +78,7 @@ class MobileCouponScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: onBackPressed, // Back button callback
+          onPressed: onBackPressed,
         ),
         title: const Text(
           "Coupon Management",
@@ -98,6 +96,7 @@ class MobileCouponScreen extends StatelessWidget {
         selectedIndex: selectedIndex,
         onItemTapped: onItemTapped,
         isLoggedIn: isLoggedIn,
+        role: 'manager',
       ),
     );
   }

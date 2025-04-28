@@ -84,7 +84,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> with 
         opacity: _fadeAnimation,
         child: ScaleTransition(
           scale: _scaleAnimation,
-          child: SingleChildScrollView( // Wrap content in a scrollable view
+          child: SingleChildScrollView(
             child: Column(
               children: [
                 _buildProductSection('Latest Product', 'View All'),
@@ -92,8 +92,8 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> with 
                 const SizedBox(height: 10),
                 _buildProductSection('Danh Sách Sản Phẩm Được Bổ Sung', ''),
                 ListView(
-                  shrinkWrap: true, // Prevent the ListView from overflowing
-                  physics: NeverScrollableScrollPhysics(), // Disable scrolling in this part, handled by SingleChildScrollView
+                  shrinkWrap: true,
+                  physics: NeverScrollableScrollPhysics(),
                   children: [
                     _buildProductItem('Laptop Dell', 'Color: Black, BB - 12 - 345', 300),
                     _buildProductItem('MacBook Pro', 'Color: Silver, CC - 78 - 910', 1500),
@@ -114,7 +114,8 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> with 
             _currentIndex = index;
           });
         },
-        isLoggedIn: true, // 👈 tuỳ trạng thái đăng nhập
+        isLoggedIn: true,
+        role:'manager',
       )
           : null,
     );

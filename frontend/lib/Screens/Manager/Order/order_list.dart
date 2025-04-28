@@ -79,7 +79,8 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
           ? MobileNavigationBar(
         selectedIndex: _currentIndex,
         onItemTapped: _onItemTapped,
-        isLoggedIn: _isLoggedIn,  // Add this argument
+        isLoggedIn: _isLoggedIn,
+        role:'manager',
       )
           : null,
     );

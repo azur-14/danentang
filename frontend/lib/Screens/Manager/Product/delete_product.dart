@@ -112,6 +112,7 @@ class _SuccessScreenState extends State<SuccessScreen> with SingleTickerProvider
             print("Tapped on item: $index");
           },
           isLoggedIn: true,
+          role:'manager',
         )
             : null,
       ),

@@ -68,12 +68,12 @@ class NoInternetScreen extends StatelessWidget {
       ),
       bottomNavigationBar: isMobile
           ? MobileNavigationBar(
-        selectedIndex: 0, // Adjust the selected index based on your needs
+        selectedIndex: 0,
         onItemTapped: (index) {
-          // Handle navigation or state change when tapping on an item
           print("Tapped on item: $index");
         },
-        isLoggedIn: true, // Set based on your app's login status
+        isLoggedIn: true,
+        role:'true',
       )
           : null,
     );

@@ -2,7 +2,7 @@ import 'package:danentang/Screens/Manager/User/user_information.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:danentang/Screens/Manager/User/user_details.dart';
-import '../../../widgets/Footer/mobile_navigation_bar.dart';  // Đảm bảo rằng bạn đã import đúng
+import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
 class UserListScreen extends StatefulWidget {
   const UserListScreen({super.key});
@@ -15,16 +15,23 @@ class _UserListScreenState extends State<UserListScreen> {
   int _currentIndex = 0;
 
   final List<User> users = [
-    User("ByeWind", "byewind@twitter.com", "Meadow Lane Oakland", "Just now", "assets/Manager/Avatar/avatar01.jpg"),
-    User("Kate Morrison", "melody@altbox.com", "Larry San Francisco", "A minute ago", "assets/Manager/Avatar/avatar02.jpg"),
-    User("Drew Cano", "max@kt.com", "Bagwell Avenue Ocala", "1 hour ago", "assets/Manager/Avatar/avatar03.png"),
-    User("Orlando Diggs", "sean@delito.com", "Washburn Baton Rouge", "Yesterday", "assets/Manager/Avatar/avatar04.jpg"),
-    User("Andi Lane", "brian@exchange.com", "Nest Lane Olivette", "Feb 2, 2024", "assets/Manager/Avatar/avatar05.jpg"),
+    User("ByeWind", "byewind@twitter.com", "Meadow Lane Oakland", "Just now",
+        "assets/Manager/Avatar/avatar01.jpg"),
+    User("Kate Morrison", "melody@altbox.com", "Larry San Francisco",
+        "A minute ago", "assets/Manager/Avatar/avatar02.jpg"),
+    User("Drew Cano", "max@kt.com", "Bagwell Avenue Ocala", "1 hour ago",
+        "assets/Manager/Avatar/avatar03.png"),
+    User(
+        "Orlando Diggs", "sean@delito.com", "Washburn Baton Rouge", "Yesterday",
+        "assets/Manager/Avatar/avatar04.jpg"),
+    User("Andi Lane", "brian@exchange.com", "Nest Lane Olivette", "Feb 2, 2024",
+        "assets/Manager/Avatar/avatar05.jpg"),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android;
+    final isMobile = defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.android;
 
     return Scaffold(
       appBar: AppBar(
@@ -67,28 +74,80 @@ class _UserListScreenState extends State<UserListScreen> {
                       onPressed: () {
                         showDialog(
                           context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text("Thông tin"),
-                            content: const Text("Đây là danh sách người dùng với thông tin chi tiết của họ."),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => const UserDetailsScreen()),
-                                  );
-                                },
-                                child: const Text("OK"),
+                          builder: (context) =>
+                              AlertDialog(
+                                title: const Text("Thông tin"),
+                                content: const Text(
+                                    "Đây là danh sách người dùng với thông tin chi tiết của họ."),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (
+                                            context) => const UserDetailsScreen()),
+                                      );
+                                    },
+                                    child: const Text("OK"),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
                         );
                       },
                     ),
-                    IconButton(
+                    PopupMenuButton<int>(
                       icon: const Icon(Icons.more_horiz, color: Colors.black),
-                      onPressed: () {},
+                      color: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      onSelected: (value) {
+                        if (value == 0) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Select selected')),
+                          );
+                        } else if (value == 1) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Select and edit selected')),
+                          );
+                        } else if (value == 2) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Larger avatar layout selected')),
+                          );
+                        }
+                      },
+                      itemBuilder: (context) =>
+                      [
+                        PopupMenuItem(
+                          value: 0,
+                          child: Row(
+                            children: const [
+                              Expanded(child: Text('Select')),
+                              Icon(Icons.check, size: 18, color: Colors.grey),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 1,
+                          child: Row(
+                            children: const [
+                              Expanded(child: Text('Select and edit')),
+                              Icon(Icons.edit, size: 18, color: Colors.grey),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 2,
+                          child: Row(
+                            children: const [
+                              Expanded(child: Text('Larger avatar layout')),
+                              Icon(Icons.person, size: 18, color: Colors.grey),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -116,13 +175,14 @@ class _UserListScreenState extends State<UserListScreen> {
           });
         },
         isLoggedIn: true,
+        role: 'manager',
       )
           : null,
     );
   }
 }
 
-class AnimatedUserCard extends StatefulWidget {
+    class AnimatedUserCard extends StatefulWidget {
   final User user;
   final int delay;
 

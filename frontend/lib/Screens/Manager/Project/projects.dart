@@ -68,7 +68,6 @@ class _ProjectsScreenState extends State<ProjectsScreen> with TickerProviderStat
     super.dispose();
   }
 
-  // Dữ liệu cho overview cards
   final _cards = const [
     {"title": "Total Projects", "value": "29", "change": "+11.02%", "icon": Icons.folder, "color": Colors.purple},
     {"title": "Total Tasks", "value": "715", "change": "-0.03%", "icon": Icons.list, "color": Colors.black},
@@ -84,7 +83,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> with TickerProviderStat
         backgroundColor: Colors.white,
         elevation: 0,
         automaticallyImplyLeading: widget.showBackButton,
-        iconTheme: const IconThemeData(color: Colors.blue),
+        iconTheme: const IconThemeData(color: Colors.black),
         title: const Text(
           "Projects",
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
@@ -138,12 +137,12 @@ class _ProjectsScreenState extends State<ProjectsScreen> with TickerProviderStat
           // TODO: xử lý khi user đổi tab
         },
         isLoggedIn: true,
+        role: 'manager',
       )
           : null,
     );
   }
 
-  /// Wrap-based overview cards để tránh GridView overflow
   Widget _buildOverviewCards(int crossAxisCount) {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -260,7 +259,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> with TickerProviderStat
             final toY = i == 7 ? 26.6 : (10 + i * 2);
             final color = i == 7 ? Colors.orange : Colors.grey;
 
-            final validToY = (toY <= 30 ? toY : 30) as double;
+            final validToY = toY <= 30 ? toY.toDouble() : 30.0;
 
             return BarChartGroupData(
               x: i,

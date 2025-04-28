@@ -11,9 +11,10 @@ import 'package:danentang/Screens/Customer/User/profile_page.dart';
 import 'package:danentang/Screens/Customer/User/personal_info_screen.dart';
 import 'package:danentang/Screens/Customer/User/account_settings_screen.dart';
 
+import 'Screens/Manager/Support/customer_support.dart';
+import 'Screens/Manager/dashboard.dart';
 import 'models/product.dart';
 
-// Các màn hình placeholder để tránh lỗi
 class ProfileScreen extends StatelessWidget {
   final bool isLoggedIn;
   const ProfileScreen({Key? key, required this.isLoggedIn}) : super(key: key);
@@ -114,10 +115,9 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const Signup(email: ""),
     ),
 
-
     GoRoute(
       path: '/',
-      builder: (context, state) => const Placeholder(), // Replace with your home screen
+      builder: (context, state) => const Placeholder(),
     ),
     GoRoute(
       path: '/cart',
@@ -127,7 +127,7 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: '/checkout',
-      builder: (context, state) => const Placeholder(), // Replace with your checkout screen
+      builder: (context, state) => const Placeholder(),
     ),
 
     GoRoute(
@@ -142,6 +142,20 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/account-settings',
       builder: (context, state) => const AccountSettingsScreen(),
+    ),
+
+    //Manager
+    GoRoute(
+      path: '/manager-dashboard',
+      builder: (context, state) => const DashBoard(),
+    ),
+    GoRoute(
+      path: '/customer-service',
+      builder: (context, state) => const Customer_Support(),
+    ),
+    GoRoute(
+      path: '/manager-profile',
+      builder: (context, state) => const ProfileManagementScreen(),
     ),
   ],
 );

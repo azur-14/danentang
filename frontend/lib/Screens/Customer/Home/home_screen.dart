@@ -176,6 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedIndex: selectedIndex,
         onItemTapped: (index) => _onItemTapped(index, context),
         isLoggedIn: user.isLoggedIn,
+        role: 'user',
       ),
     );
   }

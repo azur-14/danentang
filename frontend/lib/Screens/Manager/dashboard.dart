@@ -2,15 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../widgets/Footer/mobile_navigation_bar.dart';
 import 'package:danentang/Screens/Manager/User/user_list.dart';
-import 'package:danentang/Screens/Manager/Report/revenue_report.dart';
-import 'package:danentang/Screens/Manager/Report/oders_report.dart';
-import 'package:danentang/Screens/Manager/Report/user_report.dart';
+
 import 'package:danentang/Screens/Manager/Project/projects.dart';
 import 'package:danentang/Screens/Manager/Product/product_management.dart';
 import 'package:danentang/Screens/Manager/Coupon/coupon_management.dart';
 import 'package:danentang/Screens/Manager/Category/categories_management.dart';
 import 'package:danentang/Screens/Manager/Support/customer_support.dart';
 import 'package:danentang/Screens/Manager/Order/order_list.dart';
+
+import 'Chart/barchart.dart';
+import 'Chart/linechartuser.dart';
+import 'Chart/oderschart.dart';
+import 'Chart/piechart.dart';
+import 'Chart/revenuechart.dart';
+import 'Report/user_report.dart';
 
 class DashBoard extends StatefulWidget {
   const DashBoard({super.key});
@@ -19,9 +24,26 @@ class DashBoard extends StatefulWidget {
   State<DashBoard> createState() => _DashBoardState();
 }
 
-class _DashBoardState extends State<DashBoard> {
+class _DashBoardState extends State<DashBoard> with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
   bool _isLoggedIn = true;
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+
+    _animation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
+
+    _animationController.forward();
+  }
 
   void _onNavBarTapped(int index) {
     setState(() {
@@ -42,11 +64,40 @@ class _DashBoardState extends State<DashBoard> {
           padding: const EdgeInsets.only(bottom: 80),
           children: [
             _buildStatCards(),
-            _buildChartCard('Users Report', _buildLineChartUsers(context)),
-            _buildChartCard('Revenue Report', _buildRevenueChart(context)),
-            _buildChartCard('Orders Report', _buildOrdersChart(context)),
-            _buildChartCard('Best-Selling Products Report', _buildBarChart()),
-            _buildChartCard('Total Sales Report', _buildPieChart()),
+            LineChartUser(spots: const [
+              FlSpot(0, 1),
+              FlSpot(1, 3),
+              FlSpot(2, 2),
+              FlSpot(3, 5),
+              FlSpot(4, 4),
+              FlSpot(5, 6),
+              FlSpot(3, 5),
+              FlSpot(4, 7),
+              FlSpot(8, 5),
+              FlSpot(9, 2),
+              FlSpot(7, 1),
+              FlSpot(9, 7),
+            ],
+              lineColor: Colors.purple,
+            ),
+            RevenueChartWidget(spots: const [
+              FlSpot(0, 50),
+              FlSpot(1, 55),
+              FlSpot(2, 60),
+              FlSpot(3, 62),
+            ],
+              lineColor: Colors.red,
+            ),
+            OrdersChartWidget(spots: const [
+              FlSpot(0, 30),
+              FlSpot(1, 35),
+              FlSpot(2, 50),
+              FlSpot(3, 40),
+            ],
+              lineColor: Colors.blue,
+            ),
+            BarChartWidget(),
+            AnimatedPieChart(),
             _buildManagementSections(context),
           ],
         ),
@@ -58,6 +109,7 @@ class _DashBoardState extends State<DashBoard> {
               selectedIndex: _currentIndex,
               onItemTapped: _onNavBarTapped,
               isLoggedIn: _isLoggedIn,
+              role: 'manager',
             );
           } else {
             return const SizedBox.shrink();
@@ -129,168 +181,6 @@ class _DashBoardState extends State<DashBoard> {
             Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
             chart,
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLineChartUsers(BuildContext context) {
-    return SizedBox(
-      height: 220,
-      child: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 30),
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(show: false),
-                titlesData: FlTitlesData(show: false),
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: const [
-                      FlSpot(0, 1),
-                      FlSpot(1, 3),
-                      FlSpot(2, 2),
-                      FlSpot(3, 5),
-                      FlSpot(4, 4),
-                      FlSpot(5, 6),
-                    ],
-                    isCurved: true,
-                    color: Colors.purple,
-                    barWidth: 3,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            top: 8,
-            right: 8,
-            child: TextButton(
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const UserScreen()));
-              },
-              child: const Text("Xem chi tiết", style: TextStyle(color: Colors.deepPurple)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRevenueChart(BuildContext context) {
-    return SizedBox(
-      height: 220,
-      child: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 30),
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(show: false),
-                titlesData: FlTitlesData(show: false),
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: const [
-                      FlSpot(0, 50),
-                      FlSpot(1, 55),
-                      FlSpot(2, 60),
-                      FlSpot(3, 62),
-                    ],
-                    isCurved: true,
-                    color: Colors.red,
-                    barWidth: 3,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            top: 8,
-            right: 8,
-            child: TextButton(
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => RevenueReport()));
-              },
-              child: const Text("Xem chi tiết", style: TextStyle(color: Colors.deepPurple)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOrdersChart(BuildContext context) {
-    return SizedBox(
-      height: 220,
-      child: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 30),
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(show: false),
-                titlesData: FlTitlesData(show: false),
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: const [
-                      FlSpot(0, 30),
-                      FlSpot(1, 35),
-                      FlSpot(2, 50),
-                      FlSpot(3, 40),
-                    ],
-                    isCurved: true,
-                    color: Colors.blue,
-                    barWidth: 3,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            top: 8,
-            right: 8,
-            child: TextButton(
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => OrdersReport()));
-              },
-              child: const Text("Xem chi tiết", style: TextStyle(color: Colors.deepPurple)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBarChart() {
-    return SizedBox(
-      height: 200,
-      child: BarChart(
-        BarChartData(
-          barGroups: [
-            BarChartGroupData(x: 0, barRods: [BarChartRodData(fromY: 0, toY: 20, color: Colors.grey)]),
-            BarChartGroupData(x: 1, barRods: [BarChartRodData(fromY: 0, toY: 30, color: Colors.grey)]),
-            BarChartGroupData(x: 2, barRods: [BarChartRodData(fromY: 0, toY: 25, color: Colors.grey)]),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPieChart() {
-    return SizedBox(
-      height: 200,
-      child: PieChart(
-        PieChartData(
-          sections: [
-            PieChartSectionData(value: 30, color: Colors.green, title: 'Direct'),
-            PieChartSectionData(value: 20, color: Colors.blue, title: 'Affiliate'),
-            PieChartSectionData(value: 15, color: Colors.orange, title: 'Sponsored'),
-            PieChartSectionData(value: 10, color: Colors.yellow, title: 'Email'),
           ],
         ),
       ),

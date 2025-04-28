@@ -3,10 +3,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:danentang/Screens/Manager/dashboard.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
-void main() {
-  runApp(const RevenueReport());
-}
-
 class RevenueReport extends StatelessWidget {
   const RevenueReport({super.key});
 
@@ -102,6 +98,7 @@ class _RevenueScreenState extends State<RevenueScreen> with SingleTickerProvider
               print("Tapped item: $index");
             },
             isLoggedIn: true,
+            role: 'manager',
           )
               : null,
         );
@@ -142,9 +139,52 @@ class _RevenueScreenState extends State<RevenueScreen> with SingleTickerProvider
             aspectRatio: aspectRatio,
             child: LineChart(
               LineChartData(
-                gridData: FlGridData(show: false),
-                titlesData: FlTitlesData(show: false),
-                borderData: FlBorderData(show: false),
+                gridData: FlGridData(
+                  show: true, // Hiển thị các gridlines
+                  drawVerticalLine: true, // Hiển thị các đường dọc
+                  drawHorizontalLine: true, // Hiển thị các đường ngang
+                  getDrawingHorizontalLine: (value) {
+                    return FlLine(
+                      color: Colors.grey,
+                      strokeWidth: 0.5,
+                    );
+                  },
+                  getDrawingVerticalLine: (value) {
+                    return FlLine(
+                      color: Colors.grey,
+                      strokeWidth: 0.5,
+                    );
+                  },
+                ),
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: true, reservedSize: 30),
+                  ),
+                  rightTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  topTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      interval: 1,
+                      getTitlesWidget: (value, meta) {
+                        List<String> months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+                        if (value.toInt() >= 0 && value.toInt() < months.length) {
+                          return Text(months[value.toInt()]);
+                        } else {
+                          return const Text('');
+                        }
+                      },
+                    ),
+                  ),
+                ),
+                borderData: FlBorderData(
+                  show: true, // Hiển thị khung biên
+                  border: Border.all(color: Colors.black, width: 1), // Đặt màu và độ dày của đường viền
+                ),
                 lineBarsData: [
                   LineChartBarData(
                     spots: const [

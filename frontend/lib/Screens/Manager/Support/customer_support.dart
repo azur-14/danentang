@@ -76,6 +76,7 @@ class _CustomerSupportScreenState extends State<CustomerSupportScreen> {
               selectedIndex: _selectedIndex,
               onItemTapped: _onItemTapped,
               isLoggedIn: true,
+              role: 'manager',
             );
           } else {
             return SizedBox.shrink();

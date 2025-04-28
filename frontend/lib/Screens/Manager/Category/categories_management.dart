@@ -50,11 +50,11 @@ class MobileCategoriesScreen extends StatefulWidget {
 }
 
 class _MobileCategoriesScreenState extends State<MobileCategoriesScreen> {
-  int _selectedIndex = 0; // Default selected index
+  int _selectedIndex = 0;
 
   void _onItemTapped(int index) {
     setState(() {
-      _selectedIndex = index; // Update the selected index
+      _selectedIndex = index;
     });
   }
 
@@ -96,7 +96,8 @@ class _MobileCategoriesScreenState extends State<MobileCategoriesScreen> {
       bottomNavigationBar: MobileNavigationBar(
         selectedIndex: _selectedIndex,
         onItemTapped: _onItemTapped,
-        isLoggedIn: true, // Pass this based on your app logic
+        isLoggedIn: true,
+        role: 'manager',
       ),
     );
   }
