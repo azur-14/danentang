@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:animations/animations.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
-class Categories_Management extends StatelessWidget {
-  const Categories_Management({super.key});
+class CategoriesManagement extends StatelessWidget {
+  const CategoriesManagement({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +58,14 @@ class _MobileCategoriesScreenState extends State<MobileCategoriesScreen> {
     });
   }
 
+  void _handleBack(BuildContext context) {
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    } else {
+      Navigator.of(context).maybePop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -71,9 +79,7 @@ class _MobileCategoriesScreenState extends State<MobileCategoriesScreen> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.of(context).maybePop();
-          },
+          onPressed: () => _handleBack(context),
         ),
         actions: [
           IconButton(
@@ -133,6 +139,14 @@ class _MobileCategoriesScreenState extends State<MobileCategoriesScreen> {
 class WebCategoriesScreen extends StatelessWidget {
   const WebCategoriesScreen({super.key});
 
+  void _handleBack(BuildContext context) {
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    } else {
+      Navigator.of(context).maybePop();
+    }
+  }
+
   Widget _categoryTile(String title, IconData icon) {
     return Card(
       elevation: 3,
@@ -153,6 +167,10 @@ class WebCategoriesScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 1,
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => _handleBack(context),
+        ),
         iconTheme: const IconThemeData(color: Colors.black),
       ),
       body: Row(

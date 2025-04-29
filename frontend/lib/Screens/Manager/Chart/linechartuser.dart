@@ -39,7 +39,8 @@ class _LineChartUserState extends State<LineChartUser> with SingleTickerProvider
 
   List<FlSpot> _animatedSpots() {
     return widget.spots.map((spot) {
-      return FlSpot(spot.x, spot.y * _animation.value);
+      // Dịch toàn bộ spot x + 1
+      return FlSpot(spot.x + 1, spot.y * _animation.value);
     }).toList();
   }
 
@@ -60,8 +61,6 @@ class _LineChartUserState extends State<LineChartUser> with SingleTickerProvider
             const SizedBox(height: 10),
             LayoutBuilder(
               builder: (context, constraints) {
-                double chartWidth = constraints.maxWidth;
-
                 return SizedBox(
                   height: 250,
                   child: Padding(
@@ -90,10 +89,10 @@ class _LineChartUserState extends State<LineChartUser> with SingleTickerProvider
                               showTitles: true,
                               interval: 1,
                               getTitlesWidget: (value, meta) {
-                                if (value.toInt() < 12) {
-                                  return Text((value.toInt() + 1).toString());
-                                } else if (value.toInt() == 12) {
-                                  return const Text('Tháng');
+                                if (value == 0 || value == 13) {
+                                  return const Text('');
+                                } else if (value >= 1 && value <= 12) {
+                                  return Text('Tháng ${value.toInt()}');
                                 } else {
                                   return const Text('');
                                 }
@@ -107,18 +106,20 @@ class _LineChartUserState extends State<LineChartUser> with SingleTickerProvider
                         ),
                         lineBarsData: [
                           LineChartBarData(
-                            spots: widget.spots,
+                            spots: _animatedSpots(), // Dùng spots đã animate + dịch
                             isCurved: true,
                             color: widget.lineColor,
-                            barWidth: 5,
+                            barWidth: 3,
                             belowBarData: BarAreaData(show: false),
                             dotData: FlDotData(show: true),
                           ),
                         ],
                         minX: 0,
-                        maxX: 11,
+                        maxX: 13,
                         minY: 0,
-                        maxY: widget.spots.isEmpty ? 10 : widget.spots.map((e) => e.y).reduce((a, b) => a > b ? a : b),
+                        maxY: widget.spots.isEmpty
+                            ? 10
+                            : widget.spots.map((e) => e.y).reduce((a, b) => a > b ? a : b) * 1.2, // Nới maxY thêm 20%
                       ),
                     ),
                   ),

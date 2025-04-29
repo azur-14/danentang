@@ -192,7 +192,7 @@ class _DashBoardState extends State<DashBoard> with SingleTickerProviderStateMix
       {"title": "Projects Management", "screen": Projects()},
       {"title": "Product Management", "screen": ProductManagementScreen()},
       {"title": "Coupon Management", "screen": CouponManagement()},
-      {"title": "Manage Categories", "screen": Categories_Management()},
+      {"title": "Manage Categories", "screen": CategoriesManagement()},
       {"title": "User Management", "screen": UserListScreen()},
       {"title": "Orders Management", "screen": OrdersListScreen()},
       {"title": "Customer Support", "screen": CustomerSupportScreen()},
