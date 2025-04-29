@@ -1,9 +1,11 @@
-import 'package:danentang/Screens/Manager/dashboard.dart';
+import 'package:danentang/Screens/Manager/DashBoard/MobileDashboard.dart';
 import 'package:flutter/material.dart';
 import 'package:danentang/Screens/Customer/Login/Login_Screen.dart';
 import 'package:danentang/Screens/Customer/Login/Login_SignUp_Screen.dart';
 import 'package:danentang/Screens/Customer/Login/SignUp.dart';
 import 'package:danentang/Screens/Customer/User/profile_page.dart';
+
+import 'Screens/Manager/main.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,7 +23,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       debugShowCheckedModeBanner: false,
-      home: DashBoard(),
+      home: DashboardResponsive(),
     );
   }
 }

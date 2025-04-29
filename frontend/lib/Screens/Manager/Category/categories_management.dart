@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:animations/animations.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
@@ -77,7 +78,10 @@ class _MobileCategoriesScreenState extends State<MobileCategoriesScreen> {
           "Categories Management",
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
-        leading: IconButton(
+        automaticallyImplyLeading: !kIsWeb,
+        leading: kIsWeb
+            ? null
+            : IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => _handleBack(context),
         ),
@@ -139,14 +143,6 @@ class _MobileCategoriesScreenState extends State<MobileCategoriesScreen> {
 class WebCategoriesScreen extends StatelessWidget {
   const WebCategoriesScreen({super.key});
 
-  void _handleBack(BuildContext context) {
-    if (Navigator.canPop(context)) {
-      Navigator.pop(context);
-    } else {
-      Navigator.of(context).maybePop();
-    }
-  }
-
   Widget _categoryTile(String title, IconData icon) {
     return Card(
       elevation: 3,
@@ -163,15 +159,14 @@ class WebCategoriesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Categories Management", style: TextStyle(color: Colors.black)),
+        title: const Text(
+          "Categories Management",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         elevation: 1,
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => _handleBack(context),
-        ),
-        iconTheme: const IconThemeData(color: Colors.black),
+        automaticallyImplyLeading: false,
       ),
       body: Row(
         children: [

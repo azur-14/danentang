@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../widgets/Footer/mobile_navigation_bar.dart';
+import '../../../widgets/Footer/mobile_navigation_bar.dart';
 import 'package:danentang/Screens/Manager/User/user_list.dart';
 
 import 'package:danentang/Screens/Manager/Project/projects.dart';
@@ -10,25 +10,24 @@ import 'package:danentang/Screens/Manager/Category/categories_management.dart';
 import 'package:danentang/Screens/Manager/Support/customer_support.dart';
 import 'package:danentang/Screens/Manager/Order/order_list.dart';
 
-import 'Chart/barchart.dart';
-import 'Chart/linechartuser.dart';
-import 'Chart/oderschart.dart';
-import 'Chart/piechart.dart';
-import 'Chart/revenuechart.dart';
-import 'Report/user_report.dart';
+import '../Chart/barchart.dart';
+import '../Chart/linechartuser.dart';
+import '../Chart/oderschart.dart';
+import '../Chart/piechart.dart';
+import '../Chart/revenuechart.dart';
+import '../Report/user_report.dart';
 
-class DashBoard extends StatefulWidget {
-  const DashBoard({super.key});
+class MobileDashboard extends StatefulWidget {
+  const MobileDashboard({super.key});
 
   @override
-  State<DashBoard> createState() => _DashBoardState();
+  State<MobileDashboard> createState() => _MobileDashboardState();
 }
 
-class _DashBoardState extends State<DashBoard> with SingleTickerProviderStateMixin {
+class _MobileDashboardState extends State<MobileDashboard> with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
   bool _isLoggedIn = true;
   late AnimationController _animationController;
-  late Animation<double> _animation;
 
   @override
   void initState() {
@@ -38,9 +37,6 @@ class _DashBoardState extends State<DashBoard> with SingleTickerProviderStateMix
       duration: const Duration(seconds: 2),
     );
 
-    _animation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-    );
 
     _animationController.forward();
   }
@@ -59,43 +55,40 @@ class _DashBoardState extends State<DashBoard> with SingleTickerProviderStateMix
         backgroundColor: Colors.deepPurple,
         centerTitle: true,
       ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.deepPurple),
+              child: Text('Menu', style: TextStyle(color: Colors.white, fontSize: 24)),
+            ),
+            _drawerItem('Projects Management', Projects()),
+            _drawerItem('Product Management', ProductManagementScreen()),
+            _drawerItem('Coupon Management', CouponManagement()),
+            _drawerItem('Manage Categories', CategoriesManagement()),
+            _drawerItem('User Management', UserListScreen()),
+            _drawerItem('Orders Management', OrdersListScreen()),
+            _drawerItem('Customer Support', CustomerSupportScreen()),
+          ],
+        ),
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.only(bottom: 80),
           children: [
             _buildStatCards(),
             LineChartUser(spots: const [
-              FlSpot(0, 1),
-              FlSpot(1, 3),
-              FlSpot(2, 2),
-              FlSpot(3, 5),
-              FlSpot(4, 4),
-              FlSpot(5, 6),
-              FlSpot(3, 5),
-              FlSpot(4, 7),
-              FlSpot(8, 5),
-              FlSpot(9, 2),
-              FlSpot(7, 1),
-              FlSpot(9, 7),
-            ],
-              lineColor: Colors.purple,
-            ),
+              FlSpot(0, 1), FlSpot(1, 3), FlSpot(2, 2), FlSpot(3, 5),
+              FlSpot(4, 4), FlSpot(5, 6), FlSpot(3, 5), FlSpot(4, 7),
+              FlSpot(8, 5), FlSpot(9, 2), FlSpot(7, 1), FlSpot(9, 7),
+            ], lineColor: Colors.purple),
             RevenueChartWidget(spots: const [
-              FlSpot(0, 50),
-              FlSpot(1, 55),
-              FlSpot(2, 60),
-              FlSpot(3, 62),
-            ],
-              lineColor: Colors.red,
-            ),
+              FlSpot(0, 50), FlSpot(1, 55), FlSpot(2, 60), FlSpot(3, 62),
+            ], lineColor: Colors.red),
             OrdersChartWidget(spots: const [
-              FlSpot(0, 30),
-              FlSpot(1, 35),
-              FlSpot(2, 50),
-              FlSpot(3, 40),
-            ],
-              lineColor: Colors.blue,
-            ),
+              FlSpot(0, 30), FlSpot(1, 35), FlSpot(2, 50), FlSpot(3, 40),
+            ], lineColor: Colors.blue),
             BarChartWidget(),
             AnimatedPieChart(),
             _buildManagementSections(context),
@@ -116,6 +109,16 @@ class _DashBoardState extends State<DashBoard> with SingleTickerProviderStateMix
           }
         },
       ),
+    );
+  }
+
+  Widget _drawerItem(String title, Widget screen) {
+    return ListTile(
+      title: Text(title),
+      trailing: const Icon(Icons.arrow_forward_ios),
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+      },
     );
   }
 
@@ -166,23 +169,6 @@ class _DashBoardState extends State<DashBoard> with SingleTickerProviderStateMix
           const SizedBox(height: 5),
           Text(percentage, style: const TextStyle(fontSize: 14, color: Colors.black54)),
         ],
-      ),
-    );
-  }
-
-  Widget _buildChartCard(String title, Widget chart) {
-    return Card(
-      margin: const EdgeInsets.all(10),
-      child: Padding(
-        padding: const EdgeInsets.all(10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            chart,
-          ],
-        ),
       ),
     );
   }

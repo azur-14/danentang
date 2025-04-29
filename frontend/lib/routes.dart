@@ -12,7 +12,7 @@ import 'package:danentang/Screens/Customer/User/personal_info_screen.dart';
 import 'package:danentang/Screens/Customer/User/account_settings_screen.dart';
 
 import 'Screens/Manager/Support/customer_support.dart';
-import 'Screens/Manager/dashboard.dart';
+import 'Screens/Manager/DashBoard/MobileDashboard.dart';
 import 'models/product.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -147,7 +147,7 @@ final GoRouter router = GoRouter(
     //Manager
     GoRoute(
       path: '/manager-dashboard',
-      builder: (context, state) => const DashBoard(),
+      builder: (context, state) => const MobileDashboard(),
     ),
     GoRoute(
       path: '/customer-service',

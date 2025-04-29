@@ -1,44 +1,48 @@
-import 'package:danentang/Screens/Manager/User/user_list.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
+import '../User/user_list.dart';
 
-class User_Report extends StatelessWidget {
-  const User_Report({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: const UserScreen(),
-    );
-  }
-}
-
-class UserScreen extends StatefulWidget {
-  const UserScreen({super.key});
+class UserReportScreen extends StatefulWidget {
+  const UserReportScreen({super.key});
 
   @override
-  _UserScreenState createState() => _UserScreenState();
+  _UserReportScreenState createState() => _UserReportScreenState();
 }
 
-class _UserScreenState extends State<UserScreen> {
+class _UserReportScreenState extends State<UserReportScreen> with SingleTickerProviderStateMixin {
   String _selectedPeriod = "Month";
+  late AnimationController _controller;
+  late Animation<double> _animation;
 
-  // Animation Variables
-  double _opacity = 0.0;
-  double _scale = 0.8;
+  List<FlSpot> get _spots => [
+    FlSpot(1, 2),
+    FlSpot(2, 4),
+    FlSpot(3, 3),
+    FlSpot(4, 6),
+    FlSpot(5, 5),
+    FlSpot(6, 7),
+  ];
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 100), () {
-      setState(() {
-        _opacity = 1.0;
-        _scale = 1.0;
-      });
-    });
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 2));
+    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  List<FlSpot> _animatedSpots() {
+    final int currentIndex = (_spots.length * _animation.value).toInt();
+    final clampedIndex = currentIndex.clamp(1, _spots.length);
+    return _spots.take(clampedIndex).toList();
   }
 
   @override
@@ -46,15 +50,11 @@ class _UserScreenState extends State<UserScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
-          "Users",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
+        title: const Text("Users", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: (defaultTargetPlatform == TargetPlatform.android ||
-            defaultTargetPlatform == TargetPlatform.iOS)
+        leading: (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS)
             ? IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
@@ -63,64 +63,39 @@ class _UserScreenState extends State<UserScreen> {
         )
             : const SizedBox(),
       ),
-      body: AnimatedOpacity(
-        opacity: _opacity,
-        duration: const Duration(milliseconds: 500),
-        child: AnimatedScale(
-          scale: _scale,
-          duration: const Duration(milliseconds: 500),
-          child: SingleChildScrollView(
+      body: AnimatedBuilder(
+        animation: _animation,
+        builder: (context, child) {
+          return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildSegmentedControl(),
-                _buildLineChart(context),
+                _buildLineChart(),
                 _buildDetailButton(context),
-                _buildUserSection(title: "New user", users: [
-                  {
-                    "name": "ByeWind",
-                    "date": "Jun 24, 2024",
-                    "avatar": "assets/Manager/Avartar/avatar01.jpg"
-                  },
-                  {
-                    "name": "Natali Craig",
-                    "date": "Mar 10, 2024",
-                    "avatar": "assets/Manager/Avatar/avatar02.jpg"
-                  },
-                  {
-                    "name": "Drew Cano",
-                    "date": "Nov 10, 2024",
-                    "avatar": "assets/Manager/Avatar/avatar03.jpg"
-                  },
-                  {
-                    "name": "Orlando Diggs",
-                    "date": "Dec 20, 2024",
-                    "avatar": "assets/Manager/Avatar/avatar04.jpg"
-                  },
-                  {
-                    "name": "Andi Lane",
-                    "date": "Jul 25, 2024",
-                    "avatar": "assets/Manager/Avatar/avatar05.jpg"
-                  },
+                _buildUserSection(title: "New User", users: [
+                  {"name": "ByeWind", "date": "Jun 24, 2024", "avatar": "assets/Manager/Avartar/avatar01.jpg"},
+                  {"name": "Natali Craig", "date": "Mar 10, 2024", "avatar": "assets/Manager/Avatar/avatar02.jpg"},
+                  {"name": "Drew Cano", "date": "Nov 10, 2024", "avatar": "assets/Manager/Avatar/avatar03.jpg"},
+                  {"name": "Orlando Diggs", "date": "Dec 20, 2024", "avatar": "assets/Manager/Avatar/avatar04.jpg"},
+                  {"name": "Andi Lane", "date": "Jul 25, 2024", "avatar": "assets/Manager/Avatar/avatar05.jpg"},
                 ]),
                 _buildUserSection(title: "User List", users: [
-                  {
-                    "name": "ByeWind",
-                    "date": "Jun 24, 2024",
-                    "avatar": "assets/Manager/Avatar/avatar.jpg"
-                  },
+                  {"name": "ByeWind", "date": "Jun 24, 2024", "avatar": "assets/Manager/Avatar/avatar.jpg"},
                 ]),
               ],
             ),
-          ),
-        ),
+          );
+        },
       ),
-      bottomNavigationBar: MobileNavigationBar(
+      bottomNavigationBar: (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS)
+          ? MobileNavigationBar(
         selectedIndex: 0,
         onItemTapped: (index) {},
         isLoggedIn: true,
         role: 'manager',
-      ),
+      )
+          : null,
     );
   }
 
@@ -158,7 +133,7 @@ class _UserScreenState extends State<UserScreen> {
     );
   }
 
-  Widget _buildLineChart(BuildContext context) {
+  Widget _buildLineChart() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
@@ -168,67 +143,67 @@ class _UserScreenState extends State<UserScreen> {
           boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
         ),
         padding: const EdgeInsets.all(16),
-        child: SizedBox(
-          height: 180,
-          child: LineChart(
-            LineChartData(
-              gridData: FlGridData(show: false),
-              titlesData: FlTitlesData(
-                leftTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false)),
-                rightTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false)),
-                topTitles: AxisTitles(
-                    sideTitles: SideTitles(showTitles: false)),
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    interval: 1,
-                    getTitlesWidget: (value, meta) {
-                      List<String> months = [
-                        'Jan',
-                        'Feb',
-                        'Mar',
-                        'Apr',
-                        'May',
-                        'Jun'
-                      ];
-                      if (value.toInt() >= 0 && value.toInt() < months.length) {
-                        return Text(months[value.toInt()]);
-                      } else {
-                        return const Text('');
-                      }
-                    },
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Điều chỉnh chiều cao của biểu đồ dựa trên kích thước màn hình
+            double chartHeight = constraints.maxWidth > 600 ? 300 : 250; // Kích thước cao hơn cho web
+            return SizedBox(
+              height: chartHeight,
+              child: LineChart(
+                LineChartData(
+                  gridData: FlGridData(show: true),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                        sideTitles: SideTitles(showTitles: true, interval: 2)),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: 1,
+                        getTitlesWidget: (value, meta) {
+                          List<String> months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+                          return Text(
+                            (value >= 0 && value < months.length)
+                                ? months[value.toInt()]
+                                : '',
+                            style: const TextStyle(fontSize: 12),
+                          );
+                        },
+                      ),
+                    ),
+                    rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
+                  borderData: FlBorderData(show: true, border: Border.all(color: Colors.black)),
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: _animatedSpots(),
+                      isCurved: true,
+                      color: Colors.purple,
+                      barWidth: 3,
+                      dotData: FlDotData(show: false),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.purple.withOpacity(0.3),
+                            Colors.purple.withOpacity(0.0),
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              borderData: FlBorderData(show: false),
-              lineBarsData: [
-                LineChartBarData(
-                  spots: [
-                    FlSpot(0, 1),
-                    FlSpot(1, 3),
-                    FlSpot(2, 2),
-                    FlSpot(3, 5),
-                    FlSpot(4, 4),
-                    FlSpot(5, 6),
-                  ],
-                  isCurved: true,
-                  color: Colors.purple,
-                  barWidth: 3,
-                  belowBarData: BarAreaData(show: false),
-                  dotData: FlDotData(show: true),
-                ),
-              ],
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildUserSection(
-      {required String title, required List<Map<String, String>> users}) {
+  Widget _buildUserSection({required String title, required List<Map<String, String>> users}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
@@ -237,8 +212,8 @@ class _UserScreenState extends State<UserScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title, style: const TextStyle(
-                  fontWeight: FontWeight.bold, fontSize: 16)),
+              Text(title,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               if (title == "New user") const Icon(Icons.keyboard_arrow_down),
             ],
           ),
@@ -263,8 +238,9 @@ class _UserScreenState extends State<UserScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(user["name"]!, style: const TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w600)),
+                Text(user["name"]!,
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
                 Text(user["date"]!,
                     style: const TextStyle(fontSize: 13, color: Colors.grey)),
