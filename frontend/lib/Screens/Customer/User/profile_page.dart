@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // Dùng kIsWeb để kiểm tra nền tảng
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:danentang/models/user_model.dart';
+
+//trang nay de tam day thoi ko dung nha
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -50,7 +53,11 @@ class ProfilePage extends StatelessWidget {
                 const SizedBox(width: 8),
                 GestureDetector(
                   onTap: () {
-                    context.push('/personal-info');
+                    if (kIsWeb) {
+                      context.go('/personal-info');
+                    } else {
+                      context.push('/personal-info');
+                    }
                   },
                   child: const Icon(Icons.edit, size: 20, color: Colors.grey),
                 ),
@@ -61,7 +68,6 @@ class ProfilePage extends StatelessWidget {
               title: const Text('Phương thức thanh toán'),
               trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
-                // TODO: Implement payment methods logic
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Payment methods feature coming soon!')),
                 );
@@ -71,7 +77,6 @@ class ProfilePage extends StatelessWidget {
               title: const Text('Đơn hàng của tôi'),
               trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
-                // TODO: Implement orders logic
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Orders feature coming soon!')),
                 );

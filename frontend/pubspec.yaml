@@ -47,6 +47,7 @@ dependencies:
   carousel_slider: ^5.0.0
   animations: ^2.0.11
   image_picker: ^1.1.2
+  badges: ^3.0.3
 
 dev_dependencies:
   flutter_test:
@@ -83,7 +84,7 @@ flutter:
     - assets/Manager/Avatar/avatar05.jpg
     - assets/images/banner2.jpg
     - assets/images/banner1.jpg
-    - assets/images/banner3.jpg
+    - assets/images/banner3.png
     - assets/images/voucher1.jpg
     - assets/images/voucher2.jpg
   # An image asset can refer to one or more resolution-specific "variants", see
