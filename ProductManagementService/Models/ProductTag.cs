@@ -7,16 +7,14 @@ namespace ProductManagementService.Models
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; }
+        public string Id { get; set; } = null!;
 
-        // Sử dụng ObjectId thay vì string cho ProductId
         [BsonElement("product_id")]
         [BsonRepresentation(BsonType.ObjectId)]
-        public ObjectId ProductId { get; set; }
+        public string ProductId { get; set; } = null!;
 
-        // Sử dụng ObjectId thay vì string cho TagId
         [BsonElement("tag_id")]
         [BsonRepresentation(BsonType.ObjectId)]
-        public ObjectId TagId { get; set; }
+        public string TagId { get; set; } = null!;
     }
 }

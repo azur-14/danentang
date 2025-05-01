@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using MongoDB.Bson;
 using MongoDB.Driver;
 using ProductManagementService.Data;
 using ProductManagementService.Models;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ProductManagementService.Controllers
 {
@@ -10,102 +12,60 @@ namespace ProductManagementService.Controllers
     [Route("api/products")]
     public class ProductsController : ControllerBase
     {
-        private readonly MongoDbContext _context;
+        private readonly IMongoCollection<Product> _products;
 
         public ProductsController(MongoDbContext context)
         {
-            _context = context;
+            _products = context.Products;
         }
 
-        // Create a new product
         [HttpPost]
         public async Task<IActionResult> CreateProduct([FromBody] Product product)
         {
             if (product == null)
-            {
                 return BadRequest("Product data is required.");
-            }
 
             product.CreatedAt = DateTime.UtcNow;
             product.UpdatedAt = DateTime.UtcNow;
 
-            // Ensure that the price is stored as decimal and discount as percentage (validate if needed)
             if (product.Price <= 0 || product.DiscountPercentage < 0)
-            {
                 return BadRequest("Invalid price or discount.");
-            }
 
-            await _context.Products.InsertOneAsync(product);
+            await _products.InsertOneAsync(product);
             return Ok(product);
         }
 
-        // Get all products
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            try
-            {
-                var products = await _context.Products.Find(_ => true).ToListAsync();
-                return Ok(products);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            var products = await _products.Find(_ => true).ToListAsync();
+            return Ok(products);
         }
 
-        // Get products by categoryId (using ObjectId)
         [HttpGet("category/{categoryId}")]
         public async Task<IActionResult> GetByCategory(string categoryId)
         {
-            try
-            {
-                var objectId = new ObjectId(categoryId);  // Convert categoryId from string to ObjectId
-                var products = await _context.Products
-                    .Find(p => p.CategoryId == objectId)
-                    .ToListAsync();
+            var products = await _products
+                .Find(p => p.CategoryId == categoryId)
+                .ToListAsync();
 
-                if (products.Count == 0)
-                {
-                    return NotFound($"No products found for category with id {categoryId}.");  // Provide more specific message
-                }
+            if (!products.Any())
+                return NotFound($"No products found for category {categoryId}.");
 
-                return Ok(products);
-            }
-            catch (FormatException)
-            {
-                return BadRequest("Invalid CategoryId format.");
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            return Ok(products);
         }
 
-        // Get product by ID (using ObjectId)
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(string id)
         {
-            try
-            {
-                var objectId = new ObjectId(id);  // Convert id from string to ObjectId
-                var product = await _context.Products.Find(p => p.Id == objectId).FirstOrDefaultAsync();
+            var product = await _products
+                .Find(p => p.Id == id)
+                .FirstOrDefaultAsync();
 
-                if (product == null)
-                {
-                    return NotFound("Product not found.");
-                }
+            if (product == null)
+                return NotFound("Product not found.");
 
-                return Ok(product);
-            }
-            catch (FormatException)
-            {
-                return BadRequest("Invalid ProductId format.");
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            return Ok(product);
         }
     }
 }
