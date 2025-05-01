@@ -1,17 +1,18 @@
+// models/product.dart
 class Product {
   final String id;
-  String name;
-  String? brand;
-  String? description;
-  double price;
-  int discountPercentage;
-  String categoryId;
-  List<ProductImage> images;
-  List<ProductVariant> variants;
+  final String name;
+  final String? brand;
+  final String? description;
+  final double price;
+  final int discountPercentage;
+  final String categoryId;
+  final List<ProductImage> images;
+  final List<ProductVariant> variants;
   final DateTime createdAt;
-  DateTime updatedAt;
+  final DateTime updatedAt;
 
-  Product({
+  const Product({
     required this.id,
     required this.name,
     this.brand,
@@ -36,12 +37,12 @@ class Product {
       categoryId: json['categoryId'] ?? '',
       images: (json['images'] as List<dynamic>?)
           ?.map((img) => ProductImage.fromJson(img))
-          .toList()
-          ?? [],
+          .toList() ??
+          [],
       variants: (json['variants'] as List<dynamic>?)
           ?.map((v) => ProductVariant.fromJson(v))
-          .toList()
-          ?? [],
+          .toList() ??
+          [],
       createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
       updatedAt: DateTime.tryParse(json['updatedAt'] ?? '') ?? DateTime.now(),
     );
@@ -49,10 +50,10 @@ class Product {
 }
 
 class ProductImage {
-  String url;
-  int sortOrder;
+  final String url;
+  final int sortOrder;
 
-  ProductImage({
+  const ProductImage({
     required this.url,
     required this.sortOrder,
   });
@@ -66,11 +67,11 @@ class ProductImage {
 }
 
 class ProductVariant {
-  String variantName;
-  double additionalPrice;
-  int inventory;
+  final String variantName;
+  final double additionalPrice;
+  final int inventory;
 
-  ProductVariant({
+  const ProductVariant({
     required this.variantName,
     required this.additionalPrice,
     required this.inventory,
