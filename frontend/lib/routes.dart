@@ -10,9 +10,12 @@ import 'package:danentang/Screens/Customer/Login/Login_SignUp_Screen.dart';
 import 'package:danentang/Screens/Customer/Login/SignUp.dart';
 import 'package:danentang/Screens/Customer/User/personal_info_screen.dart';
 import 'package:danentang/Screens/Customer/User/account_settings_screen.dart';
-import 'Screens/Manager/Support/customer_support.dart';
-import 'Screens/Manager/dashboard.dart';
-import 'models/product.dart';
+import 'package:danentang/Screens/Manager/Support/customer_support.dart';
+import 'package:danentang/Screens/Manager/DashBoard/MobileDashboard.dart';
+import 'package:danentang/Screens/Customer/Product/test_product_details.dart'; // Import ProductDetailsScreen
+import 'package:danentang/models/product.dart';
+import 'package:danentang/models/ProductRating.dart'; // Import ProductRating
+import 'package:danentang/models/Review.dart'; // Import Review
 
 class ProfileScreen extends StatelessWidget {
   final bool isLoggedIn;
@@ -111,6 +114,21 @@ final GoRouter router = GoRouter(
       },
     ),
 
+    // Product Details
+    GoRoute(
+      path: '/product/:id',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        return ProductDetailsScreen(
+          product: extra['product'] as Product,
+          productRating: extra['productRating'] as ProductRating? ??
+              const ProductRating(averageRating: 0, reviewCount: 0),
+          reviews: extra['reviews'] as List<Review>? ?? [],
+          recommendedProducts: extra['recommendedProducts'] as List<Product>? ?? [],
+        );
+      },
+    ),
+
     // Login & SignUp
     GoRoute(
       path: '/login',
@@ -142,7 +160,7 @@ final GoRouter router = GoRouter(
     // Manager Routes
     GoRoute(
       path: '/manager-dashboard',
-      builder: (context, state) => const DashBoard(),
+      builder: (context, state) => const MobileDashboard(),
     ),
     GoRoute(
       path: '/customer-service',

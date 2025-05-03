@@ -1,93 +1,71 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
-using OrderService.Models;
-
-namespace OrderService.Controllers
+using OrderManagementService.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using OrderManagementService.Data;
+namespace OrderManagementService.Controllers
 {
     [ApiController]
-    [Route("api/orders")]
-    public class OrderController : ControllerBase
+    [Route("api/[controller]")]
+    public class OrdersController : ControllerBase
     {
         private readonly IMongoCollection<Order> _orders;
-        private readonly IMongoCollection<Cart> _carts;
-        private readonly IMongoCollection<Coupon> _coupons;
 
-        public OrderController(IMongoDatabase db)
+        public OrdersController(MongoDbContext context)
         {
-            _orders = db.GetCollection<Order>("orders");
-            _carts = db.GetCollection<Cart>("carts");
-            _coupons = db.GetCollection<Coupon>("coupons");
+            _orders = context.Orders;
         }
 
-        // ✅ Tạo đơn hàng
-        [HttpPost("place")]
-        public async Task<IActionResult> PlaceOrder([FromBody] Order newOrder)
+        [HttpGet]
+        public async Task<ActionResult<List<Order>>> Get() =>
+            await _orders.Find(_ => true).ToListAsync();
+
+        [HttpGet("{id:length(24)}")]
+        public async Task<ActionResult<Order>> Get(string id)
         {
-            // Validate coupon
-            if (!string.IsNullOrEmpty(newOrder.CouponCode))
-            {
-                var coupon = await _coupons.Find(c => c.Code == newOrder.CouponCode).FirstOrDefaultAsync();
-                if (coupon == null || coupon.UsageCount >= coupon.UsageLimit)
-                    return BadRequest("Invalid or expired coupon.");
-
-                // Trừ lượt dùng
-                var update = Builders<Coupon>.Update.Inc(c => c.UsageCount, 1);
-                await _coupons.UpdateOneAsync(c => c.Id == coupon.Id, update);
-            }
-
-            // Gắn thêm thời gian tạo, mã đơn, status
-            newOrder.OrderNumber = "ODR" + DateTime.UtcNow.Ticks;
-            newOrder.CreatedAt = DateTime.UtcNow;
-            newOrder.UpdatedAt = DateTime.UtcNow;
-            newOrder.Status = "pending";
-            newOrder.StatusHistory = new List<OrderStatusHistory> {
-                new OrderStatusHistory { Status = "pending", Timestamp = DateTime.UtcNow }
-            };
-
-            await _orders.InsertOneAsync(newOrder);
-
-            // Xoá giỏ hàng sau khi đặt hàng thành công
-            await _carts.DeleteOneAsync(c => c.UserId == newOrder.UserId);
-
-            return Ok(new { message = "Order placed successfully", orderId = newOrder.Id });
+            var order = await _orders.Find(o => o.Id == id).FirstOrDefaultAsync();
+            if (order == null) return NotFound();
+            return order;
         }
 
-        // ✅ Lấy danh sách đơn theo user
-        [HttpGet("user/{userId}")]
-        public async Task<IActionResult> GetOrdersByUser(string userId)
+        [HttpPost]
+        public async Task<ActionResult<Order>> Create(Order order)
         {
-            var orders = await _orders.Find(o => o.UserId == userId)
-                                      .SortByDescending(o => o.CreatedAt)
-                                      .ToListAsync();
-            return Ok(orders);
+            order.CreatedAt = order.UpdatedAt = System.DateTime.UtcNow;
+            await _orders.InsertOneAsync(order);
+            return CreatedAtAction(nameof(Get), new { id = order.Id }, order);
         }
 
-        // ✅ Xem chi tiết đơn hàng
-        [HttpGet("{orderId}")]
-        public async Task<IActionResult> GetOrderById(string orderId)
+        [HttpPut("{id:length(24)}")]
+        public async Task<IActionResult> Update(string id, Order updated)
         {
-            var order = await _orders.Find(o => o.Id == orderId).FirstOrDefaultAsync();
-            if (order == null) return NotFound("Order not found.");
-            return Ok(order);
+            updated.UpdatedAt = System.DateTime.UtcNow;
+            var result = await _orders.ReplaceOneAsync(o => o.Id == id, updated);
+            if (result.MatchedCount == 0) return NotFound();
+            return NoContent();
         }
 
-        // ✅ Admin cập nhật trạng thái đơn
-        [HttpPut("{orderId}/status")]
-        public async Task<IActionResult> UpdateOrderStatus(string orderId, [FromBody] string newStatus)
+        [HttpDelete("{id:length(24)}")]
+        public async Task<IActionResult> Delete(string id)
         {
-            var order = await _orders.Find(o => o.Id == orderId).FirstOrDefaultAsync();
-            if (order == null) return NotFound("Order not found.");
+            var result = await _orders.DeleteOneAsync(o => o.Id == id);
+            if (result.DeletedCount == 0) return NotFound();
+            return NoContent();
+        }
 
-            order.Status = newStatus;
-            order.StatusHistory.Add(new OrderStatusHistory
-            {
-                Status = newStatus,
-                Timestamp = DateTime.UtcNow
-            });
-            order.UpdatedAt = DateTime.UtcNow;
+        // Cập nhật trạng thái và thêm lịch sử
+        [HttpPatch("{id:length(24)}/status")]
+        public async Task<IActionResult> UpdateStatus(string id, [FromBody] OrderStatusHistory history)
+        {
+            var update = Builders<Order>.Update
+                .Set(o => o.Status, history.Status)
+                .Push(o => o.StatusHistory, history)
+                .CurrentDate(o => o.UpdatedAt);
 
-            var result = await _orders.ReplaceOneAsync(o => o.Id == orderId, order);
-            return Ok(new { message = "Order status updated." });
+            var result = await _orders.UpdateOneAsync(o => o.Id == id, update);
+            if (result.MatchedCount == 0) return NotFound();
+            return NoContent();
         }
     }
 }

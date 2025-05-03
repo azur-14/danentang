@@ -1,9 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:animations/animations.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
-class Categories_Management extends StatelessWidget {
-  const Categories_Management({super.key});
+class CategoriesManagement extends StatelessWidget {
+  const CategoriesManagement({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +59,14 @@ class _MobileCategoriesScreenState extends State<MobileCategoriesScreen> {
     });
   }
 
+  void _handleBack(BuildContext context) {
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    } else {
+      Navigator.of(context).maybePop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -69,11 +78,12 @@ class _MobileCategoriesScreenState extends State<MobileCategoriesScreen> {
           "Categories Management",
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
-        leading: IconButton(
+        automaticallyImplyLeading: !kIsWeb,
+        leading: kIsWeb
+            ? null
+            : IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.of(context).maybePop();
-          },
+          onPressed: () => _handleBack(context),
         ),
         actions: [
           IconButton(
@@ -149,11 +159,14 @@ class WebCategoriesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Categories Management", style: TextStyle(color: Colors.black)),
+        title: const Text(
+          "Categories Management",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.white,
         elevation: 1,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.black),
+        automaticallyImplyLeading: false,
       ),
       body: Row(
         children: [

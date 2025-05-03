@@ -20,6 +20,9 @@ class _LineChartUserState extends State<LineChartUser> with SingleTickerProvider
   late AnimationController _controller;
   late Animation<double> _animation;
 
+  List<FlSpot> get _filteredSpots =>
+      widget.spots.where((spot) => spot.x >= 1).toList();
+
   @override
   void initState() {
     super.initState();
@@ -38,9 +41,9 @@ class _LineChartUserState extends State<LineChartUser> with SingleTickerProvider
   }
 
   List<FlSpot> _animatedSpots() {
-    return widget.spots.map((spot) {
-      return FlSpot(spot.x, spot.y * _animation.value);
-    }).toList();
+    final int currentIndex = (_filteredSpots.length * _animation.value).toInt();
+    final clampedIndex = currentIndex.clamp(1, _filteredSpots.length);
+    return _filteredSpots.take(clampedIndex).toList();
   }
 
   @override
@@ -60,66 +63,74 @@ class _LineChartUserState extends State<LineChartUser> with SingleTickerProvider
             const SizedBox(height: 10),
             LayoutBuilder(
               builder: (context, constraints) {
-                double chartWidth = constraints.maxWidth;
-
                 return SizedBox(
                   height: 250,
                   child: Padding(
                     padding: const EdgeInsets.only(top: 10),
-                    child: LineChart(
-                      LineChartData(
-                        gridData: FlGridData(
-                          show: true,
-                          drawVerticalLine: true,
-                          drawHorizontalLine: true,
-                          getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey, strokeWidth: 0.5),
-                          getDrawingVerticalLine: (value) => FlLine(color: Colors.grey, strokeWidth: 0.5),
-                        ),
-                        titlesData: FlTitlesData(
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: true, reservedSize: 30),
-                          ),
-                          rightTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                          topTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              interval: 1,
-                              getTitlesWidget: (value, meta) {
-                                if (value.toInt() < 12) {
-                                  return Text((value.toInt() + 1).toString());
-                                } else if (value.toInt() == 12) {
-                                  return const Text('Tháng');
-                                } else {
-                                  return const Text('');
-                                }
-                              },
+                    child: AnimatedBuilder(
+                      animation: _animation,
+                      builder: (context, child) {
+                        final animatedSpots = _animatedSpots();
+                        return LineChart(
+                          LineChartData(
+                            gridData: FlGridData(
+                              show: true,
+                              drawVerticalLine: true,
+                              drawHorizontalLine: true,
+                              getDrawingHorizontalLine: (value) =>
+                                  FlLine(color: Colors.grey, strokeWidth: 0.5),
+                              getDrawingVerticalLine: (value) =>
+                                  FlLine(color: Colors.grey, strokeWidth: 0.5),
                             ),
+                            titlesData: FlTitlesData(
+                              leftTitles: AxisTitles(
+                                sideTitles: SideTitles(showTitles: true, reservedSize: 30),
+                              ),
+                              rightTitles: AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              topTitles: AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  interval: 1,
+                                  getTitlesWidget: (value, meta) {
+                                    if (value >= 1 && value <= 12) {
+                                      return Text('Tháng ${value.toInt()}');
+                                    }
+                                    return const Text('');
+                                  },
+                                ),
+                              ),
+                            ),
+                            borderData: FlBorderData(
+                              show: true,
+                              border: Border.all(color: Colors.black, width: 1),
+                            ),
+                            lineBarsData: [
+                              LineChartBarData(
+                                spots: animatedSpots,
+                                isCurved: true,
+                                color: widget.lineColor,
+                                barWidth: 3,
+                                belowBarData: BarAreaData(show: false),
+                                dotData: FlDotData(show: true),
+                              ),
+                            ],
+                            minX: 0,
+                            maxX: 13,
+                            minY: 0,
+                            maxY: _filteredSpots.isEmpty
+                                ? 10
+                                : _filteredSpots
+                                .map((e) => e.y)
+                                .reduce((a, b) => a > b ? a : b) *
+                                1.2,
                           ),
-                        ),
-                        borderData: FlBorderData(
-                          show: true,
-                          border: Border.all(color: Colors.black, width: 1),
-                        ),
-                        lineBarsData: [
-                          LineChartBarData(
-                            spots: widget.spots,
-                            isCurved: true,
-                            color: widget.lineColor,
-                            barWidth: 5,
-                            belowBarData: BarAreaData(show: false),
-                            dotData: FlDotData(show: true),
-                          ),
-                        ],
-                        minX: 0,
-                        maxX: 11,
-                        minY: 0,
-                        maxY: widget.spots.isEmpty ? 10 : widget.spots.map((e) => e.y).reduce((a, b) => a > b ? a : b),
-                      ),
+                        );
+                      },
                     ),
                   ),
                 );
@@ -132,7 +143,7 @@ class _LineChartUserState extends State<LineChartUser> with SingleTickerProvider
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const UserScreen()),
+                    MaterialPageRoute(builder: (_) => const UserReportScreen()),
                   );
                 },
                 child: const Text(

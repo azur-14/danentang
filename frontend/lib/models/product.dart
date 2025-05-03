@@ -1,4 +1,5 @@
-// models/product.dart
+import 'package:uuid/uuid.dart'; // Add uuid package for generating IDs
+
 class Product {
   final String id;
   final String name;
@@ -27,8 +28,12 @@ class Product {
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
+    // Generate a fallback ID if _id is missing or empty
+    final String jsonId = json['_id']?.toString() ?? '';
+    final String id = jsonId.isNotEmpty ? jsonId : const Uuid().v4();
+
     return Product(
-      id: json['_id'] ?? '',
+      id: id,
       name: json['name'] ?? '',
       brand: json['brand'],
       description: json['description'],

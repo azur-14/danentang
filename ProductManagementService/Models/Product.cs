@@ -1,5 +1,7 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
+using System;
+using System.Collections.Generic;
 
 namespace ProductManagementService.Models
 {
@@ -7,7 +9,7 @@ namespace ProductManagementService.Models
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string? Id { get; set; }
+        public string Id { get; set; } = null!;
 
         [BsonElement("name")]
         public string Name { get; set; } = null!;
@@ -24,10 +26,9 @@ namespace ProductManagementService.Models
         [BsonElement("discountPercentage")]
         public int DiscountPercentage { get; set; } = 0;
 
-        // Sửa ở đây: Thay đổi từ string -> ObjectId
         [BsonElement("categoryId")]
-        [BsonRepresentation(BsonType.ObjectId)] // Chỉ định sử dụng ObjectId trong MongoDB
-        public ObjectId CategoryId { get; set; }
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string CategoryId { get; set; } = null!;
 
         [BsonElement("createdAt")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
