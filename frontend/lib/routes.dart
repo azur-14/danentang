@@ -10,7 +10,9 @@ import 'package:danentang/Screens/Customer/Login/SignUp.dart';
 import 'package:danentang/Screens/Customer/User/profile_page.dart';
 import 'package:danentang/Screens/Customer/User/personal_info_screen.dart';
 import 'package:danentang/Screens/Customer/User/account_settings_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import 'Screens/Customer/Product/test_product_details.dart';
 import 'Screens/Manager/Support/customer_support.dart';
 import 'Screens/Manager/DashBoard/MobileDashboard.dart';
 import 'models/product.dart';
@@ -59,11 +61,28 @@ final GoRouter router = GoRouter(
       path: '/',
       builder: (context, state) => const HomeScreen(),
     ),
+    // Checkout (reuse CartScreenCheckOut or replace with a dedicated screen)
     GoRoute(
       path: '/checkout',
       builder: (context, state) {
-        final isLoggedIn = state.extra as bool? ?? false;
-        return CartScreenCheckOut(isLoggedIn: isLoggedIn, userId: userId);
+        return FutureBuilder<SharedPreferences>(
+          future: SharedPreferences.getInstance(),
+          builder: (ctx, snap) {
+            if (!snap.hasData) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+            final prefs = snap.data!;
+            final token = prefs.getString('token');
+            final isLoggedIn = token != null;
+            final userId = prefs.getString('userId') ?? '';
+            return CartScreenCheckOut(
+              isLoggedIn: isLoggedIn,
+              userId: userId,
+            );
+          },
+        );
       },
     ),
     GoRoute(
