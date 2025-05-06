@@ -1,19 +1,17 @@
-import 'package:uuid/uuid.dart'; // Add uuid package for generating IDs
-
 class Product {
   final String id;
-  final String name;
-  final String? brand;
-  final String? description;
-  final double price;
-  final int discountPercentage;
-  final String categoryId;
-  final List<ProductImage> images;
-  final List<ProductVariant> variants;
+  String name;
+  String? brand;
+  String? description;
+  double price;
+  int discountPercentage;
+  String categoryId;
+  List<ProductImage> images;
+  List<ProductVariant> variants;
   final DateTime createdAt;
-  final DateTime updatedAt;
+  DateTime updatedAt;
 
-  const Product({
+  Product({
     required this.id,
     required this.name,
     this.brand,
@@ -28,12 +26,9 @@ class Product {
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
-    // Generate a fallback ID if _id is missing or empty
-    final String jsonId = json['_id']?.toString() ?? '';
-    final String id = jsonId.isNotEmpty ? jsonId : const Uuid().v4();
-
     return Product(
-      id: id,
+      // ← read "id" first, fall back to "_id" if you ever switch
+      id: (json['id'] ?? json['_id']) as String,
       name: json['name'] ?? '',
       brand: json['brand'],
       description: json['description'],
@@ -53,6 +48,7 @@ class Product {
     );
   }
 }
+
 
 class ProductImage {
   final String url;

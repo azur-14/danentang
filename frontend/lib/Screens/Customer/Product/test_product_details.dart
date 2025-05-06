@@ -7,34 +7,36 @@ import 'package:danentang/models/ProductRating.dart';
 import 'package:danentang/models/Review.dart';
 import 'package:danentang/widgets/Header/web_header.dart';
 
-class ProductDetailsScreen extends StatefulWidget {
-  final Product? product;
-  final ProductRating productRating;
-  final List<Review> reviews;
-  final List<Product> recommendedProducts;
+import '../../../Service/product_service.dart';
 
-  const ProductDetailsScreen({
-    Key? key,
-    required this.product,
-    this.productRating = const ProductRating(averageRating: 0, reviewCount: 0),
-    this.reviews = const [],
-    this.recommendedProducts = const [],
-  }) : super(key: key);
+class ProductDetailsScreen extends StatefulWidget {
+  final String productId;
+  const ProductDetailsScreen({ super.key, required this.productId });
 
   @override
   _ProductDetailsScreenState createState() => _ProductDetailsScreenState();
 }
 
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> with SingleTickerProviderStateMixin {
-  final PageController _pageController = PageController();
+  late Future<Product> _productFuture;
+  late Future<ProductRating> _ratingFuture;
+  late Future<List<Review>> _reviewsFuture;
+  late Future<List<Product>> _recommendedFuture;
   late TabController _tabController;
+  final PageController _pageController = PageController();
 
   @override
   void initState() {
     super.initState();
-    print('Product: ${widget.product?.name ?? "null"}, Images: ${widget.product?.images.length ?? 0}');
-    print('Reviews: ${widget.reviews.length}, Recommended: ${widget.recommendedProducts.length}');
     _tabController = TabController(length: 2, vsync: this);
+
+    // Nếu widget.product != null (tức là ta đã pass full object qua extra),
+      // Ngược lại (ví dụ deep-link hoặc reload) mới fetch từ server
+      _productFuture     = ProductService.getById(widget.productId);
+      _ratingFuture      = ProductService.getRating(widget.productId);
+      _reviewsFuture     = ProductService.getReviews(widget.productId);
+      _recommendedFuture = ProductService.getRecommended(widget.productId);
+
   }
 
   @override
@@ -46,13 +48,49 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
 
   @override
   Widget build(BuildContext context) {
-    if (widget.product == null) {
-      return const Scaffold(
-        body: Center(child: Text("Product not found.")),
-      );
-    }
+    return FutureBuilder<List<dynamic>>(
+      // Chờ tất cả 4 Future cùng lúc
+      future: Future.wait([
+        _productFuture,
+        _ratingFuture,
+        _reviewsFuture,
+        _recommendedFuture,
+      ]),
+      builder: (context, snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snap.hasError || snap.data == null) {
+          return const Scaffold(
+            body: Center(child: Text('Không tải được dữ liệu sản phẩm.')),
+          );
+        }
 
-    final double discountedPrice = widget.product!.price * (1 - widget.product!.discountPercentage / 100);
+        // Sau khi load xong, extract từng phần
+        final results             = snap.data!;
+        final product             = results[0] as Product;
+        final productRating       = results[1] as ProductRating;
+        final reviews             = results[2] as List<Review>;
+        final recommendedProducts = results[3] as List<Product>;
+
+        return _buildContent(
+          context,
+          product,
+          productRating,
+          reviews,
+          recommendedProducts,
+        );
+      },
+    );
+  }
+
+  @override
+  Widget _buildContent(BuildContext context, Product product, ProductRating productRating, List<Review> reviews, List<Product> recommendedProducts) {
+
+    final double discountedPrice =
+        product.price * (1 - product.discountPercentage / 100);
     final screenWidth = MediaQuery.of(context).size.width;
     const maxContentWidth = 1200.0;
 
@@ -84,10 +122,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                                     width: double.infinity,
                                     child: PageView.builder(
                                       controller: _pageController,
-                                      itemCount: widget.product!.images.length,
+                                      itemCount: product.images.length,
                                       itemBuilder: (context, index) {
                                         return Image.network(
-                                          widget.product!.images[index].url,
+                                          product.images[index].url,
                                           height: 400,
                                           width: double.infinity,
                                           fit: BoxFit.cover,
@@ -106,7 +144,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                       color: Colors.purple[600],
                                       child: Text(
-                                        widget.product!.id,
+                                        product.id,
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 12,
@@ -117,12 +155,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                                 ],
                               ),
                               const SizedBox(height: 8),
-                              widget.product!.images.isNotEmpty
+                              product.images.isNotEmpty
                                   ? Padding(
                                 padding: const EdgeInsets.symmetric(horizontal: 8),
                                 child: SmoothPageIndicator(
                                   controller: _pageController,
-                                  count: widget.product!.images.length,
+                                  count: product.images.length,
                                   effect: const WormEffect(
                                     dotHeight: 10,
                                     dotWidth: 10,
@@ -137,7 +175,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                               SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
                                 child: Row(
-                                  children: widget.product!.images.asMap().entries.skip(1).map(
+                                  children: product.images.asMap().entries.skip(1).map(
                                         (entry) {
                                       int index = entry.key;
                                       ProductImage image = entry.value;
@@ -175,7 +213,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  widget.product!.name,
+                                  product.name,
                                   style: const TextStyle(
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
@@ -185,7 +223,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                                 Row(
                                   children: [
                                     RatingBarIndicator(
-                                      rating: widget.productRating.averageRating,
+                                      rating: productRating.averageRating,
                                       itemBuilder: (context, index) => const Icon(
                                         Icons.star,
                                         color: Colors.amber,
@@ -195,7 +233,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
-                                      "(${widget.productRating.reviewCount} Đánh giá)",
+                                      "(${productRating.reviewCount} Đánh giá)",
                                       style: const TextStyle(fontSize: 14),
                                     ),
                                   ],
@@ -212,9 +250,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                                       ),
                                     ),
                                     const SizedBox(width: 8),
-                                    if (widget.product!.discountPercentage > 0)
+                                    if (product.discountPercentage > 0)
                                       Text(
-                                        "₫${widget.product!.price.toStringAsFixed(0)}",
+                                        "₫${product.price.toStringAsFixed(0)}",
                                         style: const TextStyle(
                                           fontSize: 18,
                                           color: Colors.grey,
@@ -239,9 +277,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                ...widget.product!.variants.map(
+                                ...product.variants.map(
                                       (variant) {
-                                    double variantPrice = widget.product!.price + variant.additionalPrice;
+                                    double variantPrice = product.price + variant.additionalPrice;
                                     return Padding(
                                       padding: const EdgeInsets.symmetric(vertical: 4),
                                       child: Row(
@@ -272,7 +310,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  widget.product!.description ?? "Không có mô tả.",
+                                  product.description ?? "Không có mô tả.",
                                   style: const TextStyle(
                                     fontSize: 14,
                                     height: 1.5,
@@ -386,7 +424,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                                 SingleChildScrollView(
                                   padding: const EdgeInsets.all(16),
                                   child: Text(
-                                    widget.product!.description ?? "Không có mô tả.",
+                                    product.description ?? "Không có mô tả.",
                                     style: const TextStyle(fontSize: 14),
                                   ),
                                 ),
@@ -394,14 +432,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                                   padding: const EdgeInsets.all(16),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: widget.reviews.isEmpty
+                                    children: reviews.isEmpty
                                         ? [
                                       const Text(
                                         "Chưa có đánh giá.",
                                         style: TextStyle(fontSize: 14),
                                       )
                                     ]
-                                        : widget.reviews.map(
+                                        : reviews.map(
                                           (review) => ListTile(
                                         leading: CircleAvatar(
                                           radius: 20,
@@ -458,13 +496,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                           const SizedBox(height: 8),
                           Container(
                             height: 150,
-                            child: widget.recommendedProducts.isEmpty
+                            child: recommendedProducts.isEmpty
                                 ? const Center(child: Text("Không có sản phẩm đề xuất."))
                                 : ListView.builder(
                               scrollDirection: Axis.horizontal,
-                              itemCount: widget.recommendedProducts.length,
+                              itemCount: recommendedProducts.length,
                               itemBuilder: (context, index) {
-                                final recommendedProduct = widget.recommendedProducts[index];
+                                final recommendedProduct = recommendedProducts[index];
                                 final recommendedDiscountedPrice = recommendedProduct.price *
                                     (1 - recommendedProduct.discountPercentage / 100);
                                 return Padding(
@@ -535,10 +573,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                           width: double.infinity,
                           child: PageView.builder(
                             controller: _pageController,
-                            itemCount: widget.product!.images.length,
+                            itemCount: product.images.length,
                             itemBuilder: (context, index) {
                               return Image.network(
-                                widget.product!.images[index].url,
+                                product.images[index].url,
                                 height: 250,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
@@ -557,7 +595,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             color: Colors.purple[600],
                             child: Text(
-                              widget.product!.id,
+                              product.id,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
@@ -572,7 +610,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                       child: Center(
                         child: SmoothPageIndicator(
                           controller: _pageController,
-                          count: widget.product!.images.length,
+                          count: product.images.length,
                           effect: const WormEffect(
                             dotHeight: 10,
                             dotWidth: 10,
@@ -588,7 +626,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                       child: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Row(
-                          children: widget.product!.images.asMap().entries.skip(1).map(
+                          children: product.images.asMap().entries.skip(1).map(
                                 (entry) {
                               int index = entry.key;
                               ProductImage image = entry.value;
@@ -623,7 +661,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            widget.product!.name,
+                            product.name,
                             style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -633,7 +671,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                           Row(
                             children: [
                               RatingBarIndicator(
-                                rating: widget.productRating.averageRating,
+                                rating: productRating.averageRating,
                                 itemBuilder: (context, index) => const Icon(
                                   Icons.star,
                                   color: Colors.amber,
@@ -643,7 +681,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                               ),
                               const SizedBox(width: 8),
                               Text(
-                                "(${widget.productRating.reviewCount} Đánh giá)",
+                                "(${productRating.reviewCount} Đánh giá)",
                                 style: const TextStyle(fontSize: 14),
                               ),
                             ],
@@ -660,9 +698,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              if (widget.product!.discountPercentage > 0)
+                              if (product.discountPercentage > 0)
                                 Text(
-                                  "₫${widget.product!.price.toStringAsFixed(0)}",
+                                  "₫${product.price.toStringAsFixed(0)}",
                                   style: const TextStyle(
                                     fontSize: 16,
                                     color: Colors.grey,
@@ -687,9 +725,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          ...widget.product!.variants.map(
+                          ...product.variants.map(
                                 (variant) {
-                              double variantPrice = widget.product!.price + variant.additionalPrice;
+                              double variantPrice = product.price + variant.additionalPrice;
                               return Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 4),
                                 child: Row(
@@ -720,7 +758,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            widget.product!.description ?? "Không có mô tả.",
+                            product.description ?? "Không có mô tả.",
                             style: const TextStyle(
                               fontSize: 14,
                               height: 1.5,
@@ -831,7 +869,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                                 SingleChildScrollView(
                                   padding: const EdgeInsets.all(16),
                                   child: Text(
-                                    widget.product!.description ?? "Không có mô tả.",
+                                    product.description ?? "Không có mô tả.",
                                     style: const TextStyle(fontSize: 14),
                                   ),
                                 ),
@@ -839,14 +877,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                                   padding: const EdgeInsets.all(16),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: widget.reviews.isEmpty
+                                    children: reviews.isEmpty
                                         ? [
                                       const Text(
                                         "Chưa có đánh giá.",
                                         style: TextStyle(fontSize: 14),
                                       )
                                     ]
-                                        : widget.reviews.map(
+                                        : reviews.map(
                                           (review) => ListTile(
                                         leading: CircleAvatar(
                                           radius: 20,
@@ -903,13 +941,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                           const SizedBox(height: 8),
                           Container(
                             height: 150,
-                            child: widget.recommendedProducts.isEmpty
+                            child: recommendedProducts.isEmpty
                                 ? const Center(child: Text("Không có sản phẩm đề xuất."))
                                 : ListView.builder(
                               scrollDirection: Axis.horizontal,
-                              itemCount: widget.recommendedProducts.length,
+                              itemCount: recommendedProducts.length,
                               itemBuilder: (context, index) {
-                                final recommendedProduct = widget.recommendedProducts[index];
+                                final recommendedProduct = recommendedProducts[index];
                                 final recommendedDiscountedPrice = recommendedProduct.price *
                                     (1 - recommendedProduct.discountPercentage / 100);
                                 return Padding(

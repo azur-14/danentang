@@ -114,20 +114,15 @@ final GoRouter router = GoRouter(
       },
     ),
 
-    // Product Details
     GoRoute(
+      name: 'product',                      // ← ADD THIS
       path: '/product/:id',
       builder: (context, state) {
-        final extra = state.extra as Map<String, dynamic>? ?? {};
-        return ProductDetailsScreen(
-          product: extra['product'] as Product,
-          productRating: extra['productRating'] as ProductRating? ??
-              const ProductRating(averageRating: 0, reviewCount: 0),
-          reviews: extra['reviews'] as List<Review>? ?? [],
-          recommendedProducts: extra['recommendedProducts'] as List<Product>? ?? [],
-        );
+        final productId = state.pathParameters['id']!;
+        return ProductDetailsScreen(productId: productId);
       },
     ),
+
 
     // Login & SignUp
     GoRoute(

@@ -1,4 +1,7 @@
+// lib/widgets/product_section.dart
+
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:danentang/models/product.dart';
 import 'package:danentang/widgets/product_card.dart';
 
@@ -18,36 +21,51 @@ class ProductSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Tính số lượng thẻ trên mỗi hàng dựa trên kích thước màn hình
-    final double cardWidth = 180; // Chiều rộng của ProductCard
-    final double padding = isWeb ? 32 : 16; // Padding hai bên
-    final int itemsPerRow = ((screenWidth - 2 * padding) / (cardWidth + 8)).floor();
-    final int crossAxisCount = itemsPerRow > 0 ? itemsPerRow : 1; // Đảm bảo ít nhất 1 thẻ
+    const cardWidth = 180.0;
+    final padding = isWeb ? 32.0 : 16.0;
+    final itemsPerRow =
+    ((screenWidth - 2 * padding) / (cardWidth + 8)).floor();
+    final crossAxisCount = itemsPerRow > 0 ? itemsPerRow : 1;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Section title
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: isWeb ? 32 : 16, vertical: 8),
+          padding: EdgeInsets.symmetric(horizontal: padding, vertical: 8),
           child: Text(
             title,
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: isWeb ? 32 : 16),
+        // Grid of products
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: padding),
           child: GridView.builder(
             shrinkWrap: true,
-            physics: const ClampingScrollPhysics(),
+            physics: const NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: crossAxisCount, // Số lượng thẻ trên mỗi hàng
-              crossAxisSpacing: 16, // Khoảng cách ngang giữa các thẻ
-              mainAxisSpacing: 16, // Khoảng cách dọc giữa các thẻ
-              childAspectRatio: 180 / 250, // Tỷ lệ khung hình của ProductCard
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: cardWidth / 250,
             ),
             itemCount: products.length,
-            itemBuilder: (context, index) {
-              return ProductCard(product: products[index]);
+            itemBuilder: (ctx, i) {
+              final product = products[i];
+              return GestureDetector(
+                onTap: () {
+                  debugPrint('Navigating to Product ID: ${product.id}');
+                  context.goNamed(
+                    'product',
+                    pathParameters: {'id': product.id},
+                    extra: {'product': product},
+                  );
+                },
+                child: ProductCard(
+                  product: product,
+                ),
+              );
             },
           ),
         ),
@@ -55,3 +73,4 @@ class ProductSection extends StatelessWidget {
     );
   }
 }
+
