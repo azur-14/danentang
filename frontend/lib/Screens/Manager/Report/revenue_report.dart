@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:danentang/Screens/Manager/dashboard.dart';
+import 'package:danentang/Screens/Manager/DashBoard/MobileDashboard.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
 class RevenueReport extends StatelessWidget {
@@ -58,7 +58,7 @@ class _RevenueScreenState extends State<RevenueScreen> with SingleTickerProvider
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (_) => const DashBoard()),
+                  MaterialPageRoute(builder: (_) => const MobileDashboard()),
                 );
               },
             )
