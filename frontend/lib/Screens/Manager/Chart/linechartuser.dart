@@ -98,7 +98,7 @@ class _LineChartUserState extends State<LineChartUser> with SingleTickerProvider
                                   interval: 1,
                                   getTitlesWidget: (value, meta) {
                                     if (value >= 1 && value <= 12) {
-                                      return Text('Tháng ${value.toInt()}');
+                                      return Text('${value.toInt()}');
                                     }
                                     return const Text('');
                                   },
