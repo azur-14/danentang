@@ -42,6 +42,7 @@ class AppColors {
   static const String yellow = '#FFFF00'; // Colors.yellow (for star rating)
   static const String black = '#000000'; // Colors.black (for text)
 
+
   // Utility function to convert hex string to Color
   static Color hexToColor(String hex) {
     hex = hex.replaceAll('#', '');

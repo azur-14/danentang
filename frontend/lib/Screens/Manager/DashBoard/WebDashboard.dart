@@ -23,7 +23,7 @@ class WebDashboard extends StatelessWidget {
     return Scaffold(
       drawer: _buildDrawer(context),
       appBar: AppBar(
-        title: const Text('Admin Dashboard', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        title: const Text('Admin Dashboard', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
         backgroundColor: Colors.deepPurple,
       ),
       body: Padding(
@@ -97,23 +97,17 @@ class WebDashboard extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        int crossAxisCount = constraints.maxWidth < 600
-            ? 2 // For smaller screens like mobile
-            : 4; // For larger screens like tablet/desktop
+        double itemWidth = constraints.maxWidth < 600 ? constraints.maxWidth / 2 - 10 : constraints.maxWidth / 4 - 12;
 
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 2.5,
-          ),
-          itemCount: stats.length,
-          itemBuilder: (context, index) {
-            return _statCard(stats[index]);
-          },
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: stats.map((stat) {
+            return SizedBox(
+              width: itemWidth,
+              child: _statCard(stat),
+            );
+          }).toList(),
         );
       },
     );
@@ -143,17 +137,16 @@ class WebDashboard extends StatelessWidget {
   Widget _buildChartsGrid() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Tự động điều chỉnh số lượng cột dựa trên kích thước màn hình
-        int crossAxisCount = constraints.maxWidth < 600 ? 1 : 2; // 1 cột cho màn hình nhỏ, 2 cột cho màn hình lớn
+        int crossAxisCount = constraints.maxWidth < 600 ? 1 : 2;
 
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
-            crossAxisSpacing: 16, // Giảm khoảng cách giữa các biểu đồ
-            mainAxisSpacing: 16, // Giảm khoảng cách giữa các biểu đồ
-            childAspectRatio: 1.2, // Điều chỉnh tỷ lệ khung hình để làm cho biểu đồ nhỏ lại
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 1.0,
           ),
           itemCount: 5,
           itemBuilder: (context, index) {
@@ -223,14 +216,13 @@ class PieChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        children: const [
-          SizedBox(height: 10),
-          Expanded(child: AnimatedPieChart()),
-        ],
-      ),
+    return Column(
+      children: const [
+        SizedBox(height: 10),
+        Expanded(
+          child: AnimatedPieChart(),
+        ),
+      ],
     );
   }
 }

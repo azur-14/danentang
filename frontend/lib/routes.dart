@@ -1,7 +1,7 @@
+import 'package:danentang/Screens/Customer/User/profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:danentang/Screens/Customer/Home/home_screen.dart';
-import 'package:danentang/Screens/Customer/CheckOut/cart_screen.dart';
 import 'package:danentang/Screens/Customer/Home/product_list_screen.dart';
 import 'package:danentang/Screens/Customer/CheckOut/cart_screen.dart';
 import 'package:danentang/Screens/Customer/Login/Login_Screen.dart';
@@ -59,7 +59,6 @@ final GoRouter router = GoRouter(
       path: '/',
       builder: (context, state) => const HomeScreen(),
     ),
-
     GoRoute(
       path: '/checkout',
       builder: (context, state) {
@@ -71,13 +70,17 @@ final GoRouter router = GoRouter(
       path: '/profile',
       builder: (context, state) {
         final isLoggedIn = state.extra as bool? ?? false;
-        return ProfilePage();
+        return ProfileManagementScreen();
       },
     ),
+
+    // Chat
     GoRoute(
       path: '/chat',
       builder: (context, state) => const ChatScreen(),
     ),
+
+    // Products
     GoRoute(
       path: '/products',
       builder: (context, state) => const ProductsScreen(),
@@ -91,11 +94,23 @@ final GoRouter router = GoRouter(
         final isWeb = extra['isWeb'] as bool;
         return ProductListScreen(
           title: title,
-          products: products,
-          isWeb: isWeb,
+          products: extra['products'] as List<Product>,
+          isWeb: extra['isWeb'] as bool,
         );
       },
     ),
+
+    GoRoute(
+      name: 'product',                      // ← ADD THIS
+      path: '/product/:id',
+      builder: (context, state) {
+        final productId = state.pathParameters['id']!;
+        return ProductDetailsScreen(productId: productId);
+      },
+    ),
+
+
+    // Login & SignUp
     GoRoute(
       path: '/login',
       builder: (context, state) => const LoginScreen(),
@@ -109,26 +124,7 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const Signup(email: ""),
     ),
 
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const Placeholder(),
-    ),
-    GoRoute(
-      path: '/cart',
-      builder: (context, state) => CartScreenCheckOut(
-        isLoggedIn: state.extra as bool? ?? false,
-      ),
-    ),
-    GoRoute(
-      path: '/checkout',
-      builder: (context, state) => const Placeholder(),
-    ),
-
-    GoRoute(
-      path: '/',
-      builder: (context, state) => HomeScreen(),
-    ),
-
+    // Profile Management (for mobile and web)
     GoRoute(
       path: '/personal-info',
       builder: (context, state) => const ProfileManagementScreen(),
