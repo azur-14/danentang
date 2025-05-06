@@ -1,17 +1,40 @@
-import 'package:danentang/models/product.dart';
+// lib/models/CartItem.dart
+
+import 'Product.dart'; // chứa class Product, ProductVariant
 
 class CartItem {
-  final Product product;
+  final String productId;        // ← Mã product gốc
+  final String variantName;      // ← Tên biến thể
   int quantity;
-  final String size;
   bool isSelected;
-  final double? discountedPrice; // New field for discounted price
+
+  // Thêm các trường để lưu giá và thông tin hiển thị
+  double? currentPrice;
+  double? discountPercentage;
+  String? imageUrl;
 
   CartItem({
-    required this.product,
+    required this.productId,
+    required this.variantName,
     required this.quantity,
-    required this.size,
     this.isSelected = true,
-    this.discountedPrice,
+    this.currentPrice,
+    this.discountPercentage,
+    this.imageUrl,
   });
+
+  Map<String, dynamic> toJson() => {
+    'productId': productId,
+    'variantName': variantName,
+    'quantity': quantity,
+    'isSelected': isSelected,
+  };
+
+  factory CartItem.fromJson(Map<String, dynamic> json) => CartItem(
+    productId: json['productId'],
+    variantName: json['variantName'],
+    quantity: json['quantity'],
+    isSelected: json['isSelected'] ?? true,
+    // currentPrice, discountPercentage, imageUrl tính toán sau khi từ server
+  );
 }

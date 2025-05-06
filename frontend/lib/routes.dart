@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:danentang/Screens/Customer/Home/home_screen.dart';
-import 'package:danentang/Screens/Customer/Home/cart_screen.dart';
+import 'package:danentang/Screens/Customer/CheckOut/cart_screen.dart';
 import 'package:danentang/Screens/Customer/Home/product_list_screen.dart';
 import 'package:danentang/Screens/Customer/CheckOut/cart_screen.dart';
 import 'package:danentang/Screens/Customer/Login/Login_Screen.dart';
@@ -59,18 +59,12 @@ final GoRouter router = GoRouter(
       path: '/',
       builder: (context, state) => const HomeScreen(),
     ),
-    GoRoute(
-      path: '/cart',
-      builder: (context, state) {
-        final isLoggedIn = state.extra as bool? ?? false;
-        return CartScreen(isLoggedIn: isLoggedIn);
-      },
-    ),
+
     GoRoute(
       path: '/checkout',
       builder: (context, state) {
         final isLoggedIn = state.extra as bool? ?? false;
-        return CartScreenCheckOut(isLoggedIn: isLoggedIn);
+        return CartScreenCheckOut(isLoggedIn: isLoggedIn, userId: userId);
       },
     ),
     GoRoute(
