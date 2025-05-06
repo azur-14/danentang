@@ -16,29 +16,7 @@ class OrdersChartWidget extends StatefulWidget {
   _OrdersChartWidgetState createState() => _OrdersChartWidgetState();
 }
 
-class _OrdersChartWidgetState extends State<OrdersChartWidget> with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    );
-    _animation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-    );
-    _animationController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
+class _OrdersChartWidgetState extends State<OrdersChartWidget> {
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -56,59 +34,67 @@ class _OrdersChartWidgetState extends State<OrdersChartWidget> with TickerProvid
             const SizedBox(height: 10),
             SizedBox(
               height: 220,
-              child: LineChart(
-                LineChartData(
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: true,
-                    drawHorizontalLine: true,
-                    getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey, strokeWidth: 0.5),
-                    getDrawingVerticalLine: (value) => FlLine(color: Colors.grey, strokeWidth: 0.5),
-                  ),
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: true, reservedSize: 30),
-                    ),
-                    rightTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    topTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        interval: 1,
-                        getTitlesWidget: (value, meta) {
-                          if (value.toInt() < 12) {
-                            return Text((value.toInt() + 1).toString());
-                          } else if (value.toInt() == 12) {
-                            return const Text('Tháng');
-                          } else {
-                            return const Text('');
-                          }
-                        },
+              child: TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: 0, end: 1),
+                duration: const Duration(seconds: 2),
+                curve: Curves.easeOut,
+                builder: (context, progress, child) {
+                  final animatedSpots = widget.spots
+                      .map((e) => FlSpot(e.x, e.y * progress))
+                      .toList();
+
+                  return LineChart(
+                    LineChartData(
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: true,
+                        drawHorizontalLine: true,
+                        getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey, strokeWidth: 0.5),
+                        getDrawingVerticalLine: (value) => FlLine(color: Colors.grey, strokeWidth: 0.5),
                       ),
+                      titlesData: FlTitlesData(
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(showTitles: true, reservedSize: 30),
+                        ),
+                        rightTitles: AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        topTitles: AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            interval: 1,
+                            getTitlesWidget: (value, meta) {
+                              if (value >= 0 && value <= 11) {
+                                return Text('${value.toInt() + 1}');
+                              }
+                              return const SizedBox.shrink();
+                            },
+                          ),
+                        ),
+                      ),
+                      borderData: FlBorderData(
+                        show: true,
+                        border: Border.all(color: Colors.black, width: 1),
+                      ),
+                      lineBarsData: [
+                        LineChartBarData(
+                          spots: animatedSpots,
+                          isCurved: true,
+                          color: widget.lineColor,
+                          barWidth: 3,
+                          belowBarData: BarAreaData(show: false),
+                          dotData: FlDotData(show: true),
+                        ),
+                      ],
+                      minX: -0.5, // Để tháng 1 cách trục Y ra
+                      maxX: 11.5,
+                      minY: 0,
                     ),
-                  ),
-                  borderData: FlBorderData(
-                    show: true,
-                    border: Border.all(color: Colors.black, width: 1),
-                  ),
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: widget.spots,
-                      isCurved: true,
-                      color: widget.lineColor,
-                      barWidth: 3,
-                      belowBarData: BarAreaData(show: false),
-                      dotData: FlDotData(show: true),
-                    ),
-                  ],
-                  minX: 0,  // Bắt đầu từ 0
-                  maxX: 11, // Kết thúc ở tháng 12 (11 là giá trị cuối cùng trên trục X)
-                  minY: 0,
-                ),
+                  );
+                },
               ),
             ),
             const SizedBox(height: 10),

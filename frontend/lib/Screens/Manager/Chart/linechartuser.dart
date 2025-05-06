@@ -35,15 +35,24 @@ class _LineChartUserState extends State<LineChartUser> with SingleTickerProvider
   }
 
   @override
+  void didUpdateWidget(covariant LineChartUser oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.spots != widget.spots) {
+      _controller.reset();
+      _controller.forward();
+    }
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
 
   List<FlSpot> _animatedSpots() {
-    final int currentIndex = (_filteredSpots.length * _animation.value).toInt();
-    final clampedIndex = currentIndex.clamp(1, _filteredSpots.length);
-    return _filteredSpots.take(clampedIndex).toList();
+    return _filteredSpots
+        .map((spot) => FlSpot(spot.x, spot.y * _animation.value))
+        .toList();
   }
 
   @override
@@ -71,63 +80,65 @@ class _LineChartUserState extends State<LineChartUser> with SingleTickerProvider
                       animation: _animation,
                       builder: (context, child) {
                         final animatedSpots = _animatedSpots();
-                        return LineChart(
-                          LineChartData(
-                            gridData: FlGridData(
-                              show: true,
-                              drawVerticalLine: true,
-                              drawHorizontalLine: true,
-                              getDrawingHorizontalLine: (value) =>
-                                  FlLine(color: Colors.grey, strokeWidth: 0.5),
-                              getDrawingVerticalLine: (value) =>
-                                  FlLine(color: Colors.grey, strokeWidth: 0.5),
-                            ),
-                            titlesData: FlTitlesData(
-                              leftTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: true, reservedSize: 30),
+                        final maxY = _filteredSpots.isEmpty
+                            ? 10
+                            : _filteredSpots.map((e) => e.y).reduce((a, b) => a > b ? a : b) * 1.2;
+
+                        return FadeTransition(
+                          opacity: _animation,
+                          child: LineChart(
+                            LineChartData(
+                              gridData: FlGridData(
+                                show: true,
+                                drawVerticalLine: true,
+                                drawHorizontalLine: true,
+                                getDrawingHorizontalLine: (value) =>
+                                    FlLine(color: Colors.grey, strokeWidth: 0.5),
+                                getDrawingVerticalLine: (value) =>
+                                    FlLine(color: Colors.grey, strokeWidth: 0.5),
                               ),
-                              rightTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              topTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  interval: 1,
-                                  getTitlesWidget: (value, meta) {
-                                    if (value >= 1 && value <= 12) {
-                                      return Text('${value.toInt()}');
-                                    }
-                                    return const Text('');
-                                  },
+                              titlesData: FlTitlesData(
+                                leftTitles: AxisTitles(
+                                  sideTitles: SideTitles(showTitles: true, reservedSize: 30),
+                                ),
+                                rightTitles: AxisTitles(
+                                  sideTitles: SideTitles(showTitles: false),
+                                ),
+                                topTitles: AxisTitles(
+                                  sideTitles: SideTitles(showTitles: false),
+                                ),
+                                bottomTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    interval: 1,
+                                    getTitlesWidget: (value, meta) {
+                                      if (value >= 1 && value <= 12) {
+                                        return Text('${value.toInt()}');
+                                      }
+                                      return const Text('');
+                                    },
+                                  ),
                                 ),
                               ),
-                            ),
-                            borderData: FlBorderData(
-                              show: true,
-                              border: Border.all(color: Colors.black, width: 1),
-                            ),
-                            lineBarsData: [
-                              LineChartBarData(
-                                spots: animatedSpots,
-                                isCurved: true,
-                                color: widget.lineColor,
-                                barWidth: 3,
-                                belowBarData: BarAreaData(show: false),
-                                dotData: FlDotData(show: true),
+                              borderData: FlBorderData(
+                                show: true,
+                                border: Border.all(color: Colors.black, width: 1),
                               ),
-                            ],
-                            minX: 0,
-                            maxX: 13,
-                            minY: 0,
-                            maxY: _filteredSpots.isEmpty
-                                ? 10
-                                : _filteredSpots
-                                .map((e) => e.y)
-                                .reduce((a, b) => a > b ? a : b) *
-                                1.2,
+                              lineBarsData: [
+                                LineChartBarData(
+                                  spots: animatedSpots,
+                                  isCurved: true,
+                                  color: widget.lineColor,
+                                  barWidth: 3,
+                                  belowBarData: BarAreaData(show: false),
+                                  dotData: FlDotData(show: true),
+                                ),
+                              ],
+                              minX: 0,
+                              maxX: 13,
+                              minY: 0,
+                              maxY: maxY.toDouble(), // Fix here
+                            ),
                           ),
                         );
                       },

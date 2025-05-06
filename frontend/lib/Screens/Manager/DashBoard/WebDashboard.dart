@@ -15,28 +15,60 @@ import 'package:danentang/Screens/Manager/Category/categories_management.dart';
 import 'package:danentang/Screens/Manager/Support/customer_support.dart';
 import 'package:danentang/Screens/Manager/Order/order_list.dart';
 
-class WebDashboard extends StatelessWidget {
+class WebDashboard extends StatefulWidget {
   const WebDashboard({super.key});
+
+  @override
+  State<WebDashboard> createState() => _WebDashboardState();
+}
+
+class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _opacityAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: _buildDrawer(context),
       appBar: AppBar(
-        title: const Text('Admin Dashboard', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+        title: const Text(
+          'Admin Dashboard',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
         backgroundColor: Colors.deepPurple,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              _buildStatCards(context),
-              const SizedBox(height: 20),
-              _buildChartsGrid(),
-              const SizedBox(height: 20),
-              _buildManagementLinks(context),
-            ],
+      body: FadeTransition(
+        opacity: _opacityAnimation,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildStatCards(context),
+                const SizedBox(height: 20),
+                _buildChartsGrid(),
+                const SizedBox(height: 20),
+                _buildManagementLinks(context),
+              ],
+            ),
           ),
         ),
       ),
@@ -65,7 +97,6 @@ class WebDashboard extends StatelessWidget {
             leading: const Icon(Icons.logout),
             title: const Text('Logout'),
             onTap: () {
-              // Handle logout logic here
               Navigator.pop(context);
             },
           ),
@@ -103,9 +134,17 @@ class WebDashboard extends StatelessWidget {
           spacing: 12,
           runSpacing: 12,
           children: stats.map((stat) {
-            return SizedBox(
-              width: itemWidth,
-              child: _statCard(stat),
+            return AnimatedBuilder(
+              animation: _opacityAnimation,
+              builder: (context, child) {
+                return Opacity(
+                  opacity: _opacityAnimation.value,
+                  child: SizedBox(
+                    width: itemWidth,
+                    child: _statCard(stat),
+                  ),
+                );
+              },
             );
           }).toList(),
         );
@@ -150,29 +189,40 @@ class WebDashboard extends StatelessWidget {
           ),
           itemCount: 5,
           itemBuilder: (context, index) {
+            Widget child;
             switch (index) {
               case 0:
-                return const LineChartUser(
+                child = const LineChartUser(
                   spots: [FlSpot(0, 1), FlSpot(1, 3), FlSpot(2, 2), FlSpot(3, 5)],
                   lineColor: Colors.purple,
                 );
+                break;
               case 1:
-                return const RevenueChartWidget(
+                child = const RevenueChartWidget(
                   spots: [FlSpot(0, 50), FlSpot(1, 55), FlSpot(2, 60), FlSpot(3, 62)],
                   lineColor: Colors.red,
                 );
+                break;
               case 2:
-                return const OrdersChartWidget(
+                child = const OrdersChartWidget(
                   spots: [FlSpot(0, 30), FlSpot(1, 35), FlSpot(2, 50), FlSpot(3, 40)],
                   lineColor: Colors.blue,
                 );
+                break;
               case 3:
-                return const BarChartWidget();
+                child = const BarChartWidget();
+                break;
               case 4:
-                return const PieChartCard();
               default:
-                return const SizedBox.shrink();
+                child = const PieChartCard();
             }
+            return AnimatedBuilder(
+              animation: _opacityAnimation,
+              builder: (context, _) => Opacity(
+                opacity: _opacityAnimation.value,
+                child: child,
+              ),
+            );
           },
         );
       },
@@ -196,13 +246,19 @@ class WebDashboard extends StatelessWidget {
         const Text("Quick Access", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
         ...managements.map((item) {
-          return Card(
-            child: ListTile(
-              title: Text(item["title"]),
-              trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => item["screen"]));
-              },
+          return AnimatedBuilder(
+            animation: _opacityAnimation,
+            builder: (context, _) => Opacity(
+              opacity: _opacityAnimation.value,
+              child: Card(
+                child: ListTile(
+                  title: Text(item["title"]),
+                  trailing: const Icon(Icons.arrow_forward_ios),
+                  onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => item["screen"]));
+                  },
+                ),
+              ),
             ),
           );
         }).toList(),
