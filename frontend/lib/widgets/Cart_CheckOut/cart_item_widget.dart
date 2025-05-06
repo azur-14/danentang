@@ -3,8 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:danentang/models/CartItem.dart';
 import 'package:danentang/constants/colors.dart';
+import 'package:danentang/Service/product_service.dart';
 
-class CartItemWidget extends StatelessWidget {
+class CartItemWidget extends StatefulWidget {
   final CartItem item;
   final bool isEditing;
   final VoidCallback onDelete;
@@ -21,34 +22,93 @@ class CartItemWidget extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  _CartItemWidgetState createState() => _CartItemWidgetState();
+}
+
+class _CartItemWidgetState extends State<CartItemWidget> {
+  String productName = '';
+  String variantName = '';
+  double price = 0;
+  String imageUrl = '';
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProductDetails();
+  }
+
+  Future<void> _fetchProductDetails() async {
+    try {
+      // 1. Lấy product chính
+      final product = await ProductService().getProductById(widget.item.productId);
+      // Giá mặc định là giá product
+      double fetchedPrice = product.price;
+      // Ảnh mặc định: lấy ảnh đầu trong list, hoặc placeholder
+      String fetchedImage = product.images.isNotEmpty
+          ? product.images.first.url
+          : 'https://via.placeholder.com/150';
+      String fetchedVariantName = '';
+
+      // 2. Nếu có variant, lấy thêm và tính giá
+      if (widget.item.productVariantId != null) {
+        final variant = await ProductService().getVariantById(
+          widget.item.productId,
+          widget.item.productVariantId!,
+        );
+        fetchedPrice = product.price + variant.additionalPrice;
+        fetchedVariantName = variant.variantName;
+      }
+
+      setState(() {
+        productName = product.name;
+        variantName = fetchedVariantName;
+        price = fetchedPrice;
+        imageUrl = fetchedImage;
+        _loading = false;
+      });
+    } catch (e) {
+      // btn lỗi fallback
+      setState(() {
+        productName = 'Unknown product';
+        price = 0;
+        imageUrl = 'https://via.placeholder.com/150';
+        _loading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Giá đơn giản, không tính discount
-    final price = item.price;
+    if (_loading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Card(
         color: Colors.white,
-        elevation: isMobile ? 0 : 2,
+        elevation: widget.isMobile ? 0 : 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
         child: Padding(
-          padding: EdgeInsets.all(isMobile ? 0 : 12),
+          padding: EdgeInsets.all(widget.isMobile ? 0 : 12),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Ảnh placeholder
+              // Ảnh sản phẩm/variant
               Container(
-                width: isMobile ? 60 : 80,
-                height: isMobile ? 60 : 80,
+                width: widget.isMobile ? 60 : 80,
+                height: widget.isMobile ? 60 : 80,
                 decoration: BoxDecoration(
                   color: Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(8),
-                  image: const DecorationImage(
-                    image: NetworkImage(
-                      'https://via.placeholder.com/150',
-                    ),
+                  image: DecorationImage(
+                    image: NetworkImage(imageUrl),
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -58,32 +118,34 @@ class CartItemWidget extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Tên sản phẩm + nút delete
+                    // Tên và nút delete
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
                           child: Text(
-                            item.productName,
+                            productName,
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.bold),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (isEditing)
+                        if (widget.isEditing)
                           IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: onDelete,
+                            onPressed: widget.onDelete,
                           ),
                       ],
                     ),
 
-                    // Biến thể
-                    const SizedBox(height: 4),
-                    Text(
-                      item.variantName,
-                      style: TextStyle(color: AppColors.hexToColor(AppColors.grey)),
-                    ),
+                    // Hiển thị variant nếu có
+                    if (variantName.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        variantName,
+                        style: TextStyle(color: AppColors.hexToColor(AppColors.grey)),
+                      ),
+                    ],
 
                     // Giá và số lượng
                     const SizedBox(height: 8),
@@ -109,13 +171,13 @@ class CartItemWidget extends StatelessWidget {
                                 color: AppColors.hexToColor(AppColors.purple),
                               ),
                               onPressed: () {
-                                if (item.quantity > 1) {
-                                  onQuantityChanged(item.quantity - 1);
+                                if (widget.item.quantity > 1) {
+                                  widget.onQuantityChanged(widget.item.quantity - 1);
                                 }
                               },
                             ),
                             Text(
-                              item.quantity.toString().padLeft(2, '0'),
+                              widget.item.quantity.toString().padLeft(2, '0'),
                               style: const TextStyle(fontSize: 16),
                             ),
                             IconButton(
@@ -124,7 +186,7 @@ class CartItemWidget extends StatelessWidget {
                                 color: AppColors.hexToColor(AppColors.purple),
                               ),
                               onPressed: () {
-                                onQuantityChanged(item.quantity + 1);
+                                widget.onQuantityChanged(widget.item.quantity + 1);
                               },
                             ),
                           ],

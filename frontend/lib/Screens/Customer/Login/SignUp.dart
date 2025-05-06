@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-
 import '../../../constants/colors.dart';
+import 'package:danentang/Service/user_service.dart';
 import '../Login/Login_Screen.dart';
 
 class Signup extends StatefulWidget {
@@ -18,6 +16,7 @@ class _SignupState extends State<Signup> {
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
   final addressController = TextEditingController();
+  final UserService _userService = UserService();
 
   bool isLoading = false;
 
@@ -29,56 +28,46 @@ class _SignupState extends State<Signup> {
       return;
     }
 
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
 
-    final url = Uri.parse('http://localhost:5012/api/auth/register');
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': widget.email,
-        'fullName': nameController.text,
-        'password': passwordController.text,
-        'addressLine1': addressController.text,
-        'addressLine2': '',
-        'city': 'Hanoi',
-        'state': 'HN',
-        'zipCode': '10000',
-        'country': 'Vietnam',
-      }),
-    );
+    try {
+      await _userService.register(
+        email: widget.email,
+        fullName: nameController.text.trim(),
+        password: passwordController.text,
+        addressLine1: addressController.text.trim(),
+      );
 
-    setState(() {
-      isLoading = false;
-    });
-
-    if (response.statusCode == 200) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Đăng ký thành công!')),
       );
-      Future.delayed(const Duration(milliseconds: 500), () {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => LoginScreen(email: widget.email)),
-        );
-      });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Đăng ký thất bại: ${response.body}')),
+
+      await Future.delayed(const Duration(milliseconds: 500));
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => LoginScreen(email: widget.email),
+        ),
       );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Đăng ký thất bại: $e')),
+      );
+    } finally {
+      setState(() => isLoading = false);
     }
   }
 
-  // Widget xây dựng các trường nhập liệu cho Signup
-  Widget _buildTextField(String hintText, TextEditingController controller,
-      {bool isPassword = false}) {
+  Widget _buildTextField(
+      String hint,
+      TextEditingController controller, {
+        bool isPassword = false,
+      }) {
     return TextField(
       controller: controller,
       obscureText: isPassword,
       decoration: InputDecoration(
-        hintText: hintText,
+        hintText: hint,
         filled: true,
         fillColor: Colors.grey.shade200,
         border: OutlineInputBorder(
@@ -92,11 +81,9 @@ class _SignupState extends State<Signup> {
     );
   }
 
-  /// Layout cho Mobile (Android): sử dụng thiết kế dạng cột như phiên bản ban đầu,
-  /// với logo phóng to và card đăng ký có nền trắng.
   Widget _buildMobileLayout() {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
+    final h = MediaQuery.of(context).size.height;
+    final w = MediaQuery.of(context).size.width;
     return Scaffold(
       backgroundColor: AppColors.brandPrimary,
       body: Column(
@@ -115,26 +102,34 @@ class _SignupState extends State<Signup> {
                 ),
               ),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       "Sign Up",
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
+                      style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black),
                     ),
                     const SizedBox(height: 20),
                     _buildTextField("Enter your name *", nameController),
                     const SizedBox(height: 15),
-                    _buildTextField("Enter your password *", passwordController, isPassword: true),
+                    _buildTextField(
+                        "Enter your password *", passwordController,
+                        isPassword: true),
                     const SizedBox(height: 15),
-                    _buildTextField("Enter your password again *", confirmPasswordController, isPassword: true),
+                    _buildTextField(
+                        "Enter password again *", confirmPasswordController,
+                        isPassword: true),
                     const SizedBox(height: 15),
                     _buildTextField("Enter your address *", addressController),
                     const SizedBox(height: 25),
                     SizedBox(
                       width: double.infinity,
-                      height: screenHeight * 0.07,
+                      height: h * 0.07,
                       child: ElevatedButton(
                         onPressed: isLoading ? null : registerUser,
                         style: ElevatedButton.styleFrom(
@@ -144,11 +139,12 @@ class _SignupState extends State<Signup> {
                           ),
                         ),
                         child: isLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
+                            ? const CircularProgressIndicator(
+                            color: Colors.white)
                             : Text(
                           "Register",
                           style: TextStyle(
-                            fontSize: screenWidth * 0.05,
+                            fontSize: w * 0.05,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
@@ -158,9 +154,7 @@ class _SignupState extends State<Signup> {
                     const SizedBox(height: 20),
                     Center(
                       child: GestureDetector(
-                        onTap: () {
-                          Navigator.pop(context);
-                        },
+                        onTap: () => Navigator.pop(context),
                         child: RichText(
                           text: const TextSpan(
                             style: TextStyle(color: Colors.black54),
@@ -168,7 +162,9 @@ class _SignupState extends State<Signup> {
                               TextSpan(text: "Already have an account? "),
                               TextSpan(
                                 text: "Log in now.",
-                                style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                    color: Colors.blue,
+                                    fontWeight: FontWeight.bold),
                               ),
                             ],
                           ),
@@ -185,12 +181,10 @@ class _SignupState extends State<Signup> {
     );
   }
 
-  /// Layout cho Web: giao diện chia đôi. Bên trái hiển thị logo và slogan, bên phải chứa form đăng ký.
   Widget _buildWebLayout() {
     return Scaffold(
       body: Row(
         children: [
-          // Bên trái: chỉ hiển thị logo và slogan trên nền AppColors.brandPrimary.
           Expanded(
             flex: 1,
             child: Container(
@@ -222,7 +216,6 @@ class _SignupState extends State<Signup> {
               ),
             ),
           ),
-          // Bên phải: Card chứa form đăng ký/đăng nhập với nền trắng.
           Expanded(
             flex: 1,
             child: Center(
@@ -256,7 +249,7 @@ class _SignupState extends State<Signup> {
                         const SizedBox(height: 15),
                         _buildTextField("Enter your password *", passwordController, isPassword: true),
                         const SizedBox(height: 15),
-                        _buildTextField("Enter your password again *", confirmPasswordController, isPassword: true),
+                        _buildTextField("Enter password again *", confirmPasswordController, isPassword: true),
                         const SizedBox(height: 15),
                         _buildTextField("Enter your address *", addressController),
                         const SizedBox(height: 25),
@@ -266,20 +259,12 @@ class _SignupState extends State<Signup> {
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.brandSecondary,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
-                            onPressed: () {
-                              final email = widget.email;
-                              if (email.isNotEmpty) {
-                                registerUser();
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Please enter your email')),
-                                );
-                              }
-                            },
-                            child: const Text(
+                            onPressed: isLoading ? null : registerUser,
+                            child: isLoading
+                                ? const CircularProgressIndicator(color: Colors.white)
+                                : const Text(
                               "Register",
                               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                             ),
@@ -288,9 +273,7 @@ class _SignupState extends State<Signup> {
                         const SizedBox(height: 20),
                         Center(
                           child: GestureDetector(
-                            onTap: () {
-                              Navigator.pop(context);
-                            },
+                            onTap: () => Navigator.pop(context),
                             child: RichText(
                               text: const TextSpan(
                                 style: TextStyle(color: Colors.black54),
@@ -319,7 +302,7 @@ class _SignupState extends State<Signup> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    return screenWidth > 800 ? _buildWebLayout() : _buildMobileLayout();
+    final w = MediaQuery.of(context).size.width;
+    return w > 800 ? _buildWebLayout() : _buildMobileLayout();
   }
 }

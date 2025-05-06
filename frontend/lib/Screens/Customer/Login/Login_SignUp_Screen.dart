@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-
 import '../../../constants/colors.dart';
+import 'package:danentang/Service/user_service.dart';
 import 'Login_Screen.dart';
 import 'SignUp.dart';
-
 
 class LoginSignupScreen extends StatefulWidget {
   const LoginSignupScreen({super.key});
@@ -18,25 +15,35 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
     with SingleTickerProviderStateMixin {
   final emailController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final UserService _userService = UserService();
 
   late AnimationController _animationController;
   late Animation<Offset> _cardSlideAnimation;
   late Animation<double> _cardFadeAnimation;
 
-  // Hàm gọi API và điều hướng sang Login/Signup
-  void checkEmailAndNavigate(BuildContext context, String email) async {
-    final url = Uri.parse('http://localhost:5012/api/auth/check-email?email=$email');
-    final response = await http.get(url);
-    if (response.statusCode == 200) {
-      final jsonData = jsonDecode(response.body);
-      final exists = jsonData['exists'];
-      if (exists == true) {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => LoginScreen(email: email)));
+  /// Kiểm tra email và điều hướng
+  Future<void> checkEmailAndNavigate(BuildContext context, String email) async {
+    try {
+      final exists = await _userService.checkEmailExists(email);
+      if (exists) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LoginScreen(email: email),
+          ),
+        );
       } else {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => Signup(email: email)));
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => Signup(email: email),
+          ),
+        );
       }
-    } else {
-      print("Lỗi khi gọi API: ${response.body}");
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi kiểm tra email: $e')),
+      );
     }
   }
 
@@ -50,9 +57,12 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
     _cardSlideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.1),
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOut));
-    _cardFadeAnimation = Tween<double>(begin: 0, end: 1)
-        .animate(CurvedAnimation(parent: _animationController, curve: Curves.easeIn));
+    ).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
+    _cardFadeAnimation = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    );
     _animationController.forward();
   }
 
@@ -63,36 +73,34 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
     super.dispose();
   }
 
-  /// Layout dành cho mobile (Android) – giữ nguyên cấu trúc ban đầu với vài cải tiến nhỏ
   Widget _buildMobileLayout() {
     return Scaffold(
       backgroundColor: AppColors.brandPrimary,
       body: Column(
         children: [
-          const SizedBox(height: 40), // Giảm khoảng trống phía trên
-          Center(child: Image.asset('assets/Logo.png', width: 180)), // Phóng to logo
+          const SizedBox(height: 40),
+          Center(child: Image.asset('assets/Logo.png', width: 180)),
           const SizedBox(height: 20),
           Expanded(
             child: Container(
               width: double.infinity,
               decoration: const BoxDecoration(
-                // Card nền trắng với bo góc phía trên
                 color: Colors.white,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(30),
                   topRight: Radius.circular(30),
                 ),
               ),
-              // SingleChildScrollView để nội dung cuộn nếu cần
               child: SingleChildScrollView(
-                // Giảm padding bottom xuống còn 10
-                padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 10),
+                padding: const EdgeInsets.only(
+                    left: 20, right: 20, top: 20, bottom: 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       "Sign Up",
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      style:
+                      TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 16),
                     TextField(
@@ -110,12 +118,18 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
                     const SizedBox(height: 10),
                     Wrap(
                       children: [
-                        const Text("By continuing, I agree to the ", style: TextStyle(color: Colors.black54)),
+                        const Text(
+                          "By continuing, I agree to the ",
+                          style: TextStyle(color: Colors.black54),
+                        ),
                         GestureDetector(
                           onTap: () {},
                           child: const Text(
                             "Terms of Use",
-                            style: TextStyle(color: AppColors.brandAccent, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              color: AppColors.brandAccent,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                         const Text(" & "),
@@ -123,7 +137,10 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
                           onTap: () {},
                           child: const Text(
                             "Privacy Policy",
-                            style: TextStyle(color: AppColors.brandAccent, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              color: AppColors.brandAccent,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
@@ -135,7 +152,8 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.brandSecondary,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
                         ),
                         onPressed: () {
                           final email = emailController.text.trim();
@@ -143,13 +161,17 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
                             checkEmailAndNavigate(context, email);
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Please enter your email')),
+                              const SnackBar(
+                                  content: Text('Please enter your email')),
                             );
                           }
                         },
                         child: const Text(
                           "Continue",
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
                         ),
                       ),
                     ),
@@ -163,13 +185,10 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
     );
   }
 
-
-  /// Layout dành cho web: giao diện chia đôi – bên trái là logo & tagline, bên phải là ô đăng nhập
   Widget _buildWebLayout() {
     return Scaffold(
       body: Row(
         children: [
-          // Bên trái: hiển thị logo & slogan ấn tượng với background gradient
           Expanded(
             flex: 1,
             child: Container(
@@ -194,14 +213,14 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
                     const Text(
                       "Experience a revolutionary digital solution\nand enjoy exclusive benefits.",
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 20, color: Colors.white70, height: 1.3),
+                      style:
+                      TextStyle(fontSize: 20, color: Colors.white70, height: 1.3),
                     ),
                   ],
                 ),
               ),
             ),
           ),
-          // Bên phải: card chứa form đăng ký/đăng nhập với hiệu ứng Fade & Slide
           Expanded(
             flex: 1,
             child: Center(
@@ -232,7 +251,10 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
                             const SizedBox(height: 30),
                             const Text(
                               "Sign Up",
-                              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black87),
+                              style: TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87),
                             ),
                             const SizedBox(height: 20),
                             TextField(
@@ -250,15 +272,28 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
                             const SizedBox(height: 15),
                             Wrap(
                               children: [
-                                const Text("By continuing, I agree to the ", style: TextStyle(color: Colors.black54)),
+                                const Text(
+                                  "By continuing, I agree to the ",
+                                  style: TextStyle(color: Colors.black54),
+                                ),
                                 GestureDetector(
                                   onTap: () {},
-                                  child: const Text("Terms of Use", style: TextStyle(color: AppColors.brandAccent, fontWeight: FontWeight.bold)),
+                                  child: const Text(
+                                    "Terms of Use",
+                                    style: TextStyle(
+                                        color: AppColors.brandAccent,
+                                        fontWeight: FontWeight.bold),
+                                  ),
                                 ),
                                 const Text(" & "),
                                 GestureDetector(
                                   onTap: () {},
-                                  child: const Text("Privacy Policy", style: TextStyle(color: AppColors.brandAccent, fontWeight: FontWeight.bold)),
+                                  child: const Text(
+                                    "Privacy Policy",
+                                    style: TextStyle(
+                                        color: AppColors.brandAccent,
+                                        fontWeight: FontWeight.bold),
+                                  ),
                                 ),
                               ],
                             ),
@@ -269,21 +304,27 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.brandSecondary,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10)),
                                 ),
                                 onPressed: () {
                                   final email = emailController.text.trim();
                                   if (email.isNotEmpty) {
                                     checkEmailAndNavigate(context, email);
                                   } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Please enter your email')),
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(
+                                      const SnackBar(
+                                          content: Text('Please enter your email')),
                                     );
                                   }
                                 },
                                 child: const Text(
                                   "Continue",
-                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                                  style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white),
                                 ),
                               ),
                             ),

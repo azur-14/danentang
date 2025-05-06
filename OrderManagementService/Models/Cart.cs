@@ -20,10 +20,4 @@ namespace OrderManagementService.Models
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     }
 
-    public class CartItem
-    {
-        public string ProductVariantId { get; set; }
-
-        public int Quantity { get; set; }
-    }
 }

@@ -1,15 +1,17 @@
+// lib/models/product.dart
+
 class Product {
   final String id;
-  String name;
-  String? brand;
-  String? description;
-  double price;
-  int discountPercentage;
-  String categoryId;
-  List<ProductImage> images;
-  List<ProductVariant> variants;
+  final String name;
+  final String? brand;
+  final String? description;
+  final double price;
+  final int discountPercentage;
+  final String categoryId;
   final DateTime createdAt;
-  DateTime updatedAt;
+  final DateTime updatedAt;
+  final List<ProductImage> images;
+  final List<ProductVariant> variants;
 
   Product({
     required this.id,
@@ -19,68 +21,74 @@ class Product {
     required this.price,
     required this.discountPercentage,
     required this.categoryId,
-    required this.images,
-    required this.variants,
     required this.createdAt,
     required this.updatedAt,
+    required this.images,
+    required this.variants,
   });
 
-  factory Product.fromJson(Map<String, dynamic> json) {
-    return Product(
-      id: json['_id'] ?? '',
-      name: json['name'] ?? '',
-      brand: json['brand'],
-      description: json['description'],
-      price: (json['price'] as num?)?.toDouble() ?? 0.0,
-      discountPercentage: json['discountPercentage'] ?? 0,
-      categoryId: json['categoryId'] ?? '',
-      images: (json['images'] as List<dynamic>?)
-          ?.map((img) => ProductImage.fromJson(img))
-          .toList()
-          ?? [],
-      variants: (json['variants'] as List<dynamic>?)
-          ?.map((v) => ProductVariant.fromJson(v))
-          .toList()
-          ?? [],
-      createdAt: DateTime.tryParse(json['createdAt'] ?? '') ?? DateTime.now(),
-      updatedAt: DateTime.tryParse(json['updatedAt'] ?? '') ?? DateTime.now(),
-    );
-  }
+  factory Product.fromJson(Map<String, dynamic> json) => Product(
+    id: json['id'] as String,
+    name: json['name'] as String,
+    brand: json['brand'] as String?,
+    description: json['description'] as String?,
+    price: (json['price'] as num).toDouble(),
+    discountPercentage: json['discountPercentage'] as int,
+    categoryId: json['categoryId'] as String,
+    createdAt: DateTime.parse(json['createdAt'] as String),
+    updatedAt: DateTime.parse(json['updatedAt'] as String),
+    images: (json['images'] as List<dynamic>)
+        .map((e) => ProductImage.fromJson(e as Map<String, dynamic>))
+        .toList(),
+    variants: (json['variants'] as List<dynamic>)
+        .map((e) => ProductVariant.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
 }
 
 class ProductImage {
-  String url;
-  int sortOrder;
+  final String? id;      // cho phép null
+  final String url;
+  final int sortOrder;
 
   ProductImage({
+    this.id,
     required this.url,
     required this.sortOrder,
   });
 
-  factory ProductImage.fromJson(Map<String, dynamic> json) {
-    return ProductImage(
-      url: json['url'] ?? '',
-      sortOrder: json['sortOrder'] ?? 1,
-    );
-  }
+  factory ProductImage.fromJson(Map<String, dynamic> json) => ProductImage(
+    id: json['id'] as String?,         // parse nullable
+    url: json['url'] as String,
+    sortOrder: json['sortOrder'] as int,
+  );
 }
 
 class ProductVariant {
-  String variantName;
-  double additionalPrice;
-  int inventory;
+  final String? id;      // cho phép null
+  final String variantName;
+  final double additionalPrice;
+  final int inventory;
+  final DateTime createdAt;
+  final DateTime updatedAt;
 
   ProductVariant({
+    this.id,
     required this.variantName,
     required this.additionalPrice,
     required this.inventory,
+    required this.createdAt,
+    required this.updatedAt,
   });
 
-  factory ProductVariant.fromJson(Map<String, dynamic> json) {
-    return ProductVariant(
-      variantName: json['variantName'] ?? '',
-      additionalPrice: (json['additionalPrice'] as num?)?.toDouble() ?? 0.0,
-      inventory: json['inventory'] ?? 0,
-    );
-  }
+  factory ProductVariant.fromJson(Map<String, dynamic> json) =>
+      ProductVariant(
+        id: json['id'] as String?,
+        variantName: json['variantName'] as String,
+        additionalPrice: (json['additionalPrice'] as num).toDouble(),
+        inventory: json['inventory'] as int,
+        createdAt: DateTime.parse(json['createdAt'] as String),
+        updatedAt: DateTime.parse(json['updatedAt'] as String),
+      );
 }
+

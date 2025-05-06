@@ -1,4 +1,4 @@
-// lib/service/product_service.dart
+// lib/services/product_service.dart
 
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show debugPrint;
@@ -35,13 +35,44 @@ class ProductService {
       return [];
     }
   }
-  Future<Product> getById(String id) async {
-    final resp = await http.get(Uri.parse('$_baseUrl/$id'));
+
+  /// GET /api/products/{id}
+  Future<Product> getProductById(String id) async {
+    final uri = Uri.parse('$_productsPath/$id');
+    debugPrint('→ GET $uri');
+    final resp = await http.get(uri);
+    debugPrint('← ${resp.statusCode} ${resp.body}');
     if (resp.statusCode == 200) {
-      return Product.fromJson(json.decode(resp.body));
+      return Product.fromJson(json.decode(resp.body) as Map<String, dynamic>);
     }
-    throw Exception('Failed to load product $id');
+    throw Exception('Failed to load product $id: ${resp.statusCode}');
   }
+
+  /// GET /api/products/{productId}/variants
+  Future<List<ProductVariant>> fetchVariants(String productId) async {
+    final uri = Uri.parse('$_productsPath/$productId/variants');
+    debugPrint('→ GET $uri');
+    final resp = await http.get(uri);
+    debugPrint('← ${resp.statusCode} ${resp.body}');
+    if (resp.statusCode == 200) {
+      final List<dynamic> data = json.decode(resp.body) as List<dynamic>;
+      return data
+          .map((e) => ProductVariant.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+    throw Exception('Failed to load variants for product $productId: ${resp.statusCode}');
+  }
+
+  /// GET /api/products/{productId}/variants/{variantId}
+  Future<ProductVariant> getVariantById(String productId, String variantId) async {
+    final variants = await fetchVariants(productId);
+    try {
+      return variants.firstWhere((v) => v.id == variantId);
+    } catch (_) {
+      throw Exception('Variant $variantId not found for product $productId');
+    }
+  }
+
   /// GET /api/products/category/{categoryId}
   static Future<List<Product>> fetchProductsByCategory(String categoryId) async {
     final uri = Uri.parse('$_productsPath/category/$categoryId');

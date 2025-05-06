@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:danentang/models/CartItem.dart';
 import 'package:danentang/models/Cart.dart';
 import 'package:danentang/Service/cart_service.dart';
@@ -10,15 +11,16 @@ import 'package:danentang/widgets/Cart_CheckOut/order_summary_widget.dart';
 import 'package:danentang/widgets/Header/web_header.dart';
 import 'package:danentang/widgets/Search/web_search_bar.dart';
 import 'package:danentang/constants/colors.dart';
+import 'package:uuid/uuid.dart';
 
 class CartScreenCheckOut extends StatefulWidget {
   final bool isLoggedIn;
-  final String userId;
+  final String? userId;
 
   const CartScreenCheckOut({
     Key? key,
     required this.isLoggedIn,
-    required this.userId,
+    this.userId,
   }) : super(key: key);
 
   @override
@@ -28,6 +30,8 @@ class CartScreenCheckOut extends StatefulWidget {
 class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
   final CartService _service = CartService();
   late Future<Cart> _cartFuture;
+  late String _effectiveUserId;
+
   bool isEditing = false;
   bool applyPoints = false;
   final TextEditingController _discountController = TextEditingController();
@@ -35,19 +39,35 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
   @override
   void initState() {
     super.initState();
-    _cartFuture = _service.fetchCart(widget.userId);
+    _initUserIdAndFetchCart();
+  }
+
+  Future<void> _initUserIdAndFetchCart() async {
+    if (widget.isLoggedIn && widget.userId != null) {
+      _effectiveUserId = widget.userId!;
+    } else {
+      final prefs = await SharedPreferences.getInstance();
+      String? guestId = prefs.getString('guestId');
+      if (guestId == null) {
+        guestId = const Uuid().v4();
+        await prefs.setString('guestId', guestId);
+      }
+      _effectiveUserId = guestId;
+    }
+    setState(() {
+      _cartFuture = _service.fetchCart(_effectiveUserId);
+    });
   }
 
   Future<void> _refresh() async {
     setState(() {
-      _cartFuture = _service.fetchCart(widget.userId);
+      _cartFuture = _service.fetchCart(_effectiveUserId);
     });
   }
 
-  // Chỉ dùng price * quantity, bỏ discountPercentage
   double _subtotal(List<CartItem> items) =>
       items.where((i) => i.isSelected).fold<double>(
-          0, (sum, i) => sum + i.price * i.quantity);
+          0, (sum, i) => sum + i.currentPrice * i.quantity);
 
   double get _discount => applyPoints ? 60000 : 0;
   double get _shipping => 50000;
@@ -106,13 +126,19 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
                       item: item,
                       isEditing: isEditing,
                       onDelete: () async {
-                        await _service.removeItem(
-                            cart.id, item.productVariantId);
+                        final idToRemove =
+                            item.productVariantId ?? item.productId;
+                        await _service.removeItem(cart.id, idToRemove);
                         await _refresh();
                       },
                       onQuantityChanged: (newQty) async {
-                        item.quantity = newQty;
-                        await _service.addOrUpdateItem(cart.id, item);
+                        final updatedItem = CartItem(
+                          productId: item.productId,
+                          productVariantId: item.productVariantId,
+                          quantity: newQty,
+                        );
+                        await _service.addOrUpdateItem(
+                            cart.id, updatedItem);
                         await _refresh();
                       },
                       isMobile: true,
@@ -134,7 +160,7 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
                   '/checkout',
                   extra: {
                     'isLoggedIn': widget.isLoggedIn,
-                    'userId': widget.userId,
+                    'userId': _effectiveUserId,
                   },
                 ),
               ),
@@ -171,7 +197,6 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
                       horizontal: 32, vertical: 16),
                   child: Row(
                     children: [
-                      // Danh sách sản phẩm
                       Expanded(
                         flex: 3,
                         child: ListView.builder(
@@ -182,14 +207,22 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
                               item: item,
                               isEditing: isEditing,
                               onDelete: () async {
+                                final idToRemove =
+                                    item.productVariantId ??
+                                        item.productId;
                                 await _service.removeItem(
-                                    cart.id, item.productVariantId);
+                                    cart.id, idToRemove);
                                 await _refresh();
                               },
                               onQuantityChanged: (newQty) async {
-                                item.quantity = newQty;
+                                final updatedItem = CartItem(
+                                  productId: item.productId,
+                                  productVariantId:
+                                  item.productVariantId,
+                                  quantity: newQty,
+                                );
                                 await _service.addOrUpdateItem(
-                                    cart.id, item);
+                                    cart.id, updatedItem);
                                 await _refresh();
                               },
                               isMobile: false,
@@ -198,7 +231,6 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
                         ),
                       ),
                       const SizedBox(width: 32),
-                      // Order summary
                       Expanded(
                         flex: 2,
                         child: OrderSummaryWidget(
@@ -215,7 +247,7 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
                             '/checkout',
                             extra: {
                               'isLoggedIn': widget.isLoggedIn,
-                              'userId': widget.userId,
+                              'userId': _effectiveUserId,
                             },
                           ),
                         ),

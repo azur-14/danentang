@@ -1,8 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../constants/colors.dart';
+import 'package:danentang/Service/user_service.dart';  // import UserService
 
 class LoginScreen extends StatefulWidget {
   final String? email;
@@ -15,6 +17,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   late TextEditingController emailController;
   final TextEditingController passwordController = TextEditingController();
+  final UserService _userService = UserService();  // khởi tạo service
   bool isLoading = false;
 
   @override
@@ -24,27 +27,29 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> loginUser() async {
-    final url = Uri.parse('http://localhost:5012/api/auth/login');
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
+    try {
+      final resp = await http.post(
+        Uri.parse('https://api.yoursite.com/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': emailController.text.trim(),
+          'password': passwordController.text,
+        }),
+      );
 
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': emailController.text.trim(),
-        'password': passwordController.text,
-      }),
-    );
+      if (resp.statusCode != 200) {
+        throw Exception('Login failed: ${resp.body}');
+      }
 
-    setState(() {
-      isLoading = false;
-    });
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+      final token = data['token'] as String;
+      final userId = data['userId'] as String;   // ← lấy thẳng userId
 
-    if (response.statusCode == 200) {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', token);
       await prefs.setString('email', emailController.text.trim());
+      await prefs.setString('userId', userId);   // ← lưu userId
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Đăng nhập thành công!')),
@@ -52,19 +57,23 @@ class _LoginScreenState extends State<LoginScreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
+        MaterialPageRoute(builder: (_) => const HomePage()),
       );
-    } else {
+
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Đăng nhập thất bại: ${response.body}')),
+        SnackBar(content: Text('Đăng nhập thất bại: $e')),
       );
+    } finally {
+      setState(() => isLoading = false);
     }
   }
 
-  /// Layout dành cho Mobile (Android)
+
   Widget _buildMobileLayout() {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth  = MediaQuery.of(context).size.width;
+    final h = MediaQuery.of(context).size.height;
+    final w = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: AppColors.brandPrimary,
       body: Column(
@@ -83,17 +92,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       "Login",
                       style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black),
                     ),
                     const SizedBox(height: 20),
                     TextField(
@@ -120,30 +129,28 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide.none,
                         ),
-                        suffixIcon: const Icon(
-                          Icons.remove_red_eye_outlined,
-                          color: Colors.black26,
-                        ),
+                        suffixIcon: const Icon(Icons.remove_red_eye_outlined,
+                            color: Colors.black26),
                       ),
                     ),
                     const SizedBox(height: 25),
                     SizedBox(
                       width: double.infinity,
-                      height: screenHeight * 0.07,
+                      height: h * 0.07,
                       child: ElevatedButton(
                         onPressed: isLoading ? null : loginUser,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.brandSecondary,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                              borderRadius: BorderRadius.circular(10)),
                         ),
                         child: isLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
+                            ? const CircularProgressIndicator(
+                            color: Colors.white)
                             : Text(
                           "Login",
                           style: TextStyle(
-                            fontSize: screenWidth * 0.05,
+                            fontSize: w * 0.05,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
@@ -161,12 +168,11 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  /// Layout dành cho Web: chia thành 2 cột
   Widget _buildWebLayout() {
     return Scaffold(
       body: Row(
         children: [
-          // Bên trái: chỉ hiển thị logo và slogan trên nền AppColors.brandPrimary.
+          // Left side: Logo & slogan
           Expanded(
             flex: 1,
             child: Container(
@@ -182,23 +188,23 @@ class _LoginScreenState extends State<LoginScreen> {
                       "Welcome Back!",
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
                     ),
                     const SizedBox(height: 20),
                     const Text(
                       "Login to access exclusive deals and a seamless digital experience.",
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 20, color: Colors.white70, height: 1.3),
+                      style:
+                      TextStyle(fontSize: 20, color: Colors.white70, height: 1.3),
                     ),
                   ],
                 ),
               ),
             ),
           ),
-          // Bên phải: Card đăng nhập.
+          // Right side: Login card
           Expanded(
             flex: 1,
             child: Center(
@@ -255,7 +261,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               borderRadius: BorderRadius.circular(10),
                               borderSide: BorderSide.none,
                             ),
-                            suffixIcon: const Icon(Icons.remove_red_eye_outlined, color: Colors.black26),
+                            suffixIcon: const Icon(Icons.remove_red_eye_outlined,
+                                color: Colors.black26),
                           ),
                         ),
                         const SizedBox(height: 25),
@@ -267,18 +274,17 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.brandSecondary,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
+                                  borderRadius: BorderRadius.circular(10)),
                             ),
                             child: isLoading
-                                ? const CircularProgressIndicator(color: Colors.white)
+                                ? const CircularProgressIndicator(
+                                color: Colors.white)
                                 : const Text(
                               "Login",
                               style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white),
                             ),
                           ),
                         ),
@@ -289,7 +295,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -297,14 +303,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    return screenWidth > 800 ? _buildWebLayout() : _buildMobileLayout();
+    final w = MediaQuery.of(context).size.width;
+    return w > 800 ? _buildWebLayout() : _buildMobileLayout();
   }
 }
 
+// Giả sử bạn đã có HomePage ở chỗ khác
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
