@@ -51,7 +51,7 @@ class _CustomerSupportScreenState extends State<CustomerSupportScreen> {
         )
             : const SizedBox(),
         title: const Text(
-          "Customer Support",
+          "Hỗ trợ người dùng",
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: Colors.black,
@@ -170,7 +170,7 @@ class SupportTicketItem extends StatelessWidget {
                   borderRadius: BorderRadius.circular(15),
                 ),
                 child: const Text(
-                  "In Progress",
+                  "Đang thực hiện",
                   style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -188,9 +188,9 @@ class SupportTicketItem extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          _buildInfoRow("Project", "Landing Page"),
-          _buildInfoRow("Address", "Meadow Lane Oakland"),
-          _buildInfoRow("Date", "Just now"),
+          _buildInfoRow("Sản phẩm mua", "Landing Page"),
+          _buildInfoRow("Địa chỉ", "Meadow Lane Oakland"),
+          _buildInfoRow("Ngày", "Just now"),
           const SizedBox(height: 14),
           GestureDetector(
             onTap: () {

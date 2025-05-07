@@ -56,7 +56,7 @@ class _AnimatedPieChartState extends State<AnimatedPieChart> with SingleTickerPr
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: Column(
-            mainAxisSize: MainAxisSize.min, // 👈 quan trọng: giúp Card không bị cao thừa
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
@@ -65,7 +65,7 @@ class _AnimatedPieChartState extends State<AnimatedPieChart> with SingleTickerPr
               ),
               const SizedBox(height: 10),
               SizedBox(
-                height: 140, // Bạn có thể giảm hoặc tăng nếu thấy cần
+                height: 140,
                 child: AnimatedBuilder(
                   animation: _rotationAnimation,
                   builder: (context, child) {

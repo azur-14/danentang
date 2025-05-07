@@ -67,7 +67,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> with 
         )
             : null,
         title: const Text(
-          'Product Management',
+          'Quản lý Sản phẩm',
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -87,7 +87,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> with 
           child: SingleChildScrollView(
             child: Column(
               children: [
-                _buildProductSection('Latest Product', 'View All'),
+                _buildProductSection('Sản phẩm mới nhất', 'Xem tất cả'),
                 _buildProductItem('Laptop ASUS', 'Color: Grey, AA - 07 - 902', 200),
                 const SizedBox(height: 10),
                 _buildProductSection('Danh Sách Sản Phẩm Được Bổ Sung', ''),
@@ -177,16 +177,16 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> with 
   Widget _buildActionButtons(BuildContext context) {
     return Column(
       children: [
-        _buildActionButton('New Product', FontAwesomeIcons.boxOpen, () {
+        _buildActionButton('Thêm Sản phẩm mới', FontAwesomeIcons.boxOpen, () {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const NewProductScreen()),
           );
         }),
-        _buildActionButton('Edit Product', FontAwesomeIcons.pen, () {
+        _buildActionButton('Sửa Sản phẩm', FontAwesomeIcons.pen, () {
           // TODO: xử lý edit product
         }),
-        _buildActionButton('Delete Product', FontAwesomeIcons.trash, () {
+        _buildActionButton('Xóa Sản phẩm', FontAwesomeIcons.trash, () {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const SuccessScreen()),

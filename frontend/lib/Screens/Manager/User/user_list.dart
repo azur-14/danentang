@@ -14,18 +14,12 @@ class UserListScreen extends StatefulWidget {
 class _UserListScreenState extends State<UserListScreen> {
   int _currentIndex = 0;
 
-  final List<User> users = [
-    User("ByeWind", "byewind@twitter.com", "Meadow Lane Oakland", "Just now",
-        "assets/Manager/Avatar/avatar01.jpg"),
-    User("Kate Morrison", "melody@altbox.com", "Larry San Francisco",
-        "A minute ago", "assets/Manager/Avatar/avatar02.jpg"),
-    User("Drew Cano", "max@kt.com", "Bagwell Avenue Ocala", "1 hour ago",
-        "assets/Manager/Avatar/avatar03.png"),
-    User(
-        "Orlando Diggs", "sean@delito.com", "Washburn Baton Rouge", "Yesterday",
-        "assets/Manager/Avatar/avatar04.jpg"),
-    User("Andi Lane", "brian@exchange.com", "Nest Lane Olivette", "Feb 2, 2024",
-        "assets/Manager/Avatar/avatar05.jpg"),
+  List<User> users = [
+    User("ByeWind", "byewind@twitter.com", "Meadow Lane Oakland", "Just now", "assets/Manager/Avatar/avatar01.jpg"),
+    User("Kate Morrison", "melody@altbox.com", "Larry San Francisco", "A minute ago", "assets/Manager/Avatar/avatar02.jpg"),
+    User("Drew Cano", "max@kt.com", "Bagwell Avenue Ocala", "1 hour ago", "assets/Manager/Avatar/avatar03.png"),
+    User("Orlando Diggs", "sean@delito.com", "Washburn Baton Rouge", "Yesterday", "assets/Manager/Avatar/avatar04.jpg"),
+    User("Andi Lane", "brian@exchange.com", "Nest Lane Olivette", "Feb 2, 2024", "assets/Manager/Avatar/avatar05.jpg"),
   ];
 
   @override
@@ -44,7 +38,7 @@ class _UserListScreenState extends State<UserListScreen> {
             children: [
               const Center(
                 child: Text(
-                  "User List",
+                  "Danh sách Người dùng",
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 20,
@@ -74,25 +68,24 @@ class _UserListScreenState extends State<UserListScreen> {
                       onPressed: () {
                         showDialog(
                           context: context,
-                          builder: (context) =>
-                              AlertDialog(
-                                title: const Text("Thông tin"),
-                                content: const Text(
-                                    "Đây là danh sách người dùng với thông tin chi tiết của họ."),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(builder: (
-                                            context) => const UserDetailsScreen()),
-                                      );
-                                    },
-                                    child: const Text("OK"),
-                                  ),
-                                ],
+                          builder: (context) => AlertDialog(
+                            title: const Text("Thông tin"),
+                            content: const Text(
+                                "Đây là danh sách người dùng với thông tin chi tiết của họ."),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => const UserDetailsScreen()),
+                                  );
+                                },
+                                child: const Text("OK"),
                               ),
+                            ],
+                          ),
                         );
                       },
                     ),
@@ -102,30 +95,55 @@ class _UserListScreenState extends State<UserListScreen> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                       onSelected: (value) {
-                        if (value == 0) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Select selected')),
-                          );
-                        } else if (value == 1) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('Select and edit selected')),
-                          );
-                        } else if (value == 2) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('Larger avatar layout selected')),
-                          );
+                        switch (value) {
+                          case 0:
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Đã chọn tất cả người dùng.')),
+                            );
+                            // TODO: Add logic to select all users
+                            break;
+                          case 1:
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Đã sửa tất cả người dùng.')),
+                            );
+                            // TODO: Add logic to edit all users
+                            break;
+                          case 2:
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Xác nhận'),
+                                content: const Text('Bạn có chắc muốn xóa tất cả người dùng?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('Hủy'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      setState(() {
+                                        users.clear();
+                                      });
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Đã xóa tất cả người dùng.')),
+                                      );
+                                    },
+                                    child: const Text('Xóa'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            break;
                         }
                       },
-                      itemBuilder: (context) =>
-                      [
+                      itemBuilder: (context) => [
                         PopupMenuItem(
                           value: 0,
                           child: Row(
                             children: const [
-                              Expanded(child: Text('Select')),
-                              Icon(Icons.check, size: 18, color: Colors.grey),
+                              Expanded(child: Text('Chọn tất cả')),
+                              Icon(Icons.select_all, size: 18, color: Colors.grey),
                             ],
                           ),
                         ),
@@ -133,7 +151,7 @@ class _UserListScreenState extends State<UserListScreen> {
                           value: 1,
                           child: Row(
                             children: const [
-                              Expanded(child: Text('Select and edit')),
+                              Expanded(child: Text('Sửa tất cả')),
                               Icon(Icons.edit, size: 18, color: Colors.grey),
                             ],
                           ),
@@ -142,8 +160,8 @@ class _UserListScreenState extends State<UserListScreen> {
                           value: 2,
                           child: Row(
                             children: const [
-                              Expanded(child: Text('Larger avatar layout')),
-                              Icon(Icons.person, size: 18, color: Colors.grey),
+                              Expanded(child: Text('Xóa tất cả')),
+                              Icon(Icons.delete, size: 18, color: Colors.grey),
                             ],
                           ),
                         ),
@@ -182,7 +200,7 @@ class _UserListScreenState extends State<UserListScreen> {
   }
 }
 
-    class AnimatedUserCard extends StatefulWidget {
+class AnimatedUserCard extends StatefulWidget {
   final User user;
   final int delay;
 

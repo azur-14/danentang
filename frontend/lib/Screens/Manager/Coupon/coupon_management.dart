@@ -81,7 +81,7 @@ class MobileCouponScreen extends StatelessWidget {
           onPressed: onBackPressed,
         ),
         title: const Text(
-          "Coupon Management",
+          "Quản lý Mã giảm giá",
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
         ),
         centerTitle: true,
@@ -113,7 +113,7 @@ class WebCouponScreen extends StatelessWidget {
         elevation: 0,
         automaticallyImplyLeading: false,
         title: const Text(
-          "Coupon Management",
+          "Quản lý Mã giảm giá",
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
         ),
         centerTitle: true,
@@ -149,7 +149,7 @@ class CouponContent extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           const Text(
-            "New Coupon",
+            "Mã giảm giá mới",
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
           const SizedBox(height: 10),

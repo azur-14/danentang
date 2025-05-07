@@ -89,7 +89,7 @@ class _OrdersChartWidgetState extends State<OrdersChartWidget> {
                           dotData: FlDotData(show: true),
                         ),
                       ],
-                      minX: -0.5, // Để tháng 1 cách trục Y ra
+                      minX: -0.5,
                       maxX: 11.5,
                       minY: 0,
                     ),

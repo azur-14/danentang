@@ -144,7 +144,7 @@ class _RevenueChartWidgetState extends State<RevenueChartWidget>
                           dotData: FlDotData(show: true),
                         ),
                       ],
-                      minX: -0.8, // Đẩy Tháng 1 lệch trái để dễ nhìn
+                      minX: -0.8,
                       maxX: 11,
                       minY: 0,
                     ),

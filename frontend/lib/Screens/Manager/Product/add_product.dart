@@ -29,7 +29,7 @@ class _NewProductScreenState extends State<NewProductScreen> {
     final isMobile = MediaQuery.of(context).size.width < 600;
     return Scaffold(
       appBar: AppBar(
-        title: Text("New Product", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text("Thêm Sản phẩm mới", style: TextStyle(fontWeight: FontWeight.bold)),
         leading: isMobile
             ? IconButton(
           icon: Icon(Icons.arrow_back),

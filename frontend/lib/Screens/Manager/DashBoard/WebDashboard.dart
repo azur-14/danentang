@@ -49,7 +49,7 @@ class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMix
       drawer: _buildDrawer(context),
       appBar: AppBar(
         title: const Text(
-          'Admin Dashboard',
+          'Trang chủ',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: Colors.deepPurple,
@@ -84,18 +84,18 @@ class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMix
             decoration: BoxDecoration(color: Colors.deepPurple),
             child: Text('Admin Menu', style: TextStyle(color: Colors.white, fontSize: 24)),
           ),
-          _drawerItem(context, 'Dashboard', Icons.dashboard, null),
-          _drawerItem(context, 'Projects', Icons.work, Projects()),
-          _drawerItem(context, 'Products', Icons.shopping_cart, ProductManagementScreen()),
-          _drawerItem(context, 'Coupons', Icons.card_giftcard, CouponManagement()),
-          _drawerItem(context, 'Categories', Icons.category, CategoriesManagement()),
-          _drawerItem(context, 'Users', Icons.people, UserListScreen()),
-          _drawerItem(context, 'Orders', Icons.receipt, OrdersListScreen()),
-          _drawerItem(context, 'Support', Icons.support, CustomerSupportScreen()),
+          _drawerItem(context, 'Trang chủ', Icons.dashboard, null),
+          _drawerItem(context, 'Quản lý Dự án', Icons.work, Projects()),
+          _drawerItem(context, 'Quản lý Sản phẩm', Icons.shopping_cart, ProductManagementScreen()),
+          _drawerItem(context, 'Quản lý Mã giảm giá', Icons.card_giftcard, CouponManagement()),
+          _drawerItem(context, 'Quản lý Danh mục', Icons.category, CategoriesManagement()),
+          _drawerItem(context, 'Quản lý Người dùng', Icons.people, UserListScreen()),
+          _drawerItem(context, 'Quản lý Đơn hàng', Icons.receipt, OrdersListScreen()),
+          _drawerItem(context, 'Hỗ trợ người dùng', Icons.support, CustomerSupportScreen()),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout),
-            title: const Text('Logout'),
+            title: const Text('Đăng xuất'),
             onTap: () {
               Navigator.pop(context);
             },
@@ -120,10 +120,10 @@ class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMix
 
   Widget _buildStatCards(BuildContext context) {
     List<Map<String, dynamic>> stats = [
-      {"title": "Users", "value": "7,625", "color": Colors.purple, "percent": "+11.01%"},
-      {"title": "Orders", "value": "10,000", "color": Colors.blue, "percent": "+12.5%"},
-      {"title": "New Users", "value": "300", "color": Colors.purpleAccent, "percent": "+3.5%"},
-      {"title": "Revenue", "value": "\$100,000", "color": Colors.green, "percent": "+8.9%"},
+      {"title": "Người dùng", "value": "7,625", "color": Colors.purple, "percent": "+11.01%"},
+      {"title": "Đơn hàng", "value": "10,000", "color": Colors.blue, "percent": "+12.5%"},
+      {"title": "Người dùng mới", "value": "300", "color": Colors.purpleAccent, "percent": "+3.5%"},
+      {"title": "Doanh thu", "value": "\$100,000", "color": Colors.green, "percent": "+8.9%"},
     ];
 
     return LayoutBuilder(
@@ -231,19 +231,19 @@ class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMix
 
   Widget _buildManagementLinks(BuildContext context) {
     List<Map<String, dynamic>> managements = [
-      {"title": "Projects Management", "screen": Projects()},
-      {"title": "Product Management", "screen": ProductManagementScreen()},
-      {"title": "Coupon Management", "screen": CouponManagement()},
-      {"title": "Manage Categories", "screen": CategoriesManagement()},
-      {"title": "User Management", "screen": UserListScreen()},
-      {"title": "Orders Management", "screen": OrdersListScreen()},
-      {"title": "Customer Support", "screen": CustomerSupportScreen()},
+      {"title": "Quản lý Dự án", "screen": Projects()},
+      {"title": "Quản lý Sản phẩm", "screen": ProductManagementScreen()},
+      {"title": "Quản lý Mã giảm giá", "screen": CouponManagement()},
+      {"title": "Quản lý Danh mục", "screen": CategoriesManagement()},
+      {"title": "Quản lý Người dùng", "screen": UserListScreen()},
+      {"title": "Quản lý Đơn hàng", "screen": OrdersListScreen()},
+      {"title": "Hỗ trợ người dùng", "screen": CustomerSupportScreen()},
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Quick Access", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const Text("Lối tắt", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
         ...managements.map((item) {
           return AnimatedBuilder(

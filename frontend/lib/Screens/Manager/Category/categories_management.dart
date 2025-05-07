@@ -32,8 +32,8 @@ class ResponsiveCategoriesScreen extends StatelessWidget {
             child: child,
           ),
           child: isMobile
-              ? const MobileCategoriesScreen(key: ValueKey("Mobile"))
-              : const WebCategoriesScreen(key: ValueKey("Web")),
+              ? const MobileCategoriesScreen(key: ValueKey("Di động"))
+              : const WebCategoriesScreen(key: ValueKey("Website")),
         );
       },
     );
@@ -75,7 +75,7 @@ class _MobileCategoriesScreenState extends State<MobileCategoriesScreen> {
         elevation: 0,
         centerTitle: true,
         title: const Text(
-          "Categories Management",
+          "Quản lý danh mục",
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         automaticallyImplyLeading: !kIsWeb,
@@ -160,7 +160,7 @@ class WebCategoriesScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Categories Management",
+          "Quản lý Danh mục",
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,

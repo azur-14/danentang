@@ -69,10 +69,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> with TickerProviderStat
   }
 
   final _cards = const [
-    {"title": "Total Projects", "value": "29", "change": "+11.02%", "icon": Icons.folder, "color": Colors.purple},
-    {"title": "Total Tasks", "value": "715", "change": "-0.03%", "icon": Icons.list, "color": Colors.black},
-    {"title": "Members", "value": "31", "change": "+15.03%", "icon": Icons.people, "color": Colors.black},
-    {"title": "Productivity", "value": "93.8%", "change": "+6.08%", "icon": Icons.bar_chart, "color": Colors.purple},
+    {"title": "Tổng số Dự án", "value": "29", "change": "+11.02%", "icon": Icons.folder, "color": Colors.purple},
+    {"title": "Tổng số các nhiệm vụ", "value": "715", "change": "-0.03%", "icon": Icons.list, "color": Colors.black},
+    {"title": "Số người tham gia", "value": "31", "change": "+15.03%", "icon": Icons.people, "color": Colors.black},
+    {"title": "Sản phẩm", "value": "93.8%", "change": "+6.08%", "icon": Icons.bar_chart, "color": Colors.purple},
   ];
 
   @override
@@ -85,7 +85,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> with TickerProviderStat
         automaticallyImplyLeading: widget.showBackButton,
         iconTheme: const IconThemeData(color: Colors.black),
         title: const Text(
-          "Projects",
+          "Quản lý Dự án",
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -192,16 +192,16 @@ class _ProjectsScreenState extends State<ProjectsScreen> with TickerProviderStat
   }
 
   Widget _buildProjectStatusChart() => _chartContainer(
-    title: "Project Status",
+    title: "Trạng thái",
     titleStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
     child: AspectRatio(
       aspectRatio: 1.2,
       child: PieChart(
         PieChartData(
           sections: [
-            PieChartSectionData(value: 67.6, title: "Completed", color: Colors.black),
-            PieChartSectionData(value: 26.4, title: "In Progress", color: Colors.green),
-            PieChartSectionData(value: 6.0, title: "Behind", color: Colors.purple),
+            PieChartSectionData(value: 67.6, title: "Hoàn thành", color: Colors.black, titleStyle: TextStyle(color: Colors.white)),
+            PieChartSectionData(value: 26.4, title: "Đang thực hiện", color: Colors.green, titleStyle: TextStyle(color: Colors.white)),
+            PieChartSectionData(value: 6.0, title: "Chưa thực hiện", color: Colors.purple, titleStyle: TextStyle(color: Colors.white)),
           ],
           sectionsSpace: 2,
           centerSpaceRadius: 40,
@@ -220,7 +220,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> with TickerProviderStat
     ];
 
     return _chartContainer(
-      title: "Tasks",
+      title: "Nhiệm vụ",
       titleStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.purple),
       child: Column(
         children: tasks.map((task) {
@@ -247,7 +247,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> with TickerProviderStat
   }
 
   Widget _buildTasksOverviewChart() => _chartContainer(
-    title: "Tasks Overview",
+    title: "",
     titleStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.orange),
     child: AspectRatio(
       aspectRatio: 1.5,

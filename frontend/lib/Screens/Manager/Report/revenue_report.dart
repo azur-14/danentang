@@ -63,7 +63,7 @@ class _RevenueScreenState extends State<RevenueScreen> with SingleTickerProvider
               },
             )
                 : null,
-            title: const Text('Revenue', style: TextStyle(fontWeight: FontWeight.bold)),
+            title: const Text('Báo cáo Doanh thu', style: TextStyle(fontWeight: FontWeight.bold)),
             centerTitle: true,
             backgroundColor: Colors.white,
             foregroundColor: Colors.black,
@@ -82,7 +82,7 @@ class _RevenueScreenState extends State<RevenueScreen> with SingleTickerProvider
                   const Padding(
                     padding: EdgeInsets.all(8.0),
                     child: Text(
-                      'Income',
+                      'Thu vào',
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -95,7 +95,7 @@ class _RevenueScreenState extends State<RevenueScreen> with SingleTickerProvider
               ? MobileNavigationBar(
             selectedIndex: 0,
             onItemTapped: (index) {
-              print("Tapped item: $index");
+              print("Sản phẩm: $index");
             },
             isLoggedIn: true,
             role: 'manager',
@@ -107,7 +107,7 @@ class _RevenueScreenState extends State<RevenueScreen> with SingleTickerProvider
   }
 
   Widget _buildFilterButtons(bool isMobile) {
-    List<String> labels = ['Day', 'Week', 'Month'];
+    List<String> labels = ['Ngày', 'Tuần', 'Tháng'];
     return Row(
       mainAxisAlignment: isMobile ? MainAxisAlignment.spaceAround : MainAxisAlignment.start,
       children: List.generate(
@@ -140,9 +140,9 @@ class _RevenueScreenState extends State<RevenueScreen> with SingleTickerProvider
             child: LineChart(
               LineChartData(
                 gridData: FlGridData(
-                  show: true, // Hiển thị các gridlines
-                  drawVerticalLine: true, // Hiển thị các đường dọc
-                  drawHorizontalLine: true, // Hiển thị các đường ngang
+                  show: true,
+                  drawVerticalLine: true,
+                  drawHorizontalLine: true,
                   getDrawingHorizontalLine: (value) {
                     return FlLine(
                       color: Colors.grey,
@@ -171,19 +171,23 @@ class _RevenueScreenState extends State<RevenueScreen> with SingleTickerProvider
                       showTitles: true,
                       interval: 1,
                       getTitlesWidget: (value, meta) {
-                        List<String> months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-                        if (value.toInt() >= 0 && value.toInt() < months.length) {
-                          return Text(months[value.toInt()]);
-                        } else {
-                          return const Text('');
-                        }
+                        if (value >= 1 && value <= 12) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8.0, left: 8.0),
+                              child: Text(
+                                '${value.toInt()}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            );
+                          }
+                        return const Text('');
                       },
                     ),
                   ),
                 ),
                 borderData: FlBorderData(
-                  show: true, // Hiển thị khung biên
-                  border: Border.all(color: Colors.black, width: 1), // Đặt màu và độ dày của đường viền
+                  show: true,
+                  border: Border.all(color: Colors.black, width: 1),
                 ),
                 lineBarsData: [
                   LineChartBarData(

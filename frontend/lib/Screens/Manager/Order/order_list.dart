@@ -45,7 +45,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Order List",
+          "Danh sách Đơn hàng",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -160,9 +160,9 @@ class _FadeInOrderCardState extends State<FadeInOrderCard> with TickerProviderSt
               ],
             ),
             const SizedBox(height: 8),
-            _buildInfoRow("Project", widget.order.project),
-            _buildInfoRow("Address", widget.order.address),
-            _buildInfoRow("Date", widget.order.date),
+            _buildInfoRow("Dự án", widget.order.project),
+            _buildInfoRow("Địa chỉ", widget.order.address),
+            _buildInfoRow("Ngày", widget.order.date),
           ],
         ),
       ),

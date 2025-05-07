@@ -56,7 +56,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> with SingleTicker
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: const Text("User List", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: const Text("Danh sách Người dùng", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
             icon: const Icon(Icons.more_vert, color: Colors.black),
@@ -185,8 +185,8 @@ class UserCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             UserInfoRow(label: "Email", value: user.email),
-            UserInfoRow(label: "Address", value: user.address),
-            UserInfoRow(label: "Date", value: user.date),
+            UserInfoRow(label: "Địa chỉ", value: user.address),
+            UserInfoRow(label: "Ngày", value: user.date),
           ],
         ),
       ),

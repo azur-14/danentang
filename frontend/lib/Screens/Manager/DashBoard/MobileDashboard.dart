@@ -51,7 +51,7 @@ class _MobileDashboardState extends State<MobileDashboard> with SingleTickerProv
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard', style: TextStyle(color: Colors.white)),
+        title: const Text('Trang chủ', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.deepPurple,
         centerTitle: true,
       ),
@@ -63,13 +63,13 @@ class _MobileDashboardState extends State<MobileDashboard> with SingleTickerProv
               decoration: BoxDecoration(color: Colors.deepPurple),
               child: Text('Menu', style: TextStyle(color: Colors.white, fontSize: 24)),
             ),
-            _drawerItem('Projects Management', Projects()),
-            _drawerItem('Product Management', ProductManagementScreen()),
-            _drawerItem('Coupon Management', CouponManagement()),
-            _drawerItem('Manage Categories', CategoriesManagement()),
-            _drawerItem('User Management', UserListScreen()),
-            _drawerItem('Orders Management', OrdersListScreen()),
-            _drawerItem('Customer Support', CustomerSupportScreen()),
+            _drawerItem('Quàn lý Dự án', Projects()),
+            _drawerItem('Quản lý Sản phẩm', ProductManagementScreen()),
+            _drawerItem('Quản lý Mã giảm giá', CouponManagement()),
+            _drawerItem('Quản lý Danh mục', CategoriesManagement()),
+            _drawerItem('Quản lý Người dùng', UserListScreen()),
+            _drawerItem('Quản lý Đơn hàng', OrdersListScreen()),
+            _drawerItem('Hỗ trợ người dùng', CustomerSupportScreen()),
           ],
         ),
       ),
@@ -130,10 +130,10 @@ class _MobileDashboardState extends State<MobileDashboard> with SingleTickerProv
         runSpacing: 12,
         alignment: WrapAlignment.start,
         children: [
-          _statCard("Users", "7,625", Colors.purple, "+11.01%"),
-          _statCard("Orders", "10,000", Colors.blue, "+11.01%"),
-          _statCard("New Users", "300", Colors.purpleAccent, "+11.01%"),
-          _statCard("Revenue", "\$100,000", Colors.deepPurple.shade100, "+11.01%"),
+          _statCard("Người dùng", "7,625", Colors.purple, "+11.01%"),
+          _statCard("Đơn hàng", "10,000", Colors.blue, "+11.01%"),
+          _statCard("Người dùng mới", "300", Colors.purpleAccent, "+11.01%"),
+          _statCard("Doanh thu", "\$100,000", Colors.deepPurple.shade100, "+11.01%"),
         ],
       ),
     );
@@ -175,13 +175,13 @@ class _MobileDashboardState extends State<MobileDashboard> with SingleTickerProv
 
   Widget _buildManagementSections(BuildContext context) {
     List<Map<String, dynamic>> managements = [
-      {"title": "Projects Management", "screen": Projects()},
-      {"title": "Product Management", "screen": ProductManagementScreen()},
-      {"title": "Coupon Management", "screen": CouponManagement()},
-      {"title": "Manage Categories", "screen": CategoriesManagement()},
-      {"title": "User Management", "screen": UserListScreen()},
-      {"title": "Orders Management", "screen": OrdersListScreen()},
-      {"title": "Customer Support", "screen": CustomerSupportScreen()},
+      {"title": "Quản lý Dự án", "screen": Projects()},
+      {"title": "Quản lý Sản phẩm", "screen": ProductManagementScreen()},
+      {"title": "Quản lý Mã giảm giá", "screen": CouponManagement()},
+      {"title": "Quản lý Danh mục", "screen": CategoriesManagement()},
+      {"title": "Quản lý Người dùng", "screen": UserListScreen()},
+      {"title": "Quản lý Đơn hàng", "screen": OrdersListScreen()},
+      {"title": "Hỗ trợ người dùng", "screen": CustomerSupportScreen()},
     ];
 
     return Column(
