@@ -24,10 +24,36 @@ class CustomerSupportScreen extends StatefulWidget {
 
 class _CustomerSupportScreenState extends State<CustomerSupportScreen> {
   int _selectedIndex = 0;
+  List<bool> _selectedTickets = [false, false, false]; // Track selection status of tickets
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
+    });
+  }
+
+  // Toggle the selection of a specific ticket
+  void _toggleTicketSelection(int index) {
+    setState(() {
+      _selectedTickets[index] = !_selectedTickets[index];
+    });
+  }
+
+  // Select all tickets
+  void _selectAllTickets() {
+    setState(() {
+      for (int i = 0; i < _selectedTickets.length; i++) {
+        _selectedTickets[i] = true;
+      }
+    });
+  }
+
+  // Deselect all tickets
+  void _deselectAllTickets() {
+    setState(() {
+      for (int i = 0; i < _selectedTickets.length; i++) {
+        _selectedTickets[i] = false;
+      }
     });
   }
 
@@ -57,16 +83,55 @@ class _CustomerSupportScreenState extends State<CustomerSupportScreen> {
             color: Colors.black,
           ),
         ),
-        actions: const [
-          Icon(Icons.more_horiz, color: Colors.black),
-          SizedBox(width: 10),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              switch (value) {
+                case 'select_all':
+                  _selectAllTickets();
+                  break;
+                case 'deselect_all':
+                  _deselectAllTickets();
+                  break;
+                case 'edit_all':
+                // Handle edit all
+                  break;
+                case 'delete_all':
+                // Handle delete all
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem<String>(
+                value: 'select_all',
+                child: Text('Chọn tất cả'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'deselect_all',
+                child: Text('Bỏ chọn tất cả'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'edit_all',
+                child: Text('Sửa tất cả'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'delete_all',
+                child: Text('Xóa tất cả'),
+              ),
+            ],
+          ),
+          const SizedBox(width: 10),
         ],
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16.0),
         itemCount: 3,
         itemBuilder: (context, index) {
-          return AnimatedSupportTicketItem(delay: index * 200);
+          return AnimatedSupportTicketItem(
+            delay: index * 200,
+            isSelected: _selectedTickets[index],
+            onTap: () => _toggleTicketSelection(index),
+          );
         },
       ),
       bottomNavigationBar: LayoutBuilder(
@@ -89,8 +154,15 @@ class _CustomerSupportScreenState extends State<CustomerSupportScreen> {
 
 class AnimatedSupportTicketItem extends StatefulWidget {
   final int delay;
+  final bool isSelected;
+  final VoidCallback onTap;
 
-  const AnimatedSupportTicketItem({super.key, required this.delay});
+  const AnimatedSupportTicketItem({
+    super.key,
+    required this.delay,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   @override
   State<AnimatedSupportTicketItem> createState() => _AnimatedSupportTicketItemState();
@@ -126,7 +198,12 @@ class _AnimatedSupportTicketItemState extends State<AnimatedSupportTicketItem>
       position: _offsetAnimation,
       child: FadeTransition(
         opacity: _opacity,
-        child: const SupportTicketItem(),
+        child: GestureDetector(
+          onLongPress: widget.onTap, // Trigger on long press to select the ticket
+          child: SupportTicketItem(
+            isSelected: widget.isSelected,
+          ),
+        ),
       ),
     );
   }
@@ -139,7 +216,9 @@ class _AnimatedSupportTicketItemState extends State<AnimatedSupportTicketItem>
 }
 
 class SupportTicketItem extends StatelessWidget {
-  const SupportTicketItem({super.key});
+  final bool isSelected;
+
+  const SupportTicketItem({super.key, required this.isSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -147,7 +226,7 @@ class SupportTicketItem extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isSelected ? Colors.blue.shade100 : Colors.white,
         borderRadius: BorderRadius.circular(14),
         boxShadow: const [
           BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3)),

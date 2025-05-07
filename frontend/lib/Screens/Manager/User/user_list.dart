@@ -22,6 +22,8 @@ class _UserListScreenState extends State<UserListScreen> {
     User("Andi Lane", "brian@exchange.com", "Nest Lane Olivette", "Feb 2, 2024", "assets/Manager/Avatar/avatar05.jpg"),
   ];
 
+  List<User> selectedUsers = [];
+
   @override
   Widget build(BuildContext context) {
     final isMobile = defaultTargetPlatform == TargetPlatform.iOS ||
@@ -97,16 +99,18 @@ class _UserListScreenState extends State<UserListScreen> {
                       onSelected: (value) {
                         switch (value) {
                           case 0:
+                            setState(() {
+                              selectedUsers = List.from(users);
+                            });
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Đã chọn tất cả người dùng.')),
                             );
-                            // TODO: Add logic to select all users
                             break;
                           case 1:
+                          // Logic sửa tất cả người dùng
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Đã sửa tất cả người dùng.')),
                             );
-                            // TODO: Add logic to edit all users
                             break;
                           case 2:
                             showDialog(
@@ -180,7 +184,25 @@ class _UserListScreenState extends State<UserListScreen> {
         child: ListView.builder(
           itemCount: users.length,
           itemBuilder: (context, index) {
-            return AnimatedUserCard(user: users[index], delay: index * 150);
+            return AnimatedUserCard(
+              user: users[index],
+              delay: index * 150,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => UserInformation()),
+                );
+              },
+              onLongPress: () {
+                setState(() {
+                  if (selectedUsers.contains(users[index])) {
+                    selectedUsers.remove(users[index]);
+                  } else {
+                    selectedUsers.add(users[index]);
+                  }
+                });
+              },
+            );
           },
         ),
       ),
@@ -203,8 +225,10 @@ class _UserListScreenState extends State<UserListScreen> {
 class AnimatedUserCard extends StatefulWidget {
   final User user;
   final int delay;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
 
-  const AnimatedUserCard({super.key, required this.user, required this.delay});
+  const AnimatedUserCard({super.key, required this.user, required this.delay, required this.onTap, required this.onLongPress});
 
   @override
   _AnimatedUserCardState createState() => _AnimatedUserCardState();
@@ -240,12 +264,8 @@ class _AnimatedUserCardState extends State<AnimatedUserCard> with SingleTickerPr
       child: FadeTransition(
         opacity: _opacity,
         child: GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => UserInformation()),
-            );
-          },
+          onTap: widget.onTap,
+          onLongPress: widget.onLongPress,
           child: UserCard(user: widget.user),
         ),
       ),

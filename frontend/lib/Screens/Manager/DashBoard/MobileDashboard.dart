@@ -140,12 +140,22 @@ class _MobileDashboardState extends State<MobileDashboard> with SingleTickerProv
   }
 
   Widget _statCard(String title, String value, Color color, String percentage) {
+    final Color backgroundColor = Color.alphaBlend(color.withOpacity(0.15), Colors.white);
+    final Color trendColor = percentage.contains('+') ? Colors.green[700]! : Colors.red[700]!;
+
     return Container(
       width: MediaQuery.of(context).size.width / 2 - 24,
-      padding: const EdgeInsets.all(15),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.25),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          )
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,21 +163,42 @@ class _MobileDashboardState extends State<MobileDashboard> with SingleTickerProv
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color)),
-              Container(
-                padding: const EdgeInsets.all(5),
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(5),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: color,
                 ),
-                child: const Icon(Icons.trending_up, size: 16, color: Colors.black),
+              ),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(Icons.trending_up, size: 16, color: trendColor),
               ),
             ],
           ),
-          const SizedBox(height: 5),
-          Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 5),
-          Text(percentage, style: const TextStyle(fontSize: 14, color: Colors.black54)),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            percentage,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: trendColor,
+            ),
+          ),
         ],
       ),
     );

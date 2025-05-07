@@ -13,6 +13,12 @@ class User_Details extends StatelessWidget {
   }
 }
 
+class User {
+  final String id, name, email, address, date, avatar;
+
+  User(this.id, this.name, this.email, this.address, this.date, this.avatar);
+}
+
 class UserDetailsScreen extends StatefulWidget {
   const UserDetailsScreen({super.key});
 
@@ -24,7 +30,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> with SingleTicker
   late AnimationController _controller;
   late Animation<double> _animation;
 
-  final List<User> users = [
+  List<User> users = [
     User("#CM9801", "Natali Craig", "smith@kpmg.com", "Meadow Lane Oakland", "Just now", "assets/Manager/Avatar/avatar01.jpg"),
     User("#CM9802", "Kate Morrison", "melody@altbox.com", "Larry San Francisco", "A minute ago", "assets/Manager/Avatar/avatar02.jpg"),
     User("#CM9803", "Drew Cano", "max@kt.com", "Bagwell Avenue Ocala", "1 hour ago", "assets/Manager/Avatar/avatar03.jpg"),
@@ -32,12 +38,79 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> with SingleTicker
     User("#CM9805", "Andi Lane", "brian@exchange.com", "Nest Lane Olivette", "Feb 2, 2024", "assets/Manager/Avatar/avatar05.jpg"),
   ];
 
+  bool isSelecting = false;
+  Set<int> selectedIndexes = {};
+
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000));
     _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
     _controller.forward();
+  }
+
+  void _handleMenuSelection(String value) {
+    switch (value) {
+      case 'select_all':
+        setState(() {
+          isSelecting = true;
+          selectedIndexes = {for (int i = 0; i < users.length; i++) i};
+        });
+        break;
+      case 'delete_all':
+        setState(() {
+          users.clear();
+          selectedIndexes.clear();
+          isSelecting = false;
+        });
+        break;
+      case 'edit_all':
+      // TODO: Implement edit all logic
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Chức năng "Sửa tất cả" đang phát triển...')),
+        );
+        break;
+    }
+  }
+
+  void _onLongPressItem(int index) {
+    setState(() {
+      isSelecting = true;
+      selectedIndexes.add(index);
+    });
+  }
+
+  void _onTapItem(int index) {
+    if (isSelecting) {
+      setState(() {
+        if (selectedIndexes.contains(index)) {
+          selectedIndexes.remove(index);
+          if (selectedIndexes.isEmpty) isSelecting = false;
+        } else {
+          selectedIndexes.add(index);
+        }
+      });
+    }
+  }
+
+  void _deleteSelected() {
+    setState(() {
+      users = [
+        for (int i = 0; i < users.length; i++)
+          if (!selectedIndexes.contains(i)) users[i]
+      ];
+      selectedIndexes.clear();
+      isSelecting = false;
+    });
+  }
+
+  void _editSelected() {
+    final index = selectedIndexes.first;
+    final user = users[index];
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Sửa người dùng: ${user.name}')),
+    );
+    // TODO: Implement actual edit logic (e.g., show form dialog)
   }
 
   @override
@@ -56,11 +129,37 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> with SingleTicker
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: const Text("Danh sách Người dùng", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        leading: isMobile
+            ? IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+        )
+            : null,
+        title: const Text(
+          "Danh sách Người dùng",
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
         actions: [
-          IconButton(
+          if (isSelecting)
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
+              onPressed: _deleteSelected,
+            ),
+          if (isSelecting && selectedIndexes.length == 1)
+            IconButton(
+              icon: const Icon(Icons.edit, color: Colors.blue),
+              onPressed: _editSelected,
+            ),
+          PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: Colors.black),
-            onPressed: () {},
+            onSelected: _handleMenuSelection,
+            itemBuilder: (BuildContext context) => const [
+              PopupMenuItem(value: 'select_all', child: Text('Chọn tất cả')),
+              PopupMenuItem(value: 'delete_all', child: Text('Xóa tất cả')),
+              PopupMenuItem(value: 'edit_all', child: Text('Sửa tất cả')),
+            ],
           ),
         ],
       ),
@@ -75,12 +174,17 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> with SingleTicker
                 return ListView.builder(
                   itemCount: users.length,
                   itemBuilder: (context, index) {
-                    return AnimatedUserCard(
-                      user: users[index],
-                      animation: Tween<double>(begin: 0, end: 1).animate(
-                        CurvedAnimation(
-                          parent: _controller,
-                          curve: Interval((index / users.length), 1.0, curve: Curves.easeOut),
+                    return GestureDetector(
+                      onLongPress: () => _onLongPressItem(index),
+                      onTap: () => _onTapItem(index),
+                      child: AnimatedUserCard(
+                        user: users[index],
+                        isSelected: selectedIndexes.contains(index),
+                        animation: Tween<double>(begin: 0, end: 1).animate(
+                          CurvedAnimation(
+                            parent: _controller,
+                            curve: Interval((index / users.length), 1.0, curve: Curves.easeOut),
+                          ),
                         ),
                       ),
                     );
@@ -96,12 +200,17 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> with SingleTicker
                     mainAxisSpacing: 10,
                   ),
                   itemBuilder: (context, index) {
-                    return AnimatedUserCard(
-                      user: users[index],
-                      animation: Tween<double>(begin: 0, end: 1).animate(
-                        CurvedAnimation(
-                          parent: _controller,
-                          curve: Interval((index / users.length), 1.0, curve: Curves.easeOut),
+                    return GestureDetector(
+                      onLongPress: () => _onLongPressItem(index),
+                      onTap: () => _onTapItem(index),
+                      child: AnimatedUserCard(
+                        user: users[index],
+                        isSelected: selectedIndexes.contains(index),
+                        animation: Tween<double>(begin: 0, end: 1).animate(
+                          CurvedAnimation(
+                            parent: _controller,
+                            curve: Interval((index / users.length), 1.0, curve: Curves.easeOut),
+                          ),
                         ),
                       ),
                     );
@@ -129,8 +238,9 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> with SingleTicker
 class AnimatedUserCard extends StatelessWidget {
   final User user;
   final Animation<double> animation;
+  final bool isSelected;
 
-  const AnimatedUserCard({super.key, required this.user, required this.animation});
+  const AnimatedUserCard({super.key, required this.user, required this.animation, this.isSelected = false});
 
   @override
   Widget build(BuildContext context) {
@@ -145,27 +255,25 @@ class AnimatedUserCard extends StatelessWidget {
           ),
         );
       },
-      child: UserCard(user: user),
+      child: UserCard(user: user, isSelected: isSelected),
     );
   }
 }
 
-class User {
-  final String id, name, email, address, date, avatar;
-
-  User(this.id, this.name, this.email, this.address, this.date, this.avatar);
-}
-
 class UserCard extends StatelessWidget {
   final User user;
+  final bool isSelected;
 
-  const UserCard({super.key, required this.user});
+  const UserCard({super.key, required this.user, this.isSelected = false});
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        side: isSelected ? const BorderSide(color: Colors.blue, width: 2) : BorderSide.none,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(

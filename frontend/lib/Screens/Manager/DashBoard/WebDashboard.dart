@@ -120,7 +120,7 @@ class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMix
 
   Widget _buildStatCards(BuildContext context) {
     List<Map<String, dynamic>> stats = [
-      {"title": "Người dùng", "value": "7,625", "color": Colors.purple, "percent": "+11.01%"},
+      {"title": "Người dùng", "value": "7,625", "color": Colors.red, "percent": "+11.01%"},
       {"title": "Đơn hàng", "value": "10,000", "color": Colors.blue, "percent": "+12.5%"},
       {"title": "Người dùng mới", "value": "300", "color": Colors.purpleAccent, "percent": "+3.5%"},
       {"title": "Doanh thu", "value": "\$100,000", "color": Colors.green, "percent": "+8.9%"},
@@ -153,20 +153,44 @@ class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMix
   }
 
   Widget _statCard(Map<String, dynamic> stat) {
+    final Color bgColor = Color.alphaBlend(stat['color'].withOpacity(0.15), Colors.white);
+    final Color textColor = Colors.black87;
+
     return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: stat['color'].withOpacity(0.1),
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: bgColor,
+      shadowColor: stat['color'].withOpacity(0.4),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(stat['title'], style: TextStyle(color: stat['color'], fontWeight: FontWeight.bold)),
-            const SizedBox(height: 6),
-            Text(stat['value'], style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 6),
-            Text(stat['percent'], style: const TextStyle(color: Colors.black54)),
+            Text(
+              stat['title'],
+              style: TextStyle(
+                color: stat['color'],
+                fontWeight: FontWeight.w600,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              stat['value'],
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              stat['percent'],
+              style: TextStyle(
+                color: stat['percent'].contains('+') ? Colors.green[700] : Colors.red[700],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
         ),
       ),
