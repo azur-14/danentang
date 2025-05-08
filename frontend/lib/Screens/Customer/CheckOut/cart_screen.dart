@@ -3,15 +3,22 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
+
 import 'package:danentang/models/CartItem.dart';
 import 'package:danentang/models/Cart.dart';
-import 'package:danentang/Service/cart_service.dart';
+import 'package:danentang/models/Order.dart';
+import 'package:danentang/models/OrderItem.dart';
+import 'package:danentang/models/OrderStatusHistory.dart';
+import 'package:danentang/models/ShippingAddress.dart';
+
+import 'package:danentang/Service/order_service.dart';
+
 import 'package:danentang/widgets/Cart_CheckOut/cart_item_widget.dart';
 import 'package:danentang/widgets/Cart_CheckOut/order_summary_widget.dart';
 import 'package:danentang/widgets/Header/web_header.dart';
 import 'package:danentang/widgets/Search/web_search_bar.dart';
 import 'package:danentang/constants/colors.dart';
-import 'package:uuid/uuid.dart';
 
 class CartScreenCheckOut extends StatefulWidget {
   final bool isLoggedIn;
@@ -28,9 +35,8 @@ class CartScreenCheckOut extends StatefulWidget {
 }
 
 class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
-  final CartService _service = CartService();
-
-  Future<Cart>? _cartFuture;              // made nullable
+  final OrderService _api = OrderService.instance;
+  Future<Cart>? _cartFuture;
   late String _effectiveUserId;
 
   bool isEditing = false;
@@ -50,65 +56,106 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
       final prefs = await SharedPreferences.getInstance();
       String? guestId = prefs.getString('guestId');
       if (guestId == null) {
-        guestId = const Uuid().v4();
+        guestId = Uuid().v4();
         await prefs.setString('guestId', guestId);
       }
       _effectiveUserId = guestId;
     }
     setState(() {
-      _cartFuture = _service.fetchCart(_effectiveUserId);
+      _cartFuture = _api.fetchCart(_effectiveUserId);
     });
   }
 
   Future<void> _refresh() async {
     setState(() {
-      _cartFuture = _service.fetchCart(_effectiveUserId);
+      _cartFuture = _api.fetchCart(_effectiveUserId);
     });
   }
 
   double _subtotal(List<CartItem> items) =>
-      items.fold<double>(0, (sum, i) => sum + i.currentPrice * i.quantity);
+      items.fold(0.0, (sum, i) => sum + i.currentPrice * i.quantity);
 
   double get _discount => applyPoints ? 60000 : 0;
   double get _shipping => 50000;
   double get _vat => 0;
 
+  Future<void> _onCheckout(Cart cart) async {
+    final subtotal = _subtotal(cart.items);
+    final total = subtotal + _shipping + _vat - _discount;
+
+    final shipping = ShippingAddress(
+      street: '123 Default St',
+      city: 'Hanoi',
+      state: 'Hanoi',
+      postalCode: '100000',
+      country: 'Vietnam',
+    );
+
+    final order = Order(
+      id: '',
+      userId: _effectiveUserId,
+      orderNumber: Uuid().v4(),
+      shippingAddress: shipping,
+      items: cart.items.map((ci) {
+        return OrderItem(
+          productId: ci.productId,
+          productVariantId: ci.productVariantId,
+          productName: 'Unknown Product',
+          variantName: 'Default Variant',
+          quantity: ci.quantity,
+          price: ci.currentPrice,
+        );
+      }).toList(),
+      totalAmount: total,
+      discountAmount: _discount,
+      couponCode: null,
+      loyaltyPointsUsed: applyPoints ? 100 : 0,
+      status: 'pending',
+      statusHistory: [
+        OrderStatusHistory(status: 'pending', timestamp: DateTime.now()),
+      ],
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    try {
+      final created = await _api.createOrder(order);
+      context.go('/order-confirmation', extra: created);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Checkout failed: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // If _cartFuture hasn't been set yet, show a loader
     if (_cartFuture == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    final screenWidth = MediaQuery.of(context).size.width;
-    return screenWidth > 800
-        ? _buildWebLayout(context)
-        : _buildMobileLayout(context);
+    final width = MediaQuery.of(context).size.width;
+    return width > 800 ? _buildWeb(context) : _buildMobile(context);
   }
 
-  Widget _buildMobileLayout(BuildContext context) {
+  Widget _buildMobile(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Cart'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/'),
-        ),
+        leading: BackButton(onPressed: () => context.go('/')),
         actions: [
           TextButton(
             onPressed: () => setState(() => isEditing = !isEditing),
-            child: Text(
-              isEditing ? 'Xong' : 'Chỉnh sửa',
-              style: TextStyle(color: AppColors.hexToColor(AppColors.black)),
-            ),
+            child: Text(isEditing ? 'Done' : 'Edit',
+                style: TextStyle(color: AppColors.hexToColor(AppColors.black))),
           ),
         ],
       ),
       backgroundColor: AppColors.hexToColor(AppColors.grey),
       body: FutureBuilder<Cart>(
-        future: _cartFuture,
+        future: _cartFuture!,
         builder: (ctx, snap) {
           if (snap.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
@@ -117,35 +164,31 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
             return Center(child: Text('Error: ${snap.error}'));
           }
           final cart = snap.data!;
-          final items = cart.items;
-          final subtotal = _subtotal(items);
+          final subtotal = _subtotal(cart.items);
           final total = subtotal + _shipping + _vat - _discount;
 
           return Column(
             children: [
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: items.length,
+                  itemCount: cart.items.length,
                   itemBuilder: (_, i) {
-                    final item = items[i];
+                    final item = cart.items[i];
+                    final idToRemove = item.productVariantId ?? item.productId;
                     return CartItemWidget(
                       item: item,
                       isEditing: isEditing,
                       onDelete: () async {
-                        final idToRemove =
-                            item.productVariantId ?? item.productId;
-                        await _service.removeItem(cart.id, idToRemove);
+                        await _api.removeCartItem(cart.id, idToRemove);
                         await _refresh();
                       },
-                      onQuantityChanged: (newQty) async {
-                        final updatedItem = CartItem(
+                      onQuantityChanged: (qty) async {
+                        final updated = CartItem(
                           productId: item.productId,
                           productVariantId: item.productVariantId,
-                          quantity: newQty,
+                          quantity: qty,
                         );
-                        await _service.addOrUpdateItem(
-                            cart.id, updatedItem);
+                        await _api.upsertCartItem(cart.id, updated);
                         await _refresh();
                       },
                       isMobile: true,
@@ -163,13 +206,7 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
                 discountController: _discountController,
                 onApplyPointsChanged: (v) =>
                     setState(() => applyPoints = v),
-                onCheckout: () => context.go(
-                  '/checkout',
-                  extra: {
-                    'isLoggedIn': widget.isLoggedIn,
-                    'userId': _effectiveUserId,
-                  },
-                ),
+                onCheckout: () => _onCheckout(cart),
               ),
             ],
           );
@@ -178,7 +215,7 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
     );
   }
 
-  Widget _buildWebLayout(BuildContext context) {
+  Widget _buildWeb(BuildContext context) {
     return Scaffold(
       body: Column(
         children: [
@@ -186,7 +223,7 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
           WebSearchBar(isLoggedIn: widget.isLoggedIn),
           Expanded(
             child: FutureBuilder<Cart>(
-              future: _cartFuture,
+              future: _cartFuture!,
               builder: (ctx, snap) {
                 if (snap.connectionState != ConnectionState.done) {
                   return const Center(child: CircularProgressIndicator());
@@ -195,41 +232,38 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
                   return Center(child: Text('Error: ${snap.error}'));
                 }
                 final cart = snap.data!;
-                final items = cart.items;
-                final subtotal = _subtotal(items);
+                final subtotal = _subtotal(cart.items);
                 final total = subtotal + _shipping + _vat - _discount;
 
                 return Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 32, vertical: 16),
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                   child: Row(
                     children: [
                       Expanded(
                         flex: 3,
                         child: ListView.builder(
-                          itemCount: items.length,
+                          itemCount: cart.items.length,
                           itemBuilder: (_, i) {
-                            final item = items[i];
+                            final item = cart.items[i];
+                            final idToRemove =
+                                item.productVariantId ?? item.productId;
                             return CartItemWidget(
                               item: item,
                               isEditing: isEditing,
                               onDelete: () async {
-                                final idToRemove =
-                                    item.productVariantId ??
-                                        item.productId;
-                                await _service.removeItem(
+                                await _api.removeCartItem(
                                     cart.id, idToRemove);
                                 await _refresh();
                               },
-                              onQuantityChanged: (newQty) async {
-                                final updatedItem = CartItem(
+                              onQuantityChanged: (qty) async {
+                                final updated = CartItem(
                                   productId: item.productId,
-                                  productVariantId:
-                                  item.productVariantId,
-                                  quantity: newQty,
+                                  productVariantId: item.productVariantId,
+                                  quantity: qty,
                                 );
-                                await _service.addOrUpdateItem(
-                                    cart.id, updatedItem);
+                                await _api.upsertCartItem(
+                                    cart.id, updated);
                                 await _refresh();
                               },
                               isMobile: false,
@@ -250,13 +284,7 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
                           discountController: _discountController,
                           onApplyPointsChanged: (v) =>
                               setState(() => applyPoints = v),
-                          onCheckout: () => context.go(
-                            '/checkout',
-                            extra: {
-                              'isLoggedIn': widget.isLoggedIn,
-                              'userId': _effectiveUserId,
-                            },
-                          ),
+                          onCheckout: () => _onCheckout(cart),
                         ),
                       ),
                     ],

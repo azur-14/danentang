@@ -1,9 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
 using MongoDB.Driver;
+using OrderManagementService.Data;
 using OrderManagementService.Models;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using OrderManagementService.Data;
+
 namespace OrderManagementService.Controllers
 {
     [ApiController]
@@ -17,10 +20,12 @@ namespace OrderManagementService.Controllers
             _orders = context.Orders;
         }
 
+        // GET api/orders
         [HttpGet]
-        public async Task<ActionResult<List<Order>>> Get() =>
+        public async Task<ActionResult<List<Order>>> GetAll() =>
             await _orders.Find(_ => true).ToListAsync();
 
+        // GET api/orders/{id}
         [HttpGet("{id:length(24)}")]
         public async Task<ActionResult<Order>> Get(string id)
         {
@@ -29,23 +34,30 @@ namespace OrderManagementService.Controllers
             return order;
         }
 
+        // POST api/orders
         [HttpPost]
-        public async Task<ActionResult<Order>> Create(Order order)
+        public async Task<ActionResult<Order>> Create([FromBody] Order order)
         {
-            order.CreatedAt = order.UpdatedAt = System.DateTime.UtcNow;
+            ModelState.Remove(nameof(order.Id));
+
+            order.Id = ObjectId.GenerateNewId().ToString();
+            order.CreatedAt = order.UpdatedAt = DateTime.UtcNow;
             await _orders.InsertOneAsync(order);
             return CreatedAtAction(nameof(Get), new { id = order.Id }, order);
         }
 
+        // PUT api/orders/{id}
         [HttpPut("{id:length(24)}")]
-        public async Task<IActionResult> Update(string id, Order updated)
+        public async Task<IActionResult> Update(string id, [FromBody] Order updated)
         {
-            updated.UpdatedAt = System.DateTime.UtcNow;
+            updated.Id = id;
+            updated.UpdatedAt = DateTime.UtcNow;
             var result = await _orders.ReplaceOneAsync(o => o.Id == id, updated);
             if (result.MatchedCount == 0) return NotFound();
             return NoContent();
         }
 
+        // DELETE api/orders/{id}
         [HttpDelete("{id:length(24)}")]
         public async Task<IActionResult> Delete(string id)
         {
@@ -54,9 +66,11 @@ namespace OrderManagementService.Controllers
             return NoContent();
         }
 
-        // Cập nhật trạng thái và thêm lịch sử
+        // PATCH api/orders/{id}/status
         [HttpPatch("{id:length(24)}/status")]
-        public async Task<IActionResult> UpdateStatus(string id, [FromBody] OrderStatusHistory history)
+        public async Task<IActionResult> UpdateStatus(
+            string id,
+            [FromBody] OrderStatusHistory history)
         {
             var update = Builders<Order>.Update
                 .Set(o => o.Status, history.Status)

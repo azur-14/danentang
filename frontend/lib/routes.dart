@@ -61,7 +61,6 @@ final GoRouter router = GoRouter(
       path: '/',
       builder: (context, state) => const HomeScreen(),
     ),
-    // Checkout (reuse CartScreenCheckOut or replace with a dedicated screen)
     GoRoute(
       path: '/checkout',
       builder: (context, state) {
@@ -76,7 +75,9 @@ final GoRouter router = GoRouter(
             final prefs = snap.data!;
             final token = prefs.getString('token');
             final isLoggedIn = token != null;
-            final userId = prefs.getString('userId') ?? '';
+            final stored = prefs.getString('userId');
+            // if not logged in, pass null
+            final userId = isLoggedIn ? stored : null;
             return CartScreenCheckOut(
               isLoggedIn: isLoggedIn,
               userId: userId,
@@ -85,6 +86,7 @@ final GoRouter router = GoRouter(
         );
       },
     ),
+
     GoRoute(
       path: '/profile',
       builder: (context, state) {
