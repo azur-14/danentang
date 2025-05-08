@@ -38,7 +38,7 @@ class _CustomerServiceScreenState extends State<CustomerServiceScreen> {
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
         title: const Text(
-          "Customer Support",
+          "Hỗ trợ người dùng",
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
         ),
         backgroundColor: Colors.white,

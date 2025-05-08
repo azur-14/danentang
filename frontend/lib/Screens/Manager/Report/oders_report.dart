@@ -151,11 +151,11 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
               ],
             ),
             const SizedBox(height: 8),
-            Text("User: $user", style: const TextStyle(color: Colors.grey)),
-            Text("Project: $project", style: const TextStyle(color: Colors.grey)),
-            Text("Address: $address", style: const TextStyle(color: Colors.grey)),
+            Text("Người dùng $user", style: const TextStyle(color: Colors.grey)),
+            Text("Dự án: $project", style: const TextStyle(color: Colors.grey)),
+            Text("Địa chỉ: $address", style: const TextStyle(color: Colors.grey)),
             const SizedBox(height: 4),
-            const Text("Date: Just now", style: TextStyle(color: Colors.grey)),
+            const Text("Ngày: Bây giờ", style: TextStyle(color: Colors.grey)),
           ],
         ),
       ),
@@ -171,15 +171,15 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildTabButton("Day", 0),
-              _buildTabButton("Week", 1),
-              _buildTabButton("Month", 2),
+              _buildTabButton("Ngày", 0),
+              _buildTabButton("Tuần", 1),
+              _buildTabButton("Tháng", 2),
             ],
           ),
           const SizedBox(height: 20),
           _buildChart(),
           const SizedBox(height: 20),
-          const Text("Orders List", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text("Danh sách Đơn hàng", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
           _buildOrderCard("#CM9801", "Natali Craig", "Landing Page", "Meadow Lane Oakland", "In Progress", Colors.purpleAccent),
           _buildOrderCard("#CM9802", "Kate Morrison", "CRM Admin pages", "Larry San Francisco", "Complete", Colors.green),
@@ -197,11 +197,11 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
           children: [
             Row(
               children: [
-                _buildTabButton("Day", 0),
+                _buildTabButton("Ngày", 0),
                 const SizedBox(width: 12),
-                _buildTabButton("Week", 1),
+                _buildTabButton("Tuần", 1),
                 const SizedBox(width: 12),
-                _buildTabButton("Month", 2),
+                _buildTabButton("Tháng", 2),
               ],
             ),
             const SizedBox(height: 20),
@@ -234,7 +234,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
       child: Scaffold(
         appBar: AppBar(
           centerTitle: true,
-          title: const Text("Orders", style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text("Đơn hàng", style: TextStyle(fontWeight: FontWeight.bold)),
           leading: (defaultTargetPlatform == TargetPlatform.android ||
               defaultTargetPlatform == TargetPlatform.iOS)
               ? IconButton(

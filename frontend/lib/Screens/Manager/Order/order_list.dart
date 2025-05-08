@@ -23,9 +23,8 @@ class OrdersListScreen extends StatefulWidget {
 
 class _OrdersListScreenState extends State<OrdersListScreen> {
   int _currentIndex = 0;
-  bool _isLoggedIn = true;  // Assuming the user is logged in
-
-  final List<Order> orders = [
+  bool _isLoggedIn = true;
+  List<Order> orders = [
     Order("#CM9801", "Natali Craig", "Landing Page", "Meadow Lane Oakland", "Just now", "In Progress", Colors.purple.shade100, Colors.purple),
     Order("#CM9802", "Kate Morrison", "CRM Admin pages", "Larry San Francisco", "A minute ago", "Complete", Colors.green.shade100, Colors.green),
     Order("#CM9803", "Drew Cano", "Client Project", "Bagwell Avenue Ocala", "1 hour ago", "Pending", Colors.blue.shade100, Colors.blue),
@@ -33,9 +32,55 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
     Order("#CM9805", "Andi Lane", "App Landing Page", "Nest Lane Olivette", "Feb 2, 2024", "Rejected", Colors.grey.shade300, Colors.grey),
   ];
 
+  Set<int> selectedIndexes = {};
+
   void _onItemTapped(int index) {
     setState(() {
       _currentIndex = index;
+    });
+  }
+
+  void _deleteSelected() {
+    setState(() {
+      orders = [for (int i = 0; i < orders.length; i++) if (!selectedIndexes.contains(i)) orders[i]];
+      selectedIndexes.clear();
+    });
+  }
+
+  void _editSelected() {
+    // Placeholder logic: you can replace this with your own
+    if (selectedIndexes.length == 1) {
+      final index = selectedIndexes.first;
+      final order = orders[index];
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Chỉnh sửa: ${order.id}")));
+    }
+  }
+
+  void _selectAll() {
+    setState(() {
+      selectedIndexes = Set.from(List.generate(orders.length, (index) => index));
+    });
+  }
+
+  void _clearSelection() {
+    setState(() {
+      selectedIndexes.clear();
+    });
+  }
+
+  void _onLongPress(int index) {
+    setState(() {
+      selectedIndexes.add(index);
+    });
+  }
+
+  void _toggleSelect(int index) {
+    setState(() {
+      if (selectedIndexes.contains(index)) {
+        selectedIndexes.remove(index);
+      } else {
+        selectedIndexes.add(index);
+      }
     });
   }
 
@@ -44,26 +89,41 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
     final isMobile = MediaQuery.of(context).size.width < 600;
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Order List",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: const Text("Danh sách Đơn hàng", style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: (defaultTargetPlatform == TargetPlatform.android ||
-            defaultTargetPlatform == TargetPlatform.iOS)
+        leading: (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS)
             ? IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pop(context);  // Directly pop without confirmation
-          },
+          onPressed: () => Navigator.pop(context),
         )
             : const SizedBox(),
         actions: [
-          IconButton(
+          PopupMenuButton<String>(
             icon: const Icon(Icons.more_horiz, color: Colors.black),
-            onPressed: () {},
+            onSelected: (value) {
+              switch (value) {
+                case 'select_all':
+                  _selectAll();
+                  break;
+                case 'edit':
+                  _editSelected();
+                  break;
+                case 'delete':
+                  _deleteSelected();
+                  break;
+                case 'clear':
+                  _clearSelection();
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'select_all', child: Text("Chọn tất cả")),
+              const PopupMenuItem(value: 'edit', child: Text("Sửa tất cả (1 thẻ)")),
+              const PopupMenuItem(value: 'delete', child: Text("Xoá tất cả")),
+              const PopupMenuItem(value: 'clear', child: Text("Huỷ chọn")),
+            ],
           ),
         ],
       ),
@@ -72,7 +132,15 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
         padding: const EdgeInsets.all(16),
         itemCount: orders.length,
         itemBuilder: (context, index) {
-          return FadeInOrderCard(order: orders[index], index: index);
+          final selected = selectedIndexes.contains(index);
+          return GestureDetector(
+            onLongPress: () => _onLongPress(index),
+            onTap: () => _toggleSelect(index),
+            child: Opacity(
+              opacity: selected ? 0.6 : 1.0,
+              child: FadeInOrderCard(order: orders[index], index: index, selected: selected),
+            ),
+          );
         },
       ),
       bottomNavigationBar: isMobile
@@ -80,7 +148,7 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
         selectedIndex: _currentIndex,
         onItemTapped: _onItemTapped,
         isLoggedIn: _isLoggedIn,
-        role:'manager',
+        role: 'manager',
       )
           : null,
     );
@@ -90,8 +158,9 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
 class FadeInOrderCard extends StatefulWidget {
   final Order order;
   final int index;
+  final bool selected;
 
-  const FadeInOrderCard({super.key, required this.order, required this.index});
+  const FadeInOrderCard({super.key, required this.order, required this.index, this.selected = false});
 
   @override
   _FadeInOrderCardState createState() => _FadeInOrderCardState();
@@ -104,18 +173,11 @@ class _FadeInOrderCardState extends State<FadeInOrderCard> with TickerProviderSt
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: Duration(milliseconds: 500),
-      vsync: this,
-    );
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeIn,
-    )..addListener(() {
-      setState(() {});
-    });
+    _controller = AnimationController(duration: const Duration(milliseconds: 500), vsync: this);
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn)
+      ..addListener(() => setState(() {}));
     Future.delayed(Duration(milliseconds: widget.index * 100), () {
-      _controller.forward();
+      if (mounted) _controller.forward();
     });
   }
 
@@ -127,7 +189,7 @@ class _FadeInOrderCardState extends State<FadeInOrderCard> with TickerProviderSt
         margin: const EdgeInsets.only(bottom: 15),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: widget.selected ? Colors.blue.shade50 : Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
         ),
@@ -137,7 +199,7 @@ class _FadeInOrderCardState extends State<FadeInOrderCard> with TickerProviderSt
             Row(
               children: [
                 Text(widget.order.id, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                Spacer(),
+                const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
@@ -160,9 +222,9 @@ class _FadeInOrderCardState extends State<FadeInOrderCard> with TickerProviderSt
               ],
             ),
             const SizedBox(height: 8),
-            _buildInfoRow("Project", widget.order.project),
-            _buildInfoRow("Address", widget.order.address),
-            _buildInfoRow("Date", widget.order.date),
+            _buildInfoRow("Dự án", widget.order.project),
+            _buildInfoRow("Địa chỉ", widget.order.address),
+            _buildInfoRow("Ngày", widget.order.date),
           ],
         ),
       ),

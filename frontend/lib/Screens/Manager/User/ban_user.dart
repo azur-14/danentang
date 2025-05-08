@@ -157,7 +157,7 @@ class MainScreen extends StatelessWidget {
             );
           },
           icon: const Icon(Icons.block),
-          label: const Text("Ban User"),
+          label: const Text("Ban Người dùng"),
         ),
       ),
       bottomNavigationBar: MobileNavigationBar(

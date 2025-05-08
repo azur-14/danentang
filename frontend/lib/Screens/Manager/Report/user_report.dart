@@ -8,15 +8,16 @@ class UserReportScreen extends StatefulWidget {
   const UserReportScreen({super.key});
 
   @override
-  _UserReportScreenState createState() => _UserReportScreenState();
+  State<UserReportScreen> createState() => _UserReportScreenState();
 }
 
-class _UserReportScreenState extends State<UserReportScreen> with SingleTickerProviderStateMixin {
-  String _selectedPeriod = "Month";
+class _UserReportScreenState extends State<UserReportScreen>
+    with SingleTickerProviderStateMixin {
+  String _selectedPeriod = "Tháng";
   late AnimationController _controller;
   late Animation<double> _animation;
 
-  List<FlSpot> get _spots => [
+  final List<FlSpot> _spots = [
     FlSpot(1, 2),
     FlSpot(2, 4),
     FlSpot(3, 3),
@@ -28,8 +29,10 @@ class _UserReportScreenState extends State<UserReportScreen> with SingleTickerPr
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 2));
-    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
+    _controller =
+        AnimationController(vsync: this, duration: const Duration(seconds: 2));
+    _animation =
+        CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
     _controller.forward();
   }
 
@@ -41,8 +44,7 @@ class _UserReportScreenState extends State<UserReportScreen> with SingleTickerPr
 
   List<FlSpot> _animatedSpots() {
     final int currentIndex = (_spots.length * _animation.value).toInt();
-    final clampedIndex = currentIndex.clamp(1, _spots.length);
-    return _spots.take(clampedIndex).toList();
+    return _spots.take(currentIndex.clamp(1, _spots.length)).toList();
   }
 
   @override
@@ -50,11 +52,13 @@ class _UserReportScreenState extends State<UserReportScreen> with SingleTickerPr
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Users", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: const Text("Báo cáo Người dùng",
+            style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS)
+        leading: (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS)
             ? IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
@@ -73,22 +77,47 @@ class _UserReportScreenState extends State<UserReportScreen> with SingleTickerPr
                 _buildSegmentedControl(),
                 _buildLineChart(),
                 _buildDetailButton(context),
-                _buildUserSection(title: "New User", users: [
-                  {"name": "ByeWind", "date": "Jun 24, 2024", "avatar": "assets/Manager/Avartar/avatar01.jpg"},
-                  {"name": "Natali Craig", "date": "Mar 10, 2024", "avatar": "assets/Manager/Avatar/avatar02.jpg"},
-                  {"name": "Drew Cano", "date": "Nov 10, 2024", "avatar": "assets/Manager/Avatar/avatar03.jpg"},
-                  {"name": "Orlando Diggs", "date": "Dec 20, 2024", "avatar": "assets/Manager/Avatar/avatar04.jpg"},
-                  {"name": "Andi Lane", "date": "Jul 25, 2024", "avatar": "assets/Manager/Avatar/avatar05.jpg"},
+                _buildUserSection(title: "Người dùng mới", users: [
+                  {
+                    "name": "ByeWind",
+                    "date": "Jun 24, 2024",
+                    "avatar": "assets/Manager/Avatar/avatar01.jpg"
+                  },
+                  {
+                    "name": "Natali Craig",
+                    "date": "Mar 10, 2024",
+                    "avatar": "assets/Manager/Avatar/avatar02.jpg"
+                  },
+                  {
+                    "name": "Drew Cano",
+                    "date": "Nov 10, 2024",
+                    "avatar": "assets/Manager/Avatar/avatar03.jpg"
+                  },
+                  {
+                    "name": "Orlando Diggs",
+                    "date": "Dec 20, 2024",
+                    "avatar": "assets/Manager/Avatar/avatar04.jpg"
+                  },
+                  {
+                    "name": "Andi Lane",
+                    "date": "Jul 25, 2024",
+                    "avatar": "assets/Manager/Avatar/avatar05.jpg"
+                  },
                 ]),
-                _buildUserSection(title: "User List", users: [
-                  {"name": "ByeWind", "date": "Jun 24, 2024", "avatar": "assets/Manager/Avatar/avatar.jpg"},
+                _buildUserSection(title: "Danh sách người dùng", users: [
+                  {
+                    "name": "ByeWind",
+                    "date": "Jun 24, 2024",
+                    "avatar": "assets/Manager/Avatar/avatar.jpg"
+                  },
                 ]),
               ],
             ),
           );
         },
       ),
-      bottomNavigationBar: (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS)
+      bottomNavigationBar: (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS)
           ? MobileNavigationBar(
         selectedIndex: 0,
         onItemTapped: (index) {},
@@ -104,23 +133,17 @@ class _UserReportScreenState extends State<UserReportScreen> with SingleTickerPr
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildSegmentButton("Day"),
-          _buildSegmentButton("Week"),
-          _buildSegmentButton("Month"),
-        ],
+        children: ["Ngày", "Tuần", "Tháng"]
+            .map((label) => _buildSegmentButton(label))
+            .toList(),
       ),
     );
   }
 
   Widget _buildSegmentButton(String text) {
-    bool isSelected = _selectedPeriod == text;
+    final bool isSelected = _selectedPeriod == text;
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          _selectedPeriod = text;
-        });
-      },
+      onTap: () => setState(() => _selectedPeriod = text),
       child: Container(
         decoration: BoxDecoration(
           color: isSelected ? Colors.white : Colors.grey[200],
@@ -128,7 +151,8 @@ class _UserReportScreenState extends State<UserReportScreen> with SingleTickerPr
           border: isSelected ? Border.all(color: Colors.black) : null,
         ),
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 20),
-        child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold)),
+        child:
+        Text(text, style: const TextStyle(fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -145,8 +169,7 @@ class _UserReportScreenState extends State<UserReportScreen> with SingleTickerPr
         padding: const EdgeInsets.all(16),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            // Điều chỉnh chiều cao của biểu đồ dựa trên kích thước màn hình
-            double chartHeight = constraints.maxWidth > 600 ? 300 : 250; // Kích thước cao hơn cho web
+            double chartHeight = constraints.maxWidth > 600 ? 300 : 250;
             return SizedBox(
               height: chartHeight,
               child: LineChart(
@@ -154,26 +177,34 @@ class _UserReportScreenState extends State<UserReportScreen> with SingleTickerPr
                   gridData: FlGridData(show: true),
                   titlesData: FlTitlesData(
                     leftTitles: AxisTitles(
-                        sideTitles: SideTitles(showTitles: true, interval: 2)),
+                      sideTitles: SideTitles(showTitles: true, interval: 2),
+                    ),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
                         interval: 1,
                         getTitlesWidget: (value, meta) {
-                          List<String> months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-                          return Text(
-                            (value >= 0 && value < months.length)
-                                ? months[value.toInt()]
-                                : '',
-                            style: const TextStyle(fontSize: 12),
-                          );
+                          if (value >= 1 && value <= 12) {
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 8.0, left: 8.0),
+                              child: Text(
+                                '${value.toInt()}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                            );
+                          }
+                          return const Text('');
                         },
+                        reservedSize: 30,
                       ),
                     ),
                     rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
-                  borderData: FlBorderData(show: true, border: Border.all(color: Colors.black)),
+                  borderData: FlBorderData(
+                    show: true,
+                    border: Border.all(color: Colors.black),
+                  ),
                   lineBarsData: [
                     LineChartBarData(
                       spots: _animatedSpots(),
@@ -203,22 +234,18 @@ class _UserReportScreenState extends State<UserReportScreen> with SingleTickerPr
     );
   }
 
-  Widget _buildUserSection({required String title, required List<Map<String, String>> users}) {
+  Widget _buildUserSection(
+      {required String title, required List<Map<String, String>> users}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              if (title == "New user") const Icon(Icons.keyboard_arrow_down),
-            ],
-          ),
+          Text(title,
+              style:
+              const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 10),
-          ...users.map((user) => _buildUserItem(user)).toList(),
+          ...users.map(_buildUserItem).toList(),
         ],
       ),
     );
@@ -273,7 +300,7 @@ class _UserReportScreenState extends State<UserReportScreen> with SingleTickerPr
             elevation: 3,
           ),
           child: const Text(
-            "XEM CHI TIẾT",
+            "Xem Chi Tiết",
             style: TextStyle(
               fontSize: 16,
               color: Colors.purple,

@@ -83,7 +83,7 @@ class _SuccessScreenState extends State<SuccessScreen> with SingleTickerProvider
                   ),
                   const SizedBox(height: 20),
                   const Text(
-                    "Deleted Product\nSuccessfully!",
+                    "Xóa Sản phẩm\nThành công!",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 22,
