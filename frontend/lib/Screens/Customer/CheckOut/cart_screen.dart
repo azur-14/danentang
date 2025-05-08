@@ -29,7 +29,8 @@ class CartScreenCheckOut extends StatefulWidget {
 
 class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
   final CartService _service = CartService();
-  late Future<Cart> _cartFuture;
+
+  Future<Cart>? _cartFuture;              // made nullable
   late String _effectiveUserId;
 
   bool isEditing = false;
@@ -66,8 +67,7 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
   }
 
   double _subtotal(List<CartItem> items) =>
-      items.where((i) => i.isSelected).fold<double>(
-          0, (sum, i) => sum + i.currentPrice * i.quantity);
+      items.fold<double>(0, (sum, i) => sum + i.currentPrice * i.quantity);
 
   double get _discount => applyPoints ? 60000 : 0;
   double get _shipping => 50000;
@@ -75,6 +75,13 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
 
   @override
   Widget build(BuildContext context) {
+    // If _cartFuture hasn't been set yet, show a loader
+    if (_cartFuture == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final screenWidth = MediaQuery.of(context).size.width;
     return screenWidth > 800
         ? _buildWebLayout(context)
