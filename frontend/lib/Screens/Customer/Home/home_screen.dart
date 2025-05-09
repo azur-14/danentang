@@ -1,16 +1,11 @@
-// lib/Screens/Customer/Home/home_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
+import 'package:danentang/data/user_data.dart';
 
 import '../../../models/product.dart';
 import '../../../models/category.dart';
 import '../../../models/tag.dart';
-import '../../../models/user_model.dart';
-
 import '../../../service/product_service.dart';
-
 import '../../../widgets/banner_section.dart';
 import '../../../widgets/product_section.dart';
 import '../../../widgets/category_icon.dart';
@@ -20,10 +15,10 @@ import '../../../widgets/Search/mobile_search_bar.dart';
 import '../../../widgets/Search/web_search_bar.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
 import '../../../widgets/footer.dart';
-// lib/Screens/Customer/Home/home_screen.dart
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -38,7 +33,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Tag> tags = [];
   Map<String, List<Product>> productsByTag = {};
 
-  // map category name -> icon
+  final Map<String, dynamic> userData = UserData.userData;
+
   static const _iconMap = {
     'Laptops': Icons.laptop,
     'Gaming': Icons.sports_esports,
@@ -60,19 +56,18 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => isLoading = true);
     try {
       final prods = await ProductService.fetchAllProducts();
-      final cats  = await ProductService.fetchAllCategories();
-      final tgs   = await ProductService.fetchAllTags();
+      final cats = await ProductService.fetchAllCategories();
+      final tgs = await ProductService.fetchAllTags();
 
-      // fetch products by tag
       final mapByTag = <String, List<Product>>{};
       for (final t in tgs) {
         mapByTag[t.id] = await ProductService.fetchProductsByTag(t.id);
       }
 
       setState(() {
-        allProducts   = prods;
-        categories    = cats;
-        tags          = tgs;
+        allProducts = prods;
+        categories = cats;
+        tags = tgs;
         productsByTag = mapByTag;
       });
     } catch (e) {
@@ -85,17 +80,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onNavTapped(int idx) {
-    final user = Provider.of<UserModel>(context, listen: false);
-    if (!user.isLoggedIn && idx != 0) {
+    final bool isLoggedIn = userData['isLoggedIn'] as bool;
+    if (!isLoggedIn && idx != 0) {
       context.go('/login');
       return;
     }
     setState(() => selectedIndex = idx);
+    final extraData = {'isLoggedIn': isLoggedIn, 'userData': userData};
     switch (idx) {
-      case 0: context.go('/'); break;
-      case 1: context.go('/cart',   extra: user.isLoggedIn); break;
-      case 2: context.go('/profile',extra: user.isLoggedIn); break;
-      case 3: context.go('/chat'); break;
+      case 0:
+        context.go('/');
+        break;
+      case 1:
+        context.go('/cart', extra: extraData);
+        break;
+      case 2:
+        context.go('/profile', extra: extraData);
+        break;
+      case 3:
+        context.go('/chat');
+        break;
     }
   }
 
@@ -114,164 +118,141 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMobileLayout(BuildContext context, double w) {
-    final user = Provider.of<UserModel>(context, listen: false);
+    final bool isLoggedIn = userData['isLoggedIn'] as bool;
 
-    // calculate how many category icons to show
     const iconSize = 80.0, iconSpacing = 8.0, iconPadding = 16.0;
     final maxCats = _calculateItemsPerRow(w, iconSize, iconSpacing, iconPadding);
     final visibleCats = showAllCategories ? categories : categories.take(maxCats).toList();
 
     return Scaffold(
-      appBar: const MobileHeader(),
+      appBar: MobileHeader(userData: userData),
       body: SingleChildScrollView(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-
-          // Search bar
-          const MobileSearchBar(),
-
-          // Categories row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: iconPadding, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Categories', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                GestureDetector(
-                  onTap: () => setState(() => showAllCategories = !showAllCategories),
-                  child: Text(showAllCategories ? 'Show less' : 'See all', style: const TextStyle(color: Colors.blue)),
-                ),
-              ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const MobileSearchBar(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: iconPadding, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Categories', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  GestureDetector(
+                    onTap: () => setState(() => showAllCategories = !showAllCategories),
+                    child: Text(showAllCategories ? 'Show less' : 'See all', style: const TextStyle(color: Colors.blue)),
+                  ),
+                ],
+              ),
             ),
-          ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: iconPadding),
-            child: Row(
-              children: visibleCats.map((cat) {
-                final icon = _iconMap[cat.name] ?? Icons.category;
-                return Padding(
-                  padding: const EdgeInsets.only(right: iconSpacing),
-                  child: CategoryIcon(icon: icon, label: cat.name),
-                );
-              }).toList(),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: iconPadding),
+              child: Row(
+                children: visibleCats.map((cat) {
+                  final icon = _iconMap[cat.name] ?? Icons.category;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: iconSpacing),
+                    child: CategoryIcon(icon: icon, label: cat.name),
+                  );
+                }).toList(),
+              ),
             ),
-          ),
-
-          // Banner
-          BannerSection(isWeb: false, screenWidth: w),
-
-          // Promo icons (mobile can also show these if you like)
-          _buildPromoIcons(),
-
-          // Static sections
-          ProductSection(
-            title: 'Promotional Products',
-            products: allProducts.where((p) => p.discountPercentage > 0).toList(),
-            isWeb: false,
-            screenWidth: w,
-          ),
-          ProductSection(
-            title: 'New Products',
-            products: List<Product>.from(allProducts)
-              ..sort((a, b) => b.createdAt.compareTo(a.createdAt)),
-            isWeb: false,
-            screenWidth: w,
-          ),
-
-          // Dynamic by category
-          ...categories.map((cat) {
-            final list = allProducts.where((p) => p.categoryId == cat.id).toList();
-            if (list.isEmpty) return const SizedBox.shrink();
-            return ProductSection(
-              title: cat.name,
-              products: list,
+            BannerSection(isWeb: false, screenWidth: w),
+            _buildPromoIcons(),
+            ProductSection(
+              title: 'Promotional Products',
+              products: allProducts.where((p) => p.discountPercentage > 0).toList(),
               isWeb: false,
               screenWidth: w,
-            );
-          }),
-
-          // Dynamic by tag
-          ...tags.map((tag) {
-            final list = productsByTag[tag.id] ?? [];
-            if (list.isEmpty) return const SizedBox.shrink();
-            return ProductSection(
-              title: tag.name,
-              products: list,
+            ),
+            ProductSection(
+              title: 'New Products',
+              products: List<Product>.from(allProducts)..sort((a, b) => b.createdAt.compareTo(a.createdAt)),
               isWeb: false,
               screenWidth: w,
-            );
-          }),
-
-        ]),
+            ),
+            ...categories.map((cat) {
+              final list = allProducts.where((p) => p.categoryId == cat.id).toList();
+              if (list.isEmpty) return const SizedBox.shrink();
+              return ProductSection(
+                title: cat.name,
+                products: list,
+                isWeb: false,
+                screenWidth: w,
+              );
+            }),
+            ...tags.map((tag) {
+              final list = productsByTag[tag.id] ?? [];
+              if (list.isEmpty) return const SizedBox.shrink();
+              return ProductSection(
+                title: tag.name,
+                products: list,
+                isWeb: false,
+                screenWidth: w,
+              );
+            }),
+          ],
+        ),
       ),
       bottomNavigationBar: MobileNavigationBar(
         selectedIndex: selectedIndex,
         onItemTapped: _onNavTapped,
-        isLoggedIn: user.isLoggedIn,
+        isLoggedIn: isLoggedIn,
         role: 'user',
       ),
     );
   }
 
   Widget _buildWebLayout(BuildContext context, double w) {
-    final user = Provider.of<UserModel>(context, listen: false);
+    final bool isLoggedIn = userData['isLoggedIn'] as bool;
 
-    // calculate icons same as mobile
     const iconSize = 80.0, iconSpacing = 16.0, iconPadding = 32.0;
     final maxCats = _calculateItemsPerRow(w, iconSize, iconSpacing, iconPadding);
     final visibleCats = categories.take(maxCats).toList();
 
     return Scaffold(
       body: SingleChildScrollView(
-        child: Column(children: [
-          const WebHeader(),
-          WebSearchBar(isLoggedIn: user.isLoggedIn),
-
-          BannerSection(isWeb: true, screenWidth: w),
-
-          // Promo icons (web)
-          _buildPromoIcons(),
-
-          // Category icons row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: iconPadding, vertical: 16),
-            child: Row(
-              children: visibleCats.map((cat) {
-                final icon = _iconMap[cat.name] ?? Icons.category;
-                return Padding(
-                  padding: const EdgeInsets.only(right: iconSpacing),
-                  child: CategoryIcon(icon: icon, label: cat.name),
-                );
-              }).toList(),
+        child: Column(
+          children: [
+            WebHeader(userData: userData),
+            WebSearchBar(isLoggedIn: isLoggedIn),
+            BannerSection(isWeb: true, screenWidth: w),
+            _buildPromoIcons(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: iconPadding, vertical: 16),
+              child: Row(
+                children: visibleCats.map((cat) {
+                  final icon = _iconMap[cat.name] ?? Icons.category;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: iconSpacing),
+                    child: CategoryIcon(icon: icon, label: cat.name),
+                  );
+                }).toList(),
+              ),
             ),
-          ),
-
-          // Dynamic by category
-          ...categories.map((cat) {
-            final list = allProducts.where((p) => p.categoryId == cat.id).toList();
-            if (list.isEmpty) return const SizedBox.shrink();
-            return ProductSection(
-              title: cat.name,
-              products: list,
-              isWeb: true,
-              screenWidth: w,
-            );
-          }),
-
-          // Dynamic by tag
-          ...tags.map((tag) {
-            final list = productsByTag[tag.id] ?? [];
-            if (list.isEmpty) return const SizedBox.shrink();
-            return ProductSection(
-              title: tag.name,
-              products: list,
-              isWeb: true,
-              screenWidth: w,
-            );
-          }),
-
-          Footer(),
-        ]),
+            ...categories.map((cat) {
+              final list = allProducts.where((p) => p.categoryId == cat.id).toList();
+              if (list.isEmpty) return const SizedBox.shrink();
+              return ProductSection(
+                title: cat.name,
+                products: list,
+                isWeb: true,
+                screenWidth: w,
+              );
+            }),
+            ...tags.map((tag) {
+              final list = productsByTag[tag.id] ?? [];
+              if (list.isEmpty) return const SizedBox.shrink();
+              return ProductSection(
+                title: tag.name,
+                products: list,
+                isWeb: true,
+                screenWidth: w,
+              );
+            }),
+            Footer(),
+          ],
+        ),
       ),
     );
   }

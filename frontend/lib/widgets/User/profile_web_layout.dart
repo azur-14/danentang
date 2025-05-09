@@ -1,38 +1,60 @@
-import 'package:danentang/models/user_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'text_field_widget.dart';
 
-class ProfileWebLayout extends StatelessWidget {
-  final UserModel userModel;
+class ProfileWebLayout extends StatefulWidget {
+  final Map<String, dynamic> userData;
 
-  const ProfileWebLayout({super.key, required this.userModel});
+  const ProfileWebLayout({super.key, required this.userData});
 
-  Future<void> _pickImage(BuildContext context) async {
+  @override
+  _ProfileWebLayoutState createState() => _ProfileWebLayoutState();
+}
+
+class _ProfileWebLayoutState extends State<ProfileWebLayout> {
+  late Map<String, dynamic> _userData;
+
+  @override
+  void initState() {
+    super.initState();
+    // Create a mutable copy of userData to allow updates
+    _userData = Map<String, dynamic>.from(widget.userData);
+  }
+
+  Future<void> _pickImage() async {
     try {
       final ImagePicker picker = ImagePicker();
       final XFile? image = kIsWeb
           ? await picker.pickImage(source: ImageSource.gallery)
-          : await picker.pickImage(source: ImageSource.gallery); // Can add camera option for mobile
+          : await picker.pickImage(source: ImageSource.gallery);
 
       if (image != null) {
-        // In a real app, upload the image to a server and get the URL.
-        // For this example, we'll use the file path as a placeholder.
-        final String newAvatarUrl = image.path;
-        userModel.updateUser(avatarUrl: newAvatarUrl);
+        setState(() {
+          _userData['avatarUrl'] = image.path;
+        });
 
-        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Ảnh đại diện đã được cập nhật')),
         );
       }
     } catch (e) {
-      // Show error message
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Lỗi khi chọn ảnh')),
       );
     }
+  }
+
+  void _deleteImage() {
+    setState(() {
+      _userData['avatarUrl'] = null;
+    });
+  }
+
+  void _updateName(String firstName, String lastName) {
+    setState(() {
+      _userData['userName'] = '$firstName $lastName'.trim();
+    });
   }
 
   @override
@@ -52,10 +74,10 @@ class ProfileWebLayout extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 50,
-                  child: userModel.avatarUrl == null
+                  child: _userData['avatarUrl'] == null
                       ? const Icon(Icons.person, size: 50)
                       : Image.network(
-                    userModel.avatarUrl!,
+                    _userData['avatarUrl'],
                     fit: BoxFit.cover,
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
@@ -68,7 +90,7 @@ class ProfileWebLayout extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  userModel.userName,
+                  _userData['userName'],
                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
@@ -76,7 +98,7 @@ class ProfileWebLayout extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton(
-                      onPressed: () => _pickImage(context),
+                      onPressed: _pickImage,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2A2E5B),
                         foregroundColor: Colors.white,
@@ -85,9 +107,7 @@ class ProfileWebLayout extends StatelessWidget {
                     ),
                     const SizedBox(width: 10),
                     OutlinedButton(
-                      onPressed: () {
-                        userModel.updateUser(avatarUrl: null);
-                      },
+                      onPressed: _deleteImage,
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Color(0xFF2A2E5B)),
                         foregroundColor: const Color(0xFF2A2E5B),
@@ -105,10 +125,10 @@ class ProfileWebLayout extends StatelessWidget {
               Expanded(
                 child: TextFieldWidget(
                   label: 'FIRST NAME',
-                  value: userModel.userName.split(' ').first,
+                  value: _userData['userName'].toString().split(' ').first,
                   onChanged: (value) {
-                    final names = userModel.userName.split(' ');
-                    userModel.updateUser(userName: '$value ${names.length > 1 ? names.last : ''}');
+                    final names = _userData['userName'].toString().split(' ');
+                    _updateName(value, names.length > 1 ? names.last : '');
                   },
                 ),
               ),
@@ -116,10 +136,10 @@ class ProfileWebLayout extends StatelessWidget {
               Expanded(
                 child: TextFieldWidget(
                   label: 'LAST NAME',
-                  value: userModel.userName.split(' ').last,
+                  value: _userData['userName'].toString().split(' ').last,
                   onChanged: (value) {
-                    final names = userModel.userName.split(' ');
-                    userModel.updateUser(userName: '${names.first} $value');
+                    final names = _userData['userName'].toString().split(' ');
+                    _updateName(names.first, value);
                   },
                 ),
               ),
@@ -128,9 +148,11 @@ class ProfileWebLayout extends StatelessWidget {
           const SizedBox(height: 16),
           TextFieldWidget(
             label: 'USER NAME',
-            value: userModel.userName,
+            value: _userData['userName'].toString(),
             onChanged: (value) {
-              userModel.updateUser(userName: value);
+              setState(() {
+                _userData['userName'] = value;
+              });
             },
           ),
           const SizedBox(height: 16),
@@ -139,9 +161,11 @@ class ProfileWebLayout extends StatelessWidget {
               Expanded(
                 child: TextFieldWidget(
                   label: 'EMAIL ADDRESS',
-                  value: userModel.email ?? 'example@gmail.com',
+                  value: _userData['email']?.toString() ?? 'example@gmail.com',
                   onChanged: (value) {
-                    userModel.updateUser(email: value);
+                    setState(() {
+                      _userData['email'] = value;
+                    });
                   },
                   icon: Icons.email,
                 ),
@@ -150,9 +174,11 @@ class ProfileWebLayout extends StatelessWidget {
               Expanded(
                 child: TextFieldWidget(
                   label: 'PHONE NUMBER',
-                  value: userModel.phoneNumber ?? '',
+                  value: _userData['phoneNumber']?.toString() ?? '',
                   onChanged: (value) {
-                    userModel.updateUser(phoneNumber: value);
+                    setState(() {
+                      _userData['phoneNumber'] = value;
+                    });
                   },
                   icon: Icons.phone,
                 ),
@@ -162,9 +188,11 @@ class ProfileWebLayout extends StatelessWidget {
           const SizedBox(height: 16),
           TextFieldWidget(
             label: 'ĐỊA CHỈ',
-            value: userModel.address ?? '',
+            value: _userData['address']?.toString() ?? '',
             onChanged: (value) {
-              userModel.updateUser(address: value);
+              setState(() {
+                _userData['address'] = value;
+              });
             },
           ),
         ],

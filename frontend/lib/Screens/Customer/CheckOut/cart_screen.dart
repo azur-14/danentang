@@ -219,7 +219,7 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
     return Scaffold(
       body: Column(
         children: [
-          const WebHeader(),
+          const WebHeader(userData: {},),
           WebSearchBar(isLoggedIn: widget.isLoggedIn),
           Expanded(
             child: FutureBuilder<Cart>(
