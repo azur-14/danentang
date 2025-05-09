@@ -12,6 +12,7 @@ import 'package:danentang/Screens/Customer/User/personal_info_screen.dart';
 import 'package:danentang/Screens/Customer/User/account_settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'Screens/Customer/Login/Intro.dart';
 import 'Screens/Customer/Product/test_product_details.dart';
 import 'Screens/Manager/Support/customer_support.dart';
 import 'Screens/Manager/DashBoard/MobileDashboard.dart';
@@ -55,10 +56,10 @@ class ProductsScreen extends StatelessWidget {
 }
 
 final GoRouter router = GoRouter(
-  initialLocation: '/',
+  initialLocation: '/signup',
   routes: [
     GoRoute(
-      path: '/',
+      path: '/homepage',
       builder: (context, state) => const HomeScreen(),
     ),
     GoRoute(
@@ -93,6 +94,10 @@ final GoRouter router = GoRouter(
         final isLoggedIn = state.extra as bool? ?? false;
         return ProfileManagementScreen();
       },
+    ),
+    GoRoute(
+      path: '/intro',
+      builder: (context, state) => const SplashScreen(),
     ),
 
     // Chat
