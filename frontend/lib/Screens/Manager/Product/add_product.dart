@@ -1,69 +1,354 @@
+// lib/Screens/Manager/Product/add_product.dart
+
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:danentang/models/product.dart';
+import 'package:danentang/models/category.dart';
+import 'package:danentang/Service/product_service.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
-class Add_Product extends StatelessWidget {
-  const Add_Product({super.key});
+class Add_Product extends StatefulWidget {
+  final Product? product;
+  const Add_Product({Key? key, this.product}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: NewProductScreen(),
-    );
+  State<Add_Product> createState() => _Add_ProductState();
+}
+
+class _Add_ProductState extends State<Add_Product> {
+  final _formKey = GlobalKey<FormState>();
+  final _picker = ImagePicker();
+
+  late TextEditingController _nameCtl;
+  late TextEditingController _brandCtl;
+  late TextEditingController _descCtl;
+  late TextEditingController _priceCtl;
+  late TextEditingController _discountCtl;
+
+  List<Category> _categories = [];
+  String? _selectedCategoryId;
+
+  /// Now hold base64 strings (or null if none picked)
+  final List<String?> _imageBase64 = [];
+
+  // Variants remain as before
+  final List<TextEditingController> _variantNameCtrls  = [];
+  final List<TextEditingController> _variantPriceCtrls = [];
+  final List<TextEditingController> _variantInvCtrls   = [];
+
+  bool _loading = false;
+
+  final _baseDecoration = InputDecoration(
+    filled: true,
+    fillColor: Colors.grey.shade100,
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Basic info controllers
+    _nameCtl     = TextEditingController(text: widget.product?.name ?? '');
+    _brandCtl    = TextEditingController(text: widget.product?.brand ?? '');
+    _descCtl     = TextEditingController(text: widget.product?.description ?? '');
+    _priceCtl    = TextEditingController(text: widget.product?.price.toString() ?? '');
+    _discountCtl = TextEditingController(text: widget.product?.discountPercentage.toString() ?? '');
+    _selectedCategoryId = widget.product?.categoryId;
+
+    // Initialize existing images as Base64 strings
+    if (widget.product != null) {
+      for (var img in widget.product!.images) {
+        _imageBase64.add(img.url); // assuming `url` holds base64 when loaded
+      }
+    }
+    if (_imageBase64.isEmpty) _addImageField();
+
+    // Variants
+    if (widget.product != null) {
+      for (var v in widget.product!.variants) {
+        _variantNameCtrls.add(TextEditingController(text: v.variantName));
+        _variantPriceCtrls.add(TextEditingController(text: v.additionalPrice.toString()));
+        _variantInvCtrls.add(TextEditingController(text: v.inventory.toString()));
+      }
+    }
+    if (_variantNameCtrls.isEmpty) _addVariantField();
+
+    // Load categories
+    ProductService.fetchAllCategories().then((cats) {
+      setState(() {
+        _categories = cats;
+        _selectedCategoryId ??= cats.isNotEmpty ? cats.first.id : null;
+      });
+    });
   }
-}
 
-class NewProductScreen extends StatefulWidget {
-  const NewProductScreen({super.key});
+  void _addImageField() {
+    _imageBase64.add(null);
+  }
+
+  void _addVariantField() {
+    _variantNameCtrls.add(TextEditingController());
+    _variantPriceCtrls.add(TextEditingController(text: '0'));
+    _variantInvCtrls.add(TextEditingController(text: '0'));
+  }
 
   @override
-  _NewProductScreenState createState() => _NewProductScreenState();
-}
+  void dispose() {
+    _nameCtl.dispose();
+    _brandCtl.dispose();
+    _descCtl.dispose();
+    _priceCtl.dispose();
+    _discountCtl.dispose();
+    for (var c in _variantNameCtrls)  c.dispose();
+    for (var c in _variantPriceCtrls) c.dispose();
+    for (var c in _variantInvCtrls)   c.dispose();
+    super.dispose();
+  }
 
-class _NewProductScreenState extends State<NewProductScreen> {
-  String? selectedCategory;
-  List<String> categories = ["Danh mục 1", "Danh mục 2", "Danh mục 3"];
+  Future<void> _pickImage(int index) async {
+    final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    if (picked == null) return;
+    final bytes = await picked.readAsBytes();
+    setState(() => _imageBase64[index] = base64Encode(bytes));
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _loading = true);
+
+    // Map images: base64 strings into ProductImage
+    final images = List<ProductImage>.generate(
+      _imageBase64.length,
+          (i) => ProductImage(
+        id: widget.product?.images[i].id,
+        url: _imageBase64[i] ?? '',
+        sortOrder: i, // or allow custom ordering?
+      ),
+    );
+
+    final variants = List<ProductVariant>.generate(
+      _variantNameCtrls.length,
+          (i) => ProductVariant(
+        id: widget.product?.variants[i].id,
+        variantName: _variantNameCtrls[i].text.trim(),
+        additionalPrice: double.tryParse(_variantPriceCtrls[i].text) ?? 0,
+        inventory: int.tryParse(_variantInvCtrls[i].text) ?? 0,
+        createdAt: widget.product?.variants[i].createdAt ?? DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+    );
+
+    final p = Product(
+      id: widget.product?.id ?? '',
+      name: _nameCtl.text.trim(),
+      brand: _brandCtl.text.trim(),
+      description: _descCtl.text.trim(),
+      price: double.parse(_priceCtl.text.trim()),
+      discountPercentage: int.parse(_discountCtl.text.trim()),
+      categoryId: _selectedCategoryId ?? '',
+      createdAt: widget.product?.createdAt ?? DateTime.now(),
+      updatedAt: DateTime.now(),
+      images: images,
+      variants: variants,
+    );
+
+    try {
+      if (widget.product == null) {
+        await ProductService.createProduct(p);
+      } else {
+        await ProductService.updateProduct(p);
+      }
+      Navigator.pop(context, true);
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
+    } finally {
+      setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
+    final isEdit = widget.product != null;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text("Thêm Sản phẩm mới", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(isEdit ? 'Edit Product' : 'Add Product'),
         leading: isMobile
             ? IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context, false),
         )
             : null,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      body: _categories.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+        padding: const EdgeInsets.all(16),
+        child: Form(
+          key: _formKey,
+          child: ListView(
             children: [
-              buildInputField("Tên Sản Phẩm"),
-              buildInputField("Mã Số Sản Phẩm"),
-              buildInputField("Số Lô Sản Phẩm"),
-              buildInputField("Dòng Máy / Chip / RAM"),
-              buildInputField("Màu Sắc"),
-              buildDropdownField("Danh Mục Sản Phẩm"),
-              SizedBox(height: 20),
+              // Basic fields...
+              TextFormField(
+                controller: _nameCtl,
+                decoration: _baseDecoration.copyWith(labelText: 'Name'),
+                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _brandCtl,
+                decoration: _baseDecoration.copyWith(labelText: 'Brand'),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _descCtl,
+                decoration: _baseDecoration.copyWith(labelText: 'Description'),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _priceCtl,
+                decoration: _baseDecoration.copyWith(labelText: 'Price'),
+                keyboardType: TextInputType.number,
+                validator: (v) => v == null || double.tryParse(v)==null ? 'Invalid' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _discountCtl,
+                decoration: _baseDecoration.copyWith(labelText: 'Discount %'),
+                keyboardType: TextInputType.number,
+                validator: (v) => v == null || int.tryParse(v)==null ? 'Invalid' : null,
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: _selectedCategoryId,
+                decoration: _baseDecoration.copyWith(labelText: 'Category'),
+                items: _categories
+                    .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
+                    .toList(),
+                onChanged: (v) => setState(() => _selectedCategoryId = v),
+              ),
+              const SizedBox(height: 24),
+
+              // Images picker section
+              ExpansionTile(
+                title: const Text('Images'),
+                children: [
+                  for (var i = 0; i < _imageBase64.length; i++)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Row(
+                        children: [
+                          // thumbnail or placeholder
+                          Container(
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: _imageBase64[i] != null && _imageBase64[i]!.isNotEmpty
+                                ? Image.memory(
+                              base64Decode(_imageBase64[i]!),
+                              width: 64,
+                              height: 64,
+                              fit: BoxFit.cover,
+                            )
+                                : const Icon(Icons.image, size: 32, color: Colors.grey),
+                          ),
+                          const SizedBox(width: 12),
+                          ElevatedButton.icon(
+                            icon: const Icon(Icons.upload),
+                            label: const Text('Pick Image'),
+                            onPressed: () => _pickImage(i),
+                          ),
+                          const Spacer(),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () => setState(() {
+                              _imageBase64.removeAt(i);
+                            }),
+                          ),
+                        ],
+                      ),
+                    ),
+                  TextButton.icon(
+                    icon: const Icon(Icons.add_a_photo),
+                    label: const Text('Add Image Field'),
+                    onPressed: _addImageField,
+                  ),
+                ],
+              ),
+
+              // Variants section (unchanged)
+              ExpansionTile(
+                title: const Text('Variants'),
+                children: [
+                  for (var i = 0; i < _variantNameCtrls.length; i++)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: _variantNameCtrls[i],
+                            decoration: const InputDecoration(labelText: 'Name'),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _variantPriceCtrls[i],
+                                  decoration: const InputDecoration(labelText: 'Add. Price'),
+                                  keyboardType: TextInputType.number,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _variantInvCtrls[i],
+                                  decoration: const InputDecoration(labelText: 'Stock'),
+                                  keyboardType: TextInputType.number,
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => setState(() {
+                                  _variantNameCtrls.removeAt(i);
+                                  _variantPriceCtrls.removeAt(i);
+                                  _variantInvCtrls.removeAt(i);
+                                }),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  TextButton.icon(
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add Variant Field'),
+                    onPressed: _addVariantField,
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
               Center(
                 child: ElevatedButton(
-                  onPressed: () {
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purpleAccent,
-                    padding: EdgeInsets.symmetric(horizontal: 100, vertical: 15),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text("Lưu", style: TextStyle(fontSize: 18, color: Colors.white)),
+                  onPressed: _loading ? null : _save,
+                  child: _loading
+                      ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                  )
+                      : Text(isEdit ? 'Save Changes' : 'Create Product'),
                 ),
               ),
             ],
@@ -73,65 +358,11 @@ class _NewProductScreenState extends State<NewProductScreen> {
       bottomNavigationBar: isMobile
           ? MobileNavigationBar(
         selectedIndex: 0,
-        onItemTapped: (index) {
-          print("Tapped on item: $index");
-        },
+        onItemTapped: (_) {},
         isLoggedIn: true,
-        role:'manager',
+        role: 'manager',
       )
           : null,
-    );
-  }
-
-  Widget buildInputField(String label) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
-        SizedBox(height: 5),
-        TextField(
-          decoration: InputDecoration(
-            filled: true,
-            fillColor: Colors.grey[300],
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-          ),
-        ),
-        SizedBox(height: 15),
-      ],
-    );
-  }
-
-  Widget buildDropdownField(String label) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
-        SizedBox(height: 5),
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 10),
-          decoration: BoxDecoration(
-            color: Colors.grey[300],
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: selectedCategory,
-              hint: Text("Chọn danh mục"),
-              isExpanded: true,
-              icon: Icon(Icons.arrow_drop_down),
-              items: categories.map((String category) {
-                return DropdownMenuItem<String>(value: category, child: Text(category));
-              }).toList(),
-              onChanged: (newValue) {
-                setState(() {
-                  selectedCategory = newValue;
-                });
-              },
-            ),
-          ),
-        ),
-        SizedBox(height: 15),
-      ],
     );
   }
 }

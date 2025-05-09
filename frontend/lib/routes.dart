@@ -56,7 +56,7 @@ class ProductsScreen extends StatelessWidget {
 }
 
 final GoRouter router = GoRouter(
-  initialLocation: '/signup',
+  initialLocation: '/manager-dashboard',
   routes: [
     GoRoute(
       path: '/homepage',

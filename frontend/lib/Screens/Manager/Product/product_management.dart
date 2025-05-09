@@ -1,49 +1,53 @@
+// lib/Screens/Manager/Product/product_management.dart
+
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:danentang/Screens/Manager/Product/add_product.dart';
-import 'package:danentang/Screens/Manager/Product/delete_product.dart';
-import 'package:flutter/foundation.dart';
+import 'add_product.dart';
+import 'delete_product.dart';
+import 'product_detail_screen.dart';
+import 'package:danentang/Service/product_service.dart';
+import 'package:danentang/models/product.dart';
+import 'package:danentang/models/category.dart';
+import 'package:danentang/models/tag.dart';
 import 'package:danentang/widgets/Footer/mobile_navigation_bar.dart';
 
 class Product_Management extends StatelessWidget {
   const Product_Management({super.key});
-
   @override
-  Widget build(BuildContext context) {
-    return const ProductManagementScreen();
-  }
+  Widget build(BuildContext context) => const ProductManagementScreen();
 }
 
 class ProductManagementScreen extends StatefulWidget {
   const ProductManagementScreen({super.key});
-
   @override
-  _ProductManagementScreenState createState() => _ProductManagementScreenState();
+  State<ProductManagementScreen> createState() => _ProductManagementScreenState();
 }
 
-class _ProductManagementScreenState extends State<ProductManagementScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
+class _ProductManagementScreenState extends State<ProductManagementScreen>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _fadeAnim, _scaleAnim;
+
+  late Future<List<Product>>  _fProducts;
+  late Future<List<Category>> _fCategories;
+  late Future<List<Tag>>      _fTags;
   int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
-
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
-    );
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
-
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
+    _fadeAnim = Tween(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
+    _scaleAnim = Tween(begin: 0.8, end: 1.0).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
     _controller.forward();
+    _loadData();
+  }
+
+  void _loadData() {
+    _fProducts   = ProductService.fetchAllProducts();
+    _fCategories = ProductService.fetchAllCategories();
+    _fTags       = ProductService.fetchAllTags();
   }
 
   @override
@@ -54,163 +58,178 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> with 
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        leading: !kIsWeb &&
-            (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android)
-            ? IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pop(context);
+    final isMobile = !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android);
+
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          leading: isMobile
+              ? IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context))
+              : null,
+          title: const Text('Manage Products', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+          backgroundColor: Colors.white,
+          bottom: const TabBar(
+            tabs: [Tab(text: 'By Category'), Tab(text: 'By Tag')],
+            labelColor: Colors.black,
+            indicatorColor: Colors.purple,
+          ),
+        ),
+        body: FadeTransition(
+          opacity: _fadeAnim,
+          child: ScaleTransition(
+            scale: _scaleAnim,
+            child: FutureBuilder<List<dynamic>>(
+              future: Future.wait([_fProducts, _fCategories, _fTags]),
+              builder: (ctx, snap) {
+                if (snap.connectionState != ConnectionState.done) return const Center(child: CircularProgressIndicator());
+                if (snap.hasError) return Center(child: Text('Error: ${snap.error}'));
+                final products = snap.data![0] as List<Product>;
+                final cats     = snap.data![1] as List<Category>;
+                final tags     = snap.data![2] as List<Tag>;
+
+                return TabBarView(
+                  children: [
+                    // by category
+                    RefreshIndicator(
+                      onRefresh: () async => setState(_loadData),
+                      child: ListView.builder(
+                        itemCount: cats.length,
+                        itemBuilder: (ctx,i) {
+                          final cat = cats[i];
+                          final prods = products.where((p)=>p.categoryId==cat.id).toList();
+                          return ExpansionTile(
+                            title: Text(cat.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            children: prods.isEmpty
+                                ? [const Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Text('— No products —', textAlign: TextAlign.center),
+                            )]
+                                : prods.map(_buildProductTile).toList(),
+                          );
+                        },
+                      ),
+                    ),
+
+                    // by tag
+                    RefreshIndicator(
+                      onRefresh: () async => setState(_loadData),
+                      child: ListView.builder(
+                        itemCount: tags.length,
+                        itemBuilder: (ctx,i) {
+                          final tag = tags[i];
+                          return ExpansionTile(
+                            title: Text(tag.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            children: [
+                              FutureBuilder<List<Product>>(
+                                future: ProductService.fetchProductsByTag(tag.id),
+                                builder: (c2, psnap) {
+                                  if (psnap.connectionState!=ConnectionState.done) return const Center(child: CircularProgressIndicator());
+                                  final list = psnap.data!;
+                                  if (list.isEmpty) {
+                                    return const Padding(
+                                      padding: EdgeInsets.all(16),
+                                      child: Text('— No products —', textAlign: TextAlign.center),
+                                    );
+                                  }
+                                  return Column(children: list.map(_buildProductTile).toList());
+                                },
+                              )
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          child: const Icon(FontAwesomeIcons.plus),
+          onPressed: () async {
+            final created = await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(builder: (_) => const Add_Product()),
+            );
+            if (created==true) setState(_loadData);
           },
+        ),
+        bottomNavigationBar: isMobile
+            ? MobileNavigationBar(
+          selectedIndex: _currentIndex,
+          onItemTapped: (i) => setState(() => _currentIndex=i),
+          isLoggedIn: true, role: 'manager',
         )
             : null,
-        title: const Text(
-          'Quản lý Sản phẩm',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit, color: Colors.black),
-            onPressed: () {},
-          ),
-        ],
       ),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: ScaleTransition(
-          scale: _scaleAnimation,
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                _buildProductSection('Sản phẩm mới nhất', 'Xem tất cả'),
-                _buildProductItem('Laptop ASUS', 'Color: Grey, AA - 07 - 902', 200),
-                const SizedBox(height: 10),
-                _buildProductSection('Danh Sách Sản Phẩm Được Bổ Sung', ''),
-                ListView(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
+    );
+  }
+
+  Widget _buildProductTile(Product p) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          Navigator.push(context, MaterialPageRoute(
+            builder: (_) => ProductDetailScreen(productId: p.id),
+          ));
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              Container(
+                width: 64, height: 64,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(8),
+                  image: p.images.isNotEmpty
+                      ? DecorationImage(
+                      image: NetworkImage(p.images.first.url), fit: BoxFit.cover)
+                      : null,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildProductItem('Laptop Dell', 'Color: Black, BB - 12 - 345', 300),
-                    _buildProductItem('MacBook Pro', 'Color: Silver, CC - 78 - 910', 1500),
+                    Text(p.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    Text('\$${p.price.toStringAsFixed(2)}', style: TextStyle(color: Colors.green.shade700)),
                   ],
                 ),
-                _buildActionButtons(context),
-              ],
-            ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.edit, color: Colors.blue),
+                onPressed: () async {
+                  final edited = await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(builder: (_) => Add_Product(product: p)),
+                  );
+                  if (edited==true) setState(_loadData);
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () async {
+                  final deleted = await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(builder: (_) => Delete_Product(product: p)),
+                  );
+                  if (deleted==true) setState(_loadData);
+                },
+              ),
+            ],
           ),
         ),
-      ),
-      bottomNavigationBar: !kIsWeb &&
-          (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android)
-          ? MobileNavigationBar(
-        selectedIndex: _currentIndex,
-        onItemTapped: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        isLoggedIn: true,
-        role:'manager',
-      )
-          : null,
-    );
-  }
-
-  Widget _buildProductSection(String title, String actionText) {
-    return Container(
-      color: Colors.grey.shade300,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          if (actionText.isNotEmpty)
-            TextButton(
-              onPressed: () {},
-              child: Text(actionText, style: const TextStyle(color: Colors.blue)),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProductItem(String name, String details, double price) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.grey,
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Text(details, style: const TextStyle(color: Colors.grey)),
-              ],
-            ),
-          ),
-          Text('\$${price.toStringAsFixed(1)}', style: const TextStyle(fontWeight: FontWeight.bold)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButtons(BuildContext context) {
-    return Column(
-      children: [
-        _buildActionButton('Thêm Sản phẩm mới', FontAwesomeIcons.boxOpen, () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const NewProductScreen()),
-          );
-        }),
-        _buildActionButton('Sửa Sản phẩm', FontAwesomeIcons.pen, () {
-          // TODO: xử lý edit product
-        }),
-        _buildActionButton('Xóa Sản phẩm', FontAwesomeIcons.trash, () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const SuccessScreen()),
-          );
-        }),
-      ],
-    );
-  }
-
-  Widget _buildActionButton(String title, IconData icon, VoidCallback onTap) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: ElevatedButton.icon(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.grey.shade300,
-          foregroundColor: Colors.black,
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-        icon: Icon(icon, color: Colors.black),
-        label: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        onPressed: onTap,
       ),
     );
   }

@@ -15,7 +15,42 @@ class ProductService {
   static const String _categoriesPath  = '$_baseUrl/categories';
   static const String _tagsPath        = '$_baseUrl/Tag';
   static const String _productTagsPath = '$_baseUrl/product-tags';
+  static Future<Product> createProduct(Product p) async {
+    final uri = Uri.parse(_productsPath);
+    final resp = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(p.toJson()),
+    );
+    if (resp.statusCode == 200 || resp.statusCode == 201) {
+      return Product.fromJson(json.decode(resp.body) as Map<String, dynamic>);
+    }
+    throw Exception('Failed to create product (${resp.statusCode})');
+  }
 
+  static Future<Product> updateProduct(Product p) async {
+    final uri = Uri.parse('$_productsPath/${p.id}');
+    final resp = await http.put(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(p.toJson()),
+    );
+    if (resp.statusCode == 200) {
+      return Product.fromJson(json.decode(resp.body) as Map<String, dynamic>);
+    }
+    if (resp.statusCode == 204) {
+      return p;
+    }
+    throw Exception('Failed to update product (${resp.statusCode})');
+  }
+  /// DELETE /api/products/{id}
+  static Future<void> deleteProduct(String id) async {
+    final uri = Uri.parse('$_productsPath/$id');
+    final resp = await http.delete(uri);
+    if (resp.statusCode != 204) {
+      throw Exception('Failed to delete product (${resp.statusCode})');
+    }
+  }
   /// GET /api/products
   static Future<List<Product>> fetchAllProducts() async {
     final uri = Uri.parse(_productsPath);
@@ -206,7 +241,7 @@ class ProductService {
   }
 
   /// GET /api/products/{productId}/variants
-  Future<List<ProductVariant>> fetchVariants(String productId) async {
+  static Future<List<ProductVariant>> fetchVariants(String productId) async {
     final uri = Uri.parse('$_productsPath/$productId/variants');
     debugPrint('→ GET $uri');
     final resp = await http.get(uri);
@@ -227,6 +262,97 @@ class ProductService {
       return variants.firstWhere((v) => v.id == variantId);
     } catch (_) {
       throw Exception('Variant $variantId not found for product $productId');
+    }
+  }
+  /// GET  /api/products/{productId}/images
+  static Future<List<ProductImage>> fetchImages(String productId) async {
+    final uri = Uri.parse('$_productsPath/$productId/images');
+    final resp = await http.get(uri);
+    if (resp.statusCode == 200) {
+      final data = json.decode(resp.body) as List;
+      return data.map((e) => ProductImage.fromJson(e)).toList();
+    }
+    throw Exception('fetchImages failed: ${resp.statusCode}');
+  }
+
+  /// POST /api/products/{productId}/images
+  static Future<ProductImage> addImage(String productId, ProductImage img) async {
+    final uri = Uri.parse('$_productsPath/$productId/images');
+    final resp = await http.post(
+      uri,
+      headers: {'Content-Type':'application/json'},
+      body: jsonEncode(img.toJson()),
+    );
+    if (resp.statusCode == 200) {
+      return ProductImage.fromJson(json.decode(resp.body));
+    }
+    throw Exception('addImage failed: ${resp.statusCode}');
+  }
+
+  /// PUT  /api/products/{productId}/images/{imageId}
+  static Future<void> updateImage(String productId, ProductImage img) async {
+    final uri = Uri.parse('$_productsPath/$productId/images/${img.id}');
+    final resp = await http.put(
+      uri,
+      headers: {'Content-Type':'application/json'},
+      body: jsonEncode(img.toJson()),
+    );
+    if (resp.statusCode != 204) {
+      throw Exception('updateImage failed: ${resp.statusCode}');
+    }
+  }
+
+  /// DELETE /api/products/{productId}/images/{imageId}
+  static Future<void> deleteImage(String productId, String imageId) async {
+    final uri = Uri.parse('$_productsPath/$productId/images/$imageId');
+    final resp = await http.delete(uri);
+    if (resp.statusCode != 204) {
+      throw Exception('deleteImage failed: ${resp.statusCode}');
+    }
+  }
+  /// GET /api/product-tags/by-product/{productId}
+  static Future<List<Tag>> fetchTagsOfProduct(String productId) async {
+    final uri = Uri.parse('$_productTagsPath/by-product/$productId');
+    final resp = await http.get(uri);
+    if (resp.statusCode == 200) {
+      final data = json.decode(resp.body) as List<dynamic>;
+      return data.map((e) => Tag.fromJson(e as Map<String, dynamic>)).toList();
+    }
+    throw Exception('Failed to load tags for product $productId (${resp.statusCode})');
+  }
+  // —— Variant CRUD —— //
+
+  static Future<ProductVariant> addVariant(String productId, ProductVariant v) async {
+    final uri = Uri.parse('$_productsPath/$productId/variants');
+    final resp = await http.post(
+      uri,
+      headers: {'Content-Type':'application/json'},
+      body: jsonEncode(v.toJson()),
+    );
+    if (resp.statusCode == 200) {
+      return ProductVariant.fromJson(json.decode(resp.body) as Map<String, dynamic>);
+    }
+    throw Exception('addVariant failed: ${resp.statusCode}');
+  }
+  /// PUT  /api/products/{productId}/variants/{variantId}
+  static Future<void> updateVariant(String productId, ProductVariant v) async {
+    final uri = Uri.parse('$_productsPath/$productId/variants/${v.id}');
+    final resp = await http.put(
+      uri,
+      headers: {'Content-Type':'application/json'},
+      body: jsonEncode(v.toJson()),
+    );
+    if (resp.statusCode != 204) {
+      throw Exception('updateVariant failed: ${resp.statusCode}');
+    }
+  }
+
+  /// DELETE /api/products/{productId}/variants/{variantId}
+  static Future<void> deleteVariant(String productId, String variantId) async {
+    final uri = Uri.parse('$_productsPath/$productId/variants/$variantId');
+    final resp = await http.delete(uri);
+    if (resp.statusCode != 204) {
+      throw Exception('deleteVariant failed: ${resp.statusCode}');
     }
   }
 }

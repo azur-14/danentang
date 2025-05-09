@@ -26,7 +26,19 @@ class Product {
     required this.images,
     required this.variants,
   });
-
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'brand': brand,
+    'description': description,
+    'price': price,
+    'discountPercentage': discountPercentage,
+    'categoryId': categoryId,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+    'images': images.map((i) => i.toJson()).toList(),
+    'variants': variants.map((v) => v.toJson()).toList(),
+  };
   factory Product.fromJson(Map<String, dynamic> json) => Product(
     id: json['id'] as String,
     name: json['name'] as String,
@@ -56,7 +68,11 @@ class ProductImage {
     required this.url,
     required this.sortOrder,
   });
-
+  Map<String, dynamic> toJson() => {
+    if (id != null) 'id': id,
+    'url': url,
+    'sortOrder': sortOrder,
+  };
   factory ProductImage.fromJson(Map<String, dynamic> json) => ProductImage(
     id: json['id'] as String?,         // parse nullable
     url: json['url'] as String,
@@ -80,7 +96,12 @@ class ProductVariant {
     required this.createdAt,
     required this.updatedAt,
   });
-
+  Map<String, dynamic> toJson() => {
+    if (id != null) 'id': id,
+    'variantName': variantName,
+    'additionalPrice': additionalPrice,
+    'inventory': inventory,
+  };
   factory ProductVariant.fromJson(Map<String, dynamic> json) =>
       ProductVariant(
         id: json['id'] as String?,

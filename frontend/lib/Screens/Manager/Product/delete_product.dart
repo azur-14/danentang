@@ -1,48 +1,58 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
+import 'package:danentang/Service/product_service.dart';
+// lib/Screens/Manager/Product/delete_product.dart
 
-class Delete_Product extends StatelessWidget {
-  const Delete_Product({super.key});
+import 'package:flutter/material.dart';
+import 'package:danentang/models/product.dart';
+import 'package:danentang/Service/product_service.dart';
+import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: SuccessScreen(),
-    );
-  }
-}
-
-class SuccessScreen extends StatefulWidget {
-  const SuccessScreen({super.key});
+class Delete_Product extends StatefulWidget {
+  final Product product;
+  const Delete_Product({Key? key, required this.product}) : super(key: key);
 
   @override
-  State<SuccessScreen> createState() => _SuccessScreenState();
+  State<Delete_Product> createState() => _Delete_ProductState();
 }
 
-class _SuccessScreenState extends State<SuccessScreen> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _fadeAnimation;
+class _Delete_ProductState extends State<Delete_Product>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _fadeAnimation, _scaleAnimation;
+  bool _deleted = false;
 
   @override
   void initState() {
     super.initState();
-
     _controller = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 800));
-
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+    _fadeAnimation = Tween(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    );
     _scaleAnimation = CurvedAnimation(
       parent: _controller,
       curve: Curves.easeOutBack,
     );
-
-    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeIn,
-    ));
-
     _controller.forward();
+
+    _performDelete();
+  }
+
+  Future<void> _performDelete() async {
+    // 1) Call the delete API
+    await ProductService.deleteProduct(widget.product.id);
+
+    // 2) Show the success animation
+    setState(() => _deleted = true);
+
+    // 3) Wait a moment so user sees it
+    await Future.delayed(const Duration(seconds: 1));
+
+    // 4) Pop back to the management screen, passing "true" to indicate deletion
+    if (mounted) Navigator.pop(context, true);
   }
 
   @override
@@ -51,71 +61,56 @@ class _SuccessScreenState extends State<SuccessScreen> with SingleTickerProvider
     super.dispose();
   }
 
-  Future<bool> _onWillPop() async {
-    Navigator.pop(context);
-    return false;
-  }
-
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return WillPopScope(
-      onWillPop: _onWillPop,
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: Center(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: ScaleTransition(
-              scale: _scaleAnimation,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircleAvatar(
-                    radius: 60,
-                    backgroundColor: Colors.purple,
-                    child: const Icon(
-                      Icons.check,
-                      size: 60,
-                      color: Colors.white,
-                    ),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: _deleted
+            ? FadeTransition(
+          opacity: _fadeAnimation,
+          child: ScaleTransition(
+            scale: _scaleAnimation,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                CircleAvatar(
+                  radius: 60,
+                  backgroundColor: Colors.purple,
+                  child: Icon(Icons.check, size: 60, color: Colors.white),
+                ),
+                SizedBox(height: 20),
+                Text(
+                  "Xóa Sản phẩm\nThành công!",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.purple,
                   ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    "Xóa Sản phẩm\nThành công!",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.purple,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    "Trở về trang chủ và tiếp tục chỉnh sửa sản phẩm",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  "Trở về danh sách để tiếp tục quản lý",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+              ],
             ),
           ),
-        ),
-        bottomNavigationBar: isMobile
-            ? MobileNavigationBar(
-          selectedIndex: 0,
-          onItemTapped: (index) {
-            print("Tapped on item: $index");
-          },
-          isLoggedIn: true,
-          role:'manager',
         )
-            : null,
+            : const CircularProgressIndicator(),
       ),
+      bottomNavigationBar: isMobile
+          ? MobileNavigationBar(
+        selectedIndex: 0,
+        onItemTapped: (_) {},
+        isLoggedIn: true,
+        role: 'manager',
+      )
+          : null,
     );
   }
 }

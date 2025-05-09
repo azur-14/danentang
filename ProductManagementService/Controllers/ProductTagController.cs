@@ -45,9 +45,20 @@ namespace ProductManagementService.Controllers
         [HttpGet("by-tag/{tagId}")]
         public async Task<IActionResult> GetProductsByTag(string tagId)
         {
-            var links = await _productTags.Find(pt => pt.TagId == tagId).ToListAsync();
-            var productIds = links.Select(pt => pt.ProductId).ToList();
-            var products = await _products.Find(p => productIds.Contains(p.Id)).ToListAsync();
+            // 1) Filter the product_tags collection by the raw "tag_id" field
+            var linkFilter = Builders<ProductTag>.Filter.Eq("tag_id", tagId);
+            var links = await _productTags
+              .Find(linkFilter)
+              .ToListAsync();
+
+            // 2) Pull out the product_id values
+            var productIds = links.Select(l => l.ProductId).ToList();
+
+            // 3) Fetch the actual products whose Id is in that list
+            var prodFilter = Builders<Product>.Filter.In(p => p.Id, productIds);
+            var products = await _products
+              .Find(prodFilter)
+              .ToListAsync();
 
             return Ok(products);
         }
