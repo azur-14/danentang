@@ -154,7 +154,14 @@ class _SignupState extends State<Signup> {
                     const SizedBox(height: 20),
                     Center(
                       child: GestureDetector(
-                        onTap: () => Navigator.pop(context),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => LoginScreen(email: widget.email),
+                            ),
+                          );
+                        },
                         child: RichText(
                           text: const TextSpan(
                             style: TextStyle(color: Colors.black54),
@@ -273,7 +280,14 @@ class _SignupState extends State<Signup> {
                         const SizedBox(height: 20),
                         Center(
                           child: GestureDetector(
-                            onTap: () => Navigator.pop(context),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => LoginScreen(email: widget.email),
+                                ),
+                              );
+                            },
                             child: RichText(
                               text: const TextSpan(
                                 style: TextStyle(color: Colors.black54),
