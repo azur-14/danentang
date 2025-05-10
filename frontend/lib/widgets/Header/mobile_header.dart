@@ -1,25 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import 'package:danentang/models/User.dart';
 
 class MobileHeader extends StatelessWidget implements PreferredSizeWidget {
-  const MobileHeader({Key? key}) : super(key: key);
+  final Map<String, dynamic> userData;
+
+  const MobileHeader({Key? key, required this.userData}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<User>(context);
+    final String userName = userData['userName'] as String;
+    final bool isLoggedIn = userData['isLoggedIn'] as bool;
 
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
       title: Row(
         children: [
-          Icon(Icons.diamond, color: Colors.purple, size: 20),
-          SizedBox(width: 8),
+          const Icon(Icons.diamond, color: Colors.purple, size: 20),
+          const SizedBox(width: 8),
           Text(
-            "Hello ${user.userName}",
-            style: TextStyle(color: Colors.black, fontSize: 18),
+            "Hello $userName",
+            style: const TextStyle(color: Colors.black, fontSize: 18),
           ),
         ],
       ),
@@ -27,25 +28,25 @@ class MobileHeader extends StatelessWidget implements PreferredSizeWidget {
         Stack(
           children: [
             IconButton(
-              icon: Icon(Icons.shopping_cart, color: Colors.black),
+              icon: const Icon(Icons.shopping_cart, color: Colors.black),
               onPressed: () {
-                context.go('/checkout', extra: user.isLoggedIn);
+                context.go('/checkout', extra: isLoggedIn);
               },
             ),
             Positioned(
               right: 8,
               top: 8,
               child: Container(
-                padding: EdgeInsets.all(2),
-                decoration: BoxDecoration(
+                padding: const EdgeInsets.all(2),
+                decoration: const BoxDecoration(
                   color: Colors.red,
                   shape: BoxShape.circle,
                 ),
-                constraints: BoxConstraints(
+                constraints: const BoxConstraints(
                   minWidth: 16,
                   minHeight: 16,
                 ),
-                child: Text(
+                child: const Text(
                   "1",
                   style: TextStyle(
                     color: Colors.white,
@@ -60,23 +61,25 @@ class MobileHeader extends StatelessWidget implements PreferredSizeWidget {
         Stack(
           children: [
             IconButton(
-              icon: Icon(Icons.message, color: Colors.black),
-              onPressed: () {},
+              icon: const Icon(Icons.message, color: Colors.black),
+              onPressed: () {
+                context.go('/chat');
+              },
             ),
             Positioned(
               right: 8,
               top: 8,
               child: Container(
-                padding: EdgeInsets.all(2),
-                decoration: BoxDecoration(
+                padding: const EdgeInsets.all(2),
+                decoration: const BoxDecoration(
                   color: Colors.red,
                   shape: BoxShape.circle,
                 ),
-                constraints: BoxConstraints(
+                constraints: const BoxConstraints(
                   minWidth: 16,
                   minHeight: 16,
                 ),
-                child: Text(
+                child: const Text(
                   "1",
                   style: TextStyle(
                     color: Colors.white,
@@ -93,5 +96,5 @@ class MobileHeader extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }

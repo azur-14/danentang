@@ -1,43 +1,66 @@
-// lib/Screens/Manager/Profile/profile_web_layout.dart
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:danentang/models/User.dart';
-import 'package:danentang/models/address.dart';
 import 'text_field_widget.dart';
 
-class ProfileWebLayout extends StatelessWidget {
-  final User user;
+class ProfileWebLayout extends StatefulWidget {
+  final Map<String, dynamic> userData;
 
-  const ProfileWebLayout({super.key, required this.user});
+  const ProfileWebLayout({super.key, required this.userData});
 
-  Future<void> _pickImage(BuildContext context) async {
+  @override
+  _ProfileWebLayoutState createState() => _ProfileWebLayoutState();
+}
+
+class _ProfileWebLayoutState extends State<ProfileWebLayout> {
+  late Map<String, dynamic> _userData;
+
+  @override
+  void initState() {
+    super.initState();
+    // Create a mutable copy of userData to allow updates
+    _userData = Map<String, dynamic>.from(widget.userData);
+  }
+
+  Future<void> _pickImage() async {
     try {
-      final picker = ImagePicker();
-      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = kIsWeb
+          ? await picker.pickImage(source: ImageSource.gallery)
+          : await picker.pickImage(source: ImageSource.gallery);
+
       if (image != null) {
-        user.updateUser(avatarUrl: image.path);
+        setState(() {
+          _userData['avatarUrl'] = image.path;
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Ảnh đại diện đã được cập nhật')),
         );
       }
-    } catch (_) {
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Lỗi khi chọn ảnh')),
       );
     }
   }
 
+  void _deleteImage() {
+    setState(() {
+      _userData['avatarUrl'] = null;
+    });
+  }
+
+  void _updateName(String firstName, String lastName) {
+    setState(() {
+      _userData['userName'] = '$firstName $lastName'.trim();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    // take first addressLine or fallback
-    final firstAddressLine = user.addresses.isNotEmpty
-        ? user.addresses.first.addressLine
-        : '';
-
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -51,25 +74,31 @@ class ProfileWebLayout extends StatelessWidget {
               children: [
                 CircleAvatar(
                   radius: 50,
-                  backgroundImage: user.avatarUrl != null
-                      ? NetworkImage(user.avatarUrl!)
-                      : null,
-                  child: user.avatarUrl == null
+                  child: _userData['avatarUrl'] == null
                       ? const Icon(Icons.person, size: 50)
-                      : null,
+                      : Image.network(
+                    _userData['avatarUrl'],
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const CircularProgressIndicator();
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(Icons.error, size: 50);
+                    },
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  user.userName,
-                  style: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.bold),
+                  _userData['userName'],
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton(
-                      onPressed: () => _pickImage(context),
+                      onPressed: _pickImage,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2A2E5B),
                         foregroundColor: Colors.white,
@@ -78,9 +107,7 @@ class ProfileWebLayout extends StatelessWidget {
                     ),
                     const SizedBox(width: 10),
                     OutlinedButton(
-                      onPressed: () {
-                        user.updateUser(avatarUrl: null);
-                      },
+                      onPressed: _deleteImage,
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Color(0xFF2A2E5B)),
                         foregroundColor: const Color(0xFF2A2E5B),
@@ -93,18 +120,15 @@ class ProfileWebLayout extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          // split name into first/last for web
           Row(
             children: [
               Expanded(
                 child: TextFieldWidget(
                   label: 'FIRST NAME',
-                  value: user.userName.split(' ').first,
-                  onChanged: (v) {
-                    final parts = user.userName.split(' ');
-                    final last = parts.length > 1 ? parts.last : '';
-                    user.updateUser(
-                        userName: '$v${last.isEmpty ? '' : ' $last'}');
+                  value: _userData['userName'].toString().split(' ').first,
+                  onChanged: (value) {
+                    final names = _userData['userName'].toString().split(' ');
+                    _updateName(value, names.length > 1 ? names.last : '');
                   },
                 ),
               ),
@@ -112,12 +136,10 @@ class ProfileWebLayout extends StatelessWidget {
               Expanded(
                 child: TextFieldWidget(
                   label: 'LAST NAME',
-                  value: user.userName.split(' ').length > 1
-                      ? user.userName.split(' ').last
-                      : '',
-                  onChanged: (v) {
-                    final first = user.userName.split(' ').first;
-                    user.updateUser(userName: '$first ${v.trim()}');
+                  value: _userData['userName'].toString().split(' ').last,
+                  onChanged: (value) {
+                    final names = _userData['userName'].toString().split(' ');
+                    _updateName(names.first, value);
                   },
                 ),
               ),
@@ -126,8 +148,12 @@ class ProfileWebLayout extends StatelessWidget {
           const SizedBox(height: 16),
           TextFieldWidget(
             label: 'USER NAME',
-            value: user.userName,
-            onChanged: (v) => user.updateUser(userName: v),
+            value: _userData['userName'].toString(),
+            onChanged: (value) {
+              setState(() {
+                _userData['userName'] = value;
+              });
+            },
           ),
           const SizedBox(height: 16),
           Row(
@@ -135,18 +161,26 @@ class ProfileWebLayout extends StatelessWidget {
               Expanded(
                 child: TextFieldWidget(
                   label: 'EMAIL ADDRESS',
-                  value: user.email,
+                  value: _userData['email']?.toString() ?? 'example@gmail.com',
+                  onChanged: (value) {
+                    setState(() {
+                      _userData['email'] = value;
+                    });
+                  },
                   icon: Icons.email,
-                  onChanged: (v) => user.updateUser(email: v),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: TextFieldWidget(
                   label: 'PHONE NUMBER',
-                  value: user.phoneNumber ?? '',
+                  value: _userData['phoneNumber']?.toString() ?? '',
+                  onChanged: (value) {
+                    setState(() {
+                      _userData['phoneNumber'] = value;
+                    });
+                  },
                   icon: Icons.phone,
-                  onChanged: (v) => user.updateUser(phoneNumber: v),
                 ),
               ),
             ],
@@ -154,30 +188,11 @@ class ProfileWebLayout extends StatelessWidget {
           const SizedBox(height: 16),
           TextFieldWidget(
             label: 'ĐỊA CHỈ',
-            value: firstAddressLine,
-            onChanged: (v) {
-              // wrap into a single-address list
-              user.updateUser(addresses: [
-                Address(
-                  addressLine: v,
-                  city: user.addresses.isNotEmpty
-                      ? user.addresses.first.city
-                      : null,
-                  state: user.addresses.isNotEmpty
-                      ? user.addresses.first.state
-                      : null,
-                  zipCode: user.addresses.isNotEmpty
-                      ? user.addresses.first.zipCode
-                      : null,
-                  country: user.addresses.isNotEmpty
-                      ? user.addresses.first.country
-                      : null,
-                  isDefault: true,
-                  createdAt: user.addresses.isNotEmpty
-                      ? user.addresses.first.createdAt
-                      : DateTime.now(),
-                )
-              ]);
+            value: _userData['address']?.toString() ?? '',
+            onChanged: (value) {
+              setState(() {
+                _userData['address'] = value;
+              });
             },
           ),
         ],

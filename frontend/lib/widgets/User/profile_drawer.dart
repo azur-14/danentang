@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class ProfileDrawer extends StatelessWidget {
-  const ProfileDrawer({super.key});
+  const ProfileDrawer({super.key, required Map<String, dynamic> userData});
 
   @override
   Widget build(BuildContext context) {

@@ -1,36 +1,34 @@
-import 'package:danentang/models/User.dart';
+import 'package:danentang/models/user_model.dart';
 import 'package:flutter/material.dart';
 
 class GenderDialog {
-  static void show(BuildContext context, User userModel) {
-    showDialog(
+  static Future<String?> show(BuildContext context, UserModel? userModel) async {
+    return await showDialog<String?>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Giới tính'),
+          title: const Text('Chọn giới tính'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
                 title: const Text('Nam'),
-                onTap: () {
-                  userModel.updateUser(gender: 'Nam');
-                  Navigator.pop(context);
-                },
+                onTap: () => Navigator.pop(context, 'Nam'),
               ),
               ListTile(
                 title: const Text('Nữ'),
-                onTap: () {
-                  userModel.updateUser(gender: 'Nữ');
-                  Navigator.pop(context);
-                },
+                onTap: () => Navigator.pop(context, 'Nữ'),
+              ),
+              ListTile(
+                title: const Text('Khác'),
+                onTap: () => Navigator.pop(context, 'Khác'),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: const Text('Hủy'),
             ),
           ],
         );

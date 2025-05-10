@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
-import 'package:danentang/models/User.dart';
 import 'package:danentang/constants/colors.dart';
 
 class WebHeader extends StatelessWidget {
-  const WebHeader({Key? key}) : super(key: key);
+  final Map<String, dynamic> userData;
+
+  const WebHeader({Key? key, required this.userData}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<User>(context);
+    final String userName = userData['userName'] as String? ?? 'Guest';
+    final String? avatarUrl = userData['avatarUrl'] as String?;
 
     return Container(
       color: AppColors.primaryPurple,
@@ -32,22 +33,23 @@ class WebHeader extends StatelessWidget {
                 children: [
                   GestureDetector(
                     onTap: () {
-                      context.go('/profile');
+                      // Wrap userData in a map to ensure clarity on the receiving end
+                      context.go('/profile', extra: {'userData': userData});
                     },
                     child: CircleAvatar(
                       radius: 16,
-                      backgroundImage: user.avatarUrl != null
-                          ? NetworkImage(user.avatarUrl!)
+                      backgroundImage: avatarUrl != null
+                          ? NetworkImage(avatarUrl)
                           : null,
-                      child: user.avatarUrl == null
+                      child: avatarUrl == null
                           ? const Icon(Icons.person, color: Colors.white)
                           : null,
                     ),
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    user.userName,
-                    style: TextStyle(color: Colors.white, fontSize: 14),
+                    userName,
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
                   ),
                 ],
               ),

@@ -78,7 +78,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
           body: SingleChildScrollView(
             child: Column(
               children: [
-                if (screenWidth > 800) const WebHeader(),
+                if (screenWidth > 800) const WebHeader(userData: {},),
                 screenWidth > 800
                     ? Center(
                   child: ConstrainedBox(
