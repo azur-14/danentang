@@ -1,4 +1,4 @@
-import 'package:danentang/models/user_model.dart';
+import 'package:danentang/models/User.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -8,30 +8,25 @@ import 'gender_dialog.dart';
 import 'date_picker_dialog.dart';
 
 class ProfileMobileLayout extends StatelessWidget {
-  final UserModel userModel;
+  final User user;
 
-  const ProfileMobileLayout({super.key, required this.userModel});
+  const ProfileMobileLayout({
+    super.key,
+    required this.user,
+  });
 
   Future<void> _pickImage(BuildContext context) async {
     try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = kIsWeb
-          ? await picker.pickImage(source: ImageSource.gallery)
-          : await picker.pickImage(source: ImageSource.gallery); // Can add camera option for mobile
-
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
-        // In a real app, upload the image to a server and get the URL.
-        // For this example, we'll use the file path as a placeholder.
-        final String newAvatarUrl = image.path;
-        userModel.updateUser(avatarUrl: newAvatarUrl);
-
-        // Show success message
+        // In real app upload then get URL; here we just use path
+        user.updateUser(avatarUrl: image.path);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Ảnh đại diện đã được cập nhật')),
         );
       }
-    } catch (e) {
-      // Show error message
+    } catch (_) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Lỗi khi chọn ảnh')),
       );
@@ -40,8 +35,12 @@ class ProfileMobileLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final firstAddress = user.addresses.isNotEmpty
+        ? user.addresses.first.addressLine
+        : 'Chưa có địa chỉ';
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -49,34 +48,27 @@ class ProfileMobileLayout extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 40,
-                child: userModel.avatarUrl == null
+                backgroundImage: user.avatarUrl != null
+                    ? NetworkImage(user.avatarUrl!)
+                    : null,
+                child: user.avatarUrl == null
                     ? const Icon(Icons.person, size: 40)
-                    : Image.network(
-                  userModel.avatarUrl!,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return const CircularProgressIndicator();
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(Icons.error, size: 40);
-                  },
-                ),
+                    : null,
               ),
               const SizedBox(width: 16),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    userModel.userName,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    user.userName,
+                    style: const TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   ElevatedButton(
                     onPressed: () => _pickImage(context),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF2A2E5B),
-                      foregroundColor: Colors.white,
                     ),
                     child: const Text('Cập nhật ảnh'),
                   ),
@@ -85,21 +77,38 @@ class ProfileMobileLayout extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          const Text('Thông tin cá nhân', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text('Thông tin cá nhân',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
-          _buildInfoRow(context, 'Giới tính', userModel.gender ?? 'Nữ', () => GenderDialog.show(context, userModel)),
-          _buildInfoRow(context, 'Ngày sinh', userModel.dateOfBirth ?? 'xx/xx/xxxx', () => ProfileDatePickerDialog.show(context, userModel)),
-          _buildInfoRow(context, 'SĐT', userModel.phoneNumber ?? 'xxxxxxxxxx', () => EditDialog.show(context, userModel, 'phoneNumber', 'Số điện thoại')),
-          _buildInfoRow(context, 'Email', userModel.email ?? 'example@gmail.com', () => EditDialog.show(context, userModel, 'email', 'Email')),
-          _buildInfoRow(context, 'Địa chỉ', userModel.address ?? 'hhhdshdhhhhhh', () => context.push('/address')),
+          _buildInfoRow(context, 'Giới tính',
+              user.gender ?? 'Chưa cập nhật', () {
+                GenderDialog.show(context, user);
+              }),
+          _buildInfoRow(context, 'Ngày sinh',
+              user.dateOfBirth ?? 'Chưa cập nhật', () {
+                ProfileDatePickerDialog.show(context, user);
+              }),
+          _buildInfoRow(
+              context, 'SĐT', user.phoneNumber ?? 'Chưa cập nhật', () {
+            EditDialog.show(
+                context, user, 'phoneNumber', 'Số điện thoại');
+          }),
+          _buildInfoRow(context, 'Email', user.email, () {
+            EditDialog.show(context, user, 'email', 'Email');
+          }),
+          _buildInfoRow(context, 'Địa chỉ', firstAddress, () {
+            // navigate to a full address management screen
+            context.push('/addresses');
+          }),
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(BuildContext context, String label, String value, VoidCallback onTap) {
+  Widget _buildInfoRow(
+      BuildContext context, String label, String value, VoidCallback onTap) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: InkWell(
         onTap: onTap,
         child: Row(
@@ -108,9 +117,12 @@ class ProfileMobileLayout extends StatelessWidget {
             Text(label, style: const TextStyle(fontSize: 16)),
             Row(
               children: [
-                Text(value, style: const TextStyle(fontSize: 16, color: Colors.grey)),
+                Text(value,
+                    style:
+                    const TextStyle(fontSize: 16, color: Colors.grey)),
                 const SizedBox(width: 8),
-                const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                const Icon(Icons.arrow_forward_ios,
+                    size: 16, color: Colors.grey),
               ],
             ),
           ],

@@ -1,8 +1,8 @@
-import 'package:danentang/models/user_model.dart';
+import 'package:danentang/models/User.dart';
 import 'package:flutter/material.dart';
 
 class ProfileDatePickerDialog {
-  static void show(BuildContext context, UserModel userModel) {
+  static void show(BuildContext context, User userModel) {
     showDatePicker(
       context: context,
       initialDate: DateTime.now(),

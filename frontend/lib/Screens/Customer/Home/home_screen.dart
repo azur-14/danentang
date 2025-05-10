@@ -7,9 +7,9 @@ import 'package:provider/provider.dart';
 import '../../../models/product.dart';
 import '../../../models/category.dart';
 import '../../../models/tag.dart';
-import '../../../models/user_model.dart';
+import '../../../models/user.dart';
 
-import '../../../service/product_service.dart';
+import '../../../Service/product_service.dart';
 
 import '../../../widgets/banner_section.dart';
 import '../../../widgets/product_section.dart';
@@ -20,7 +20,6 @@ import '../../../widgets/Search/mobile_search_bar.dart';
 import '../../../widgets/Search/web_search_bar.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
 import '../../../widgets/footer.dart';
-// lib/Screens/Customer/Home/home_screen.dart
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -85,17 +84,25 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onNavTapped(int idx) {
-    final user = Provider.of<UserModel>(context, listen: false);
+    final user = Provider.of<User>(context, listen: false);
     if (!user.isLoggedIn && idx != 0) {
       context.go('/login');
       return;
     }
     setState(() => selectedIndex = idx);
     switch (idx) {
-      case 0: context.go('/'); break;
-      case 1: context.go('/cart',   extra: user.isLoggedIn); break;
-      case 2: context.go('/profile',extra: user.isLoggedIn); break;
-      case 3: context.go('/chat'); break;
+      case 0:
+        context.go('/homepage');
+        break;
+      case 1:
+        context.go('/checkout');
+        break;
+      case 2:
+        context.go('/profile');
+        break;
+      case 3:
+        context.go('/chat');
+        break;
     }
   }
 
@@ -110,13 +117,15 @@ class _HomeScreenState extends State<HomeScreen> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     final w = MediaQuery.of(context).size.width;
-    return w > 800 ? _buildWebLayout(context, w) : _buildMobileLayout(context, w);
+    return w > 800
+        ? _buildWebLayout(context, w)
+        : _buildMobileLayout(context, w);
   }
 
   Widget _buildMobileLayout(BuildContext context, double w) {
-    final user = Provider.of<UserModel>(context, listen: false);
+    final user = Provider.of<User>(context, listen: false);
 
-    // calculate how many category icons to show
+    // how many categories fit
     const iconSize = 80.0, iconSpacing = 8.0, iconPadding = 16.0;
     final maxCats = _calculateItemsPerRow(w, iconSize, iconSpacing, iconPadding);
     final visibleCats = showAllCategories ? categories : categories.take(maxCats).toList();
@@ -125,7 +134,6 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: const MobileHeader(),
       body: SingleChildScrollView(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-
           // Search bar
           const MobileSearchBar(),
 
@@ -160,7 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // Banner
           BannerSection(isWeb: false, screenWidth: w),
 
-          // Promo icons (mobile can also show these if you like)
+          // Promo icons
           _buildPromoIcons(),
 
           // Static sections
@@ -169,39 +177,39 @@ class _HomeScreenState extends State<HomeScreen> {
             products: allProducts.where((p) => p.discountPercentage > 0).toList(),
             isWeb: false,
             screenWidth: w,
+            onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
           ),
           ProductSection(
             title: 'New Products',
-            products: List<Product>.from(allProducts)
-              ..sort((a, b) => b.createdAt.compareTo(a.createdAt)),
+            products: [
+              ...allProducts..sort((a, b) => b.createdAt.compareTo(a.createdAt))
+            ],
             isWeb: false,
             screenWidth: w,
+            onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
           ),
 
           // Dynamic by category
-          ...categories.map((cat) {
-            final list = allProducts.where((p) => p.categoryId == cat.id).toList();
-            if (list.isEmpty) return const SizedBox.shrink();
-            return ProductSection(
-              title: cat.name,
-              products: list,
-              isWeb: false,
-              screenWidth: w,
-            );
-          }),
+          for (final cat in categories)
+            if (allProducts.any((p) => p.categoryId == cat.id))
+              ProductSection(
+                title: cat.name,
+                products: allProducts.where((p) => p.categoryId == cat.id).toList(),
+                isWeb: false,
+                screenWidth: w,
+                onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+              ),
 
           // Dynamic by tag
-          ...tags.map((tag) {
-            final list = productsByTag[tag.id] ?? [];
-            if (list.isEmpty) return const SizedBox.shrink();
-            return ProductSection(
-              title: tag.name,
-              products: list,
-              isWeb: false,
-              screenWidth: w,
-            );
-          }),
-
+          for (final tag in tags)
+            if ((productsByTag[tag.id] ?? []).isNotEmpty)
+              ProductSection(
+                title: tag.name,
+                products: productsByTag[tag.id]!,
+                isWeb: false,
+                screenWidth: w,
+                onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+              ),
         ]),
       ),
       bottomNavigationBar: MobileNavigationBar(
@@ -214,9 +222,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildWebLayout(BuildContext context, double w) {
-    final user = Provider.of<UserModel>(context, listen: false);
+    final user = Provider.of<User>(context, listen: false);
 
-    // calculate icons same as mobile
     const iconSize = 80.0, iconSpacing = 16.0, iconPadding = 32.0;
     final maxCats = _calculateItemsPerRow(w, iconSize, iconSpacing, iconPadding);
     final visibleCats = categories.take(maxCats).toList();
@@ -228,8 +235,6 @@ class _HomeScreenState extends State<HomeScreen> {
           WebSearchBar(isLoggedIn: user.isLoggedIn),
 
           BannerSection(isWeb: true, screenWidth: w),
-
-          // Promo icons (web)
           _buildPromoIcons(),
 
           // Category icons row
@@ -247,28 +252,26 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
 
           // Dynamic by category
-          ...categories.map((cat) {
-            final list = allProducts.where((p) => p.categoryId == cat.id).toList();
-            if (list.isEmpty) return const SizedBox.shrink();
-            return ProductSection(
-              title: cat.name,
-              products: list,
-              isWeb: true,
-              screenWidth: w,
-            );
-          }),
+          for (final cat in categories)
+            if (allProducts.any((p) => p.categoryId == cat.id))
+              ProductSection(
+                title: cat.name,
+                products: allProducts.where((p) => p.categoryId == cat.id).toList(),
+                isWeb: true,
+                screenWidth: w,
+                onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+              ),
 
           // Dynamic by tag
-          ...tags.map((tag) {
-            final list = productsByTag[tag.id] ?? [];
-            if (list.isEmpty) return const SizedBox.shrink();
-            return ProductSection(
-              title: tag.name,
-              products: list,
-              isWeb: true,
-              screenWidth: w,
-            );
-          }),
+          for (final tag in tags)
+            if ((productsByTag[tag.id] ?? []).isNotEmpty)
+              ProductSection(
+                title: tag.name,
+                products: productsByTag[tag.id]!,
+                isWeb: true,
+                screenWidth: w,
+                onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+              ),
 
           Footer(),
         ]),

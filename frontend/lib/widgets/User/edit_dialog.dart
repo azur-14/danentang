@@ -1,4 +1,4 @@
-import 'package:danentang/models/user_model.dart';
+import 'package:danentang/models/User.dart';
 import 'package:flutter/material.dart';
 
 class EditDialog extends StatefulWidget {
@@ -15,7 +15,7 @@ class EditDialog extends StatefulWidget {
     super.key,
   });
 
-  static void show(BuildContext context, UserModel userModel, String field, String title) {
+  static void show(BuildContext context, User userModel, String field, String title) {
     showDialog(
       context: context,
       builder: (context) {

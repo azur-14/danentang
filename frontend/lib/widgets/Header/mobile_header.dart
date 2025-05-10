@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:danentang/models/user_model.dart';
+import 'package:danentang/models/User.dart';
 
 class MobileHeader extends StatelessWidget implements PreferredSizeWidget {
   const MobileHeader({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<UserModel>(context);
+    final user = Provider.of<User>(context);
 
     return AppBar(
       backgroundColor: Colors.white,

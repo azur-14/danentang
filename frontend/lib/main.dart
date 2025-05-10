@@ -6,7 +6,7 @@
   import 'package:danentang/Screens/Customer/User/profile_page.dart';
   import 'package:danentang/Screens/Customer/Home/home_screen.dart';
   import 'routes.dart';
-  import 'package:danentang/models/user_model.dart';
+  import 'package:danentang/models/User.dart';
 
   void main() async {
     WidgetsFlutterBinding.ensureInitialized();

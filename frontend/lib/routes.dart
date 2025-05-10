@@ -56,12 +56,63 @@ class ProductsScreen extends StatelessWidget {
 }
 
 final GoRouter router = GoRouter(
-  initialLocation: '/manager-dashboard',
+  // Always land on the home page first
+  initialLocation: '/homepage',
   routes: [
+
+    /// Splash / Intro
+    GoRoute(
+      path: '/intro',
+      builder: (context, state) => const SplashScreen(),
+    ),
+
+    /// Home
     GoRoute(
       path: '/homepage',
       builder: (context, state) => const HomeScreen(),
     ),
+
+    /// Login / Sign-Up
+    GoRoute(
+      path: '/login',
+      builder: (context, state) => const LoginScreen(),
+    ),
+    GoRoute(
+      path: '/login-signup',
+      builder: (context, state) => const LoginSignupScreen(),
+    ),
+    GoRoute(
+      path: '/signup',
+      builder: (context, state) => const Signup(email: ""),
+    ),
+
+    /// Product listing & details
+    GoRoute(
+      path: '/products',
+      builder: (context, state) => const ProductsScreen(),
+    ),
+    GoRoute(
+      path: '/products/:title',
+      builder: (context, state) {
+        final title = state.pathParameters['title']!;
+        final extra = state.extra as Map<String, dynamic>;
+        return ProductListScreen(
+          title: title,
+          products: extra['products'] as List<Product>,
+          isWeb: extra['isWeb'] as bool,
+        );
+      },
+    ),
+    GoRoute(
+      name: 'product',
+      path: '/product/:id',
+      builder: (context, state) {
+        final id = state.pathParameters['id']!;
+        return ProductDetailsScreen(productId: id);
+      },
+    ),
+
+    /// Cart / Checkout
     GoRoute(
       path: '/checkout',
       builder: (context, state) {
@@ -76,9 +127,7 @@ final GoRouter router = GoRouter(
             final prefs = snap.data!;
             final token = prefs.getString('token');
             final isLoggedIn = token != null;
-            final stored = prefs.getString('userId');
-            // if not logged in, pass null
-            final userId = isLoggedIn ? stored : null;
+            final userId = isLoggedIn ? prefs.getString('userId') : null;
             return CartScreenCheckOut(
               isLoggedIn: isLoggedIn,
               userId: userId,
@@ -88,69 +137,11 @@ final GoRouter router = GoRouter(
       },
     ),
 
+    /// User profile & settings
     GoRoute(
       path: '/profile',
-      builder: (context, state) {
-        final isLoggedIn = state.extra as bool? ?? false;
-        return ProfileManagementScreen();
-      },
+      builder: (context, state) => const ProfileManagementScreen(),
     ),
-    GoRoute(
-      path: '/intro',
-      builder: (context, state) => const SplashScreen(),
-    ),
-
-    // Chat
-    GoRoute(
-      path: '/chat',
-      builder: (context, state) => const ChatScreen(),
-    ),
-
-    // Products
-    GoRoute(
-      path: '/products',
-      builder: (context, state) => const ProductsScreen(),
-    ),
-    GoRoute(
-      path: '/products/:title',
-      builder: (context, state) {
-        final title = state.pathParameters['title']!;
-        final extra = state.extra as Map<String, dynamic>;
-        final products = extra['products'] as List<Product>;
-        final isWeb = extra['isWeb'] as bool;
-        return ProductListScreen(
-          title: title,
-          products: extra['products'] as List<Product>,
-          isWeb: extra['isWeb'] as bool,
-        );
-      },
-    ),
-
-    GoRoute(
-      name: 'product',                      // ← ADD THIS
-      path: '/product/:id',
-      builder: (context, state) {
-        final productId = state.pathParameters['id']!;
-        return ProductDetailsScreen(productId: productId);
-      },
-    ),
-
-
-    // Login & SignUp
-    GoRoute(
-      path: '/login',
-      builder: (context, state) => const LoginScreen(),
-    ),
-    GoRoute(
-      path: '/login-signup',
-      builder: (context, state) => const LoginSignupScreen(),
-    ),
-    GoRoute(
-      path: '/signup',
-      builder: (context, state) => const Signup(email: ""),
-    ),
-
-    // Profile Management (for mobile and web)
     GoRoute(
       path: '/personal-info',
       builder: (context, state) => const ProfileManagementScreen(),
@@ -160,7 +151,7 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const AccountSettingsScreen(),
     ),
 
-    //Manager
+    /// Manager dashboard & support
     GoRoute(
       path: '/manager-dashboard',
       builder: (context, state) => const MobileDashboard(),

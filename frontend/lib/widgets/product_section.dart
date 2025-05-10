@@ -1,15 +1,17 @@
 // lib/widgets/product_section.dart
 
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:danentang/models/product.dart';
 import 'package:danentang/widgets/product_card.dart';
+
+typedef ProductTapCallback = void Function(Product product);
 
 class ProductSection extends StatelessWidget {
   final String title;
   final List<Product> products;
   final bool isWeb;
   final double screenWidth;
+  final ProductTapCallback onTap;
 
   const ProductSection({
     Key? key,
@@ -17,14 +19,14 @@ class ProductSection extends StatelessWidget {
     required this.products,
     required this.isWeb,
     required this.screenWidth,
+    required this.onTap,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     const cardWidth = 180.0;
     final padding = isWeb ? 32.0 : 16.0;
-    final itemsPerRow =
-    ((screenWidth - 2 * padding) / (cardWidth + 8)).floor();
+    final itemsPerRow = ((screenWidth - 2 * padding) / (cardWidth + 8)).floor();
     final crossAxisCount = itemsPerRow > 0 ? itemsPerRow : 1;
 
     return Column(
@@ -54,17 +56,8 @@ class ProductSection extends StatelessWidget {
             itemBuilder: (ctx, i) {
               final product = products[i];
               return GestureDetector(
-                onTap: () {
-                  debugPrint('Navigating to Product ID: ${product.id}');
-                  context.goNamed(
-                    'product',
-                    pathParameters: {'id': product.id},
-                    extra: {'product': product},
-                  );
-                },
-                child: ProductCard(
-                  product: product,
-                ),
+                onTap: () => onTap(product),
+                child: ProductCard(product: product),
               );
             },
           ),
@@ -73,4 +66,3 @@ class ProductSection extends StatelessWidget {
     );
   }
 }
-

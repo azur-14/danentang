@@ -1,4 +1,4 @@
-import 'package:danentang/models/user_model.dart';
+import 'package:danentang/models/User.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -12,9 +12,9 @@ class ProfileManagementScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<UserModel>(
-      builder: (context, userModel, child) {
-        if (userModel == null) {
+    return Consumer<User>(
+      builder: (context, user, child) {
+        if (user == null) {
           return const Center(child: CircularProgressIndicator());
         }
         final bool isWideScreen = MediaQuery.of(context).size.width > 600;
@@ -39,8 +39,8 @@ class ProfileManagementScreen extends StatelessWidget {
               if (kIsWeb) const ProfileDrawer(),
               Expanded(
                 child: kIsWeb
-                    ? ProfileWebLayout(userModel: userModel)
-                    : ProfileMobileLayout(userModel: userModel),
+                    ? ProfileWebLayout(user: user)
+                    : ProfileMobileLayout(user: user),
               ),
             ],
           ),

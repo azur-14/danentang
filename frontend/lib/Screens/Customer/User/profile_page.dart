@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart'; // Dùng kIsWeb để kiểm tra nền tảng
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:danentang/models/user_model.dart';
+import 'package:danentang/models/User.dart';
 
 //trang nay de tam day thoi ko dung nha
 
@@ -11,7 +11,7 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<UserModel>(context);
+    final user = Provider.of<User>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -93,7 +93,7 @@ class ProfilePage extends StatelessWidget {
               title: const Text('Đăng xuất'),
               trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
-                final user = Provider.of<UserModel>(context, listen: false);
+                final user = Provider.of<User>(context, listen: false);
                 user.updateUser(isLoggedIn: false);
                 context.go('/login');
               },

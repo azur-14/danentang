@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:danentang/models/user_model.dart';
+import 'package:danentang/models/User.dart';
 
 class AccountSettingsScreen extends StatelessWidget {
   const AccountSettingsScreen({Key? key}) : super(key: key);
@@ -34,7 +34,7 @@ class AccountSettingsScreen extends StatelessWidget {
               title: const Text('Logout'),
               trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
-                final user = Provider.of<UserModel>(context, listen: false);
+                final user = Provider.of<User>(context, listen: false);
                 user.updateUser(isLoggedIn: false);
                 context.go('/login');
               },

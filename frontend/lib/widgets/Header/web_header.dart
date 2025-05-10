@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:danentang/models/user_model.dart';
+import 'package:danentang/models/User.dart';
 import 'package:danentang/constants/colors.dart';
 
 class WebHeader extends StatelessWidget {
@@ -9,7 +9,7 @@ class WebHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = Provider.of<UserModel>(context);
+    final user = Provider.of<User>(context);
 
     return Container(
       color: AppColors.primaryPurple,

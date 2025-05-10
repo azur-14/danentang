@@ -1,15 +1,15 @@
-﻿using MongoDB.Bson.Serialization.Attributes;
+﻿// UserManagementService/Models/Address.cs
 
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+using System;
 
 namespace UserManagementService.Models
 {
     public class Address
     {
-        [BsonElement("addressLine1")]
-        public string AddressLine1 { get; set; } = null!;
-
-        [BsonElement("addressLine2")]
-        public string? AddressLine2 { get; set; }
+        [BsonElement("addressLine")]
+        public string AddressLine { get; set; } = null!;
 
         [BsonElement("city")]
         public string? City { get; set; }
@@ -27,8 +27,7 @@ namespace UserManagementService.Models
         public bool IsDefault { get; set; } = false;
 
         [BsonElement("createdAt")]
+        [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
-
-
 }
