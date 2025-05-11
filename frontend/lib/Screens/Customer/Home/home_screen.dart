@@ -159,38 +159,27 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             BannerSection(isWeb: false, screenWidth: w),
             _buildPromoIcons(),
-            ProductSection(
-              title: 'Promotional Products',
-              products: allProducts.where((p) => p.discountPercentage > 0).toList(),
-              isWeb: false,
-              screenWidth: w,
-            ),
-            ProductSection(
-              title: 'New Products',
-              products: List<Product>.from(allProducts)..sort((a, b) => b.createdAt.compareTo(a.createdAt)),
-              isWeb: false,
-              screenWidth: w,
-            ),
-            ...categories.map((cat) {
-              final list = allProducts.where((p) => p.categoryId == cat.id).toList();
-              if (list.isEmpty) return const SizedBox.shrink();
-              return ProductSection(
-                title: cat.name,
-                products: list,
-                isWeb: false,
-                screenWidth: w,
-              );
-            }),
-            ...tags.map((tag) {
-              final list = productsByTag[tag.id] ?? [];
-              if (list.isEmpty) return const SizedBox.shrink();
-              return ProductSection(
-                title: tag.name,
-                products: list,
-                isWeb: false,
-                screenWidth: w,
-              );
-            }),
+            // By Category
+            for (final cat in categories)
+              if (allProducts.any((p) => p.categoryId == cat.id))
+                ProductSection(
+                  title: cat.name,
+                  products: allProducts.where((p) => p.categoryId == cat.id).toList(),
+                  isWeb: false,
+                  screenWidth: w,
+                  onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+                ),
+
+            // By Tag
+            for (final tag in tags)
+              if ((productsByTag[tag.id] ?? []).isNotEmpty)
+                ProductSection(
+                  title: tag.name,
+                  products: productsByTag[tag.id]!,
+                  isWeb: false,
+                  screenWidth: w,
+                  onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+                ),
           ],
         ),
       ),
@@ -230,26 +219,28 @@ class _HomeScreenState extends State<HomeScreen> {
                 }).toList(),
               ),
             ),
-            ...categories.map((cat) {
-              final list = allProducts.where((p) => p.categoryId == cat.id).toList();
-              if (list.isEmpty) return const SizedBox.shrink();
-              return ProductSection(
-                title: cat.name,
-                products: list,
-                isWeb: true,
-                screenWidth: w,
-              );
-            }),
-            ...tags.map((tag) {
-              final list = productsByTag[tag.id] ?? [];
-              if (list.isEmpty) return const SizedBox.shrink();
-              return ProductSection(
-                title: tag.name,
-                products: list,
-                isWeb: true,
-                screenWidth: w,
-              );
-            }),
+            // By Category
+            for (final cat in categories)
+              if (allProducts.any((p) => p.categoryId == cat.id))
+                ProductSection(
+                  title: cat.name,
+                  products: allProducts.where((p) => p.categoryId == cat.id).toList(),
+                  isWeb: true,
+                  screenWidth: w,
+                  onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+                ),
+
+            // By Tag
+            for (final tag in tags)
+              if ((productsByTag[tag.id] ?? []).isNotEmpty)
+                ProductSection(
+                  title: tag.name,
+                  products: productsByTag[tag.id]!,
+                  isWeb: true,
+                  screenWidth: w,
+                  onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+                ),
+
             Footer(),
           ],
         ),
