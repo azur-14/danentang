@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart'; // Dùng kIsWeb để kiểm tra nền
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:danentang/models/User.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 //trang nay de tam day thoi ko dung nha
 
@@ -47,7 +48,7 @@ class ProfilePage extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  user.userName,
+                  user.fullName,
                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(width: 8),
@@ -90,14 +91,20 @@ class ProfilePage extends StatelessWidget {
               },
             ),
             ListTile(
-              title: const Text('Đăng xuất'),
+              title: const Text('Logout'),
               trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () {
-                final user = Provider.of<User>(context, listen: false);
-                user.updateUser(isLoggedIn: false);
+              onTap: () async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.remove('token');
+                await prefs.remove('email');
+                await prefs.remove('userId');
+                // hoặc clear hết tất cả: await prefs.clear();
+
+                // Chuyển về màn hình Login, reset stack
                 context.go('/login');
               },
             ),
+
           ],
         ),
       ),

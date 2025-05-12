@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:danentang/models/User.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AccountSettingsScreen extends StatelessWidget {
   const AccountSettingsScreen({Key? key}) : super(key: key);
@@ -30,12 +31,18 @@ class AccountSettingsScreen extends StatelessWidget {
                 );
               },
             ),
+
             ListTile(
               title: const Text('Logout'),
               trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () {
-                final user = Provider.of<User>(context, listen: false);
-                user.updateUser(isLoggedIn: false);
+              onTap: () async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.remove('token');
+                await prefs.remove('email');
+                await prefs.remove('userId');
+                // hoặc clear hết tất cả: await prefs.clear();
+
+                // Chuyển về màn hình Login, reset stack
                 context.go('/login');
               },
             ),

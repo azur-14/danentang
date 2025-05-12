@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:danentang/models/ship.dart';
-import 'package:danentang/models/user.dart';      // <-- updated
+import 'package:danentang/models/User.dart';      // <-- updated
 import 'package:danentang/models/address.dart';         // <-- if you need the type
 
 class ShippingSelectionScreen extends StatefulWidget {
@@ -99,7 +99,7 @@ class _ShippingSelectionScreenState extends State<ShippingSelectionScreen> {
 
           ListTile(
             leading: const Icon(Icons.location_on),
-            title: Text(user.userName),
+            title: Text(user.fullName),
             subtitle: Text(addrLine),
             trailing: const Icon(Icons.check_circle_outline),
             onTap: () {

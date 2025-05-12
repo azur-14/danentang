@@ -1,6 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -24,14 +28,18 @@ namespace UserManagementService.Controllers
         }
 
         // --- 1. Kiểm tra email ---
+        // GET /api/auth/check-email?email=...
         [HttpGet("check-email")]
-        public async Task<IActionResult> CheckEmail(string email)
+        public async Task<IActionResult> CheckEmail([FromQuery] string email)
         {
-            var exists = await _context.Users.Find(u => u.Email == email).AnyAsync();
+            var exists = await _context.Users
+                .Find(u => u.Email == email)
+                .AnyAsync();
             return Ok(new { exists });
         }
 
         // --- 2. Đăng ký tài khoản ---
+        // POST /api/auth/register
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
@@ -47,6 +55,7 @@ namespace UserManagementService.Controllers
                 FullName = dto.FullName,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 Role = "customer",
+                Status = "Active",
                 LoyaltyPoints = 0,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
@@ -54,20 +63,19 @@ namespace UserManagementService.Controllers
             };
 
             // Thêm địa chỉ nếu có
-            if (!string.IsNullOrEmpty(dto.AddressLine1))
+            if (!string.IsNullOrEmpty(dto.AddressLine))
             {
                 var address = new Address
                 {
-                    AddressLine1 = dto.AddressLine1,
-                    AddressLine2 = dto.AddressLine2,
+                    ReceiverName = dto.ReceiverName ?? dto.FullName,
+                    Phone = dto.Phone ?? "",
+                    AddressLine = dto.AddressLine,
+                    Commune = dto.Commune,
+                    District = dto.District,
                     City = dto.City,
-                    State = dto.State,
-                    ZipCode = dto.ZipCode,
-                    Country = dto.Country,
                     IsDefault = true,
                     CreatedAt = DateTime.UtcNow
                 };
-
                 user.Addresses.Add(address);
             }
 
@@ -76,10 +84,14 @@ namespace UserManagementService.Controllers
         }
 
         // --- 3. Đăng nhập và sinh JWT ---
+        // POST /api/auth/login
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
-            var user = await _context.Users.Find(u => u.Email == dto.Email).FirstOrDefaultAsync();
+            var user = await _context.Users
+                .Find(u => u.Email == dto.Email)
+                .FirstOrDefaultAsync();
+
             if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
                 return Unauthorized("Invalid credentials.");
 
@@ -96,32 +108,100 @@ namespace UserManagementService.Controllers
                 new Claim(ClaimTypes.Role, user.Role)
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["TokenKey"] ?? throw new Exception("TokenKey is missing")));
+            var keyBytes = Encoding.UTF8.GetBytes(
+                _configuration["TokenKey"] 
+                ?? throw new Exception("TokenKey is missing"));
+            var key = new SymmetricSecurityKey(keyBytes);
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            var token = new JwtSecurityToken(
+            var jwt = new JwtSecurityToken(
                 claims: claims,
                 expires: DateTime.UtcNow.AddHours(1),
                 signingCredentials: creds
             );
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return new JwtSecurityTokenHandler().WriteToken(jwt);
+        }
+
+        // --- DTO trả về UI, loại bỏ PasswordHash, địa chỉ, v.v. ---
+        public class UserDto
+        {
+            public string Id { get; set; } = null!;
+            public string Email { get; set; } = null!;
+            public string FullName { get; set; } = null!;
+            public string Role { get; set; } = null!;
+            public string Status { get; set; } = null!;
+            public DateTime CreatedAt { get; set; }
+            public DateTime UpdatedAt { get; set; }
+        }
+
+        // --- 5. Lấy danh sách user, có thể exclude theo role --- 
+        // GET /api/auth/users?excludeRole=admin
+        [HttpGet("users")]
+        public async Task<IActionResult> GetUsers([FromQuery] string? excludeRole)
+        {
+            var filter = Builders<User>.Filter.Empty;
+            if (!string.IsNullOrEmpty(excludeRole))
+            {
+                filter = Builders<User>.Filter.Ne(u => u.Role, excludeRole);
+            }
+
+            var users = await _context.Users.Find(filter).ToListAsync();
+            var dtos = users.Select(u => new UserDto
+            {
+                Id = u.Id!,
+                Email = u.Email,
+                FullName = u.FullName,
+                Role = u.Role,
+                Status = u.Status,
+                CreatedAt = u.CreatedAt,
+                UpdatedAt = u.UpdatedAt
+            }).ToList();
+
+            return Ok(dtos);
+        }
+
+        // --- 6. Lấy chi tiết một user theo id ---
+        // GET /api/auth/users/{id}
+        [HttpGet("users/{id:length(24)}")]
+        public async Task<IActionResult> GetUserById(string id)
+        {
+            var u = await _context.Users.Find(u => u.Id == id).FirstOrDefaultAsync();
+            if (u == null) return NotFound();
+
+            var dto = new UserDto
+            {
+                Id = u.Id!,
+                Email = u.Email,
+                FullName = u.FullName,
+                Role = u.Role,
+                Status = u.Status,
+                CreatedAt = u.CreatedAt,
+                UpdatedAt = u.UpdatedAt
+            };
+
+            return Ok(dto);
         }
     }
-    public class RegisterDto
-    {
-        public string Email { get; set; } = null!;
-        public string FullName { get; set; } = null!;
-        public string Password { get; set; } = null!;
 
-        public string? AddressLine1 { get; set; }
-        public string? AddressLine2 { get; set; }
-        public string? City { get; set; }
-        public string? State { get; set; }
-        public string? ZipCode { get; set; }
-        public string? Country { get; set; }
-    }
+    // ---  DTO nhận từ client khi register ---
+public class RegisterDto
+{
+    public string Email { get; set; } = null!;
+    public string FullName { get; set; } = null!;
+    public string Password { get; set; } = null!;
 
+    // Address fields
+    public string? ReceiverName { get; set; }
+    public string? Phone { get; set; }
+    public string? AddressLine { get; set; }
+    public string? Commune { get; set; }
+    public string? District { get; set; }
+    public string? City { get; set; }
+}
+
+
+    // --- DTO nhận từ client khi login ---
     public class LoginDto
     {
         public string Email { get; set; } = null!;

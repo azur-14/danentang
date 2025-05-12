@@ -1,8 +1,17 @@
-import 'package:danentang/Screens/Manager/User/user_information.dart';
+// lib/Screens/Manager/User/user_list_screen.dart
+
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:danentang/Screens/Manager/User/user_details.dart';
-import '../../../widgets/Footer/mobile_navigation_bar.dart';
+import 'package:intl/intl.dart';
+import 'package:danentang/models/User.dart';
+import 'package:danentang/Service/user_service.dart';
+import 'package:danentang/Screens/Manager/User/user_information.dart';
+import 'package:danentang/widgets/Footer/mobile_navigation_bar.dart';
+
+import '../../../models/Address.dart';
 
 class UserListScreen extends StatefulWidget {
   const UserListScreen({super.key});
@@ -11,197 +20,147 @@ class UserListScreen extends StatefulWidget {
   _UserListScreenState createState() => _UserListScreenState();
 }
 
-class _UserListScreenState extends State<UserListScreen> {
+class _UserListScreenState extends State<UserListScreen>
+    with SingleTickerProviderStateMixin {
+  final _service = UserService();
+  final _searchCtrl = TextEditingController();
+
+  List<User> _users = [];
+  List<User> _filtered = [];
+  Set<String> _selectedIds = {};
+  bool _isLoading = true;
   int _currentIndex = 0;
 
-  List<User> users = [
-    User("ByeWind", "byewind@twitter.com", "Meadow Lane Oakland", "Just now", "assets/Manager/Avatar/avatar01.jpg"),
-    User("Kate Morrison", "melody@altbox.com", "Larry San Francisco", "A minute ago", "assets/Manager/Avatar/avatar02.jpg"),
-    User("Drew Cano", "max@kt.com", "Bagwell Avenue Ocala", "1 hour ago", "assets/Manager/Avatar/avatar03.png"),
-    User("Orlando Diggs", "sean@delito.com", "Washburn Baton Rouge", "Yesterday", "assets/Manager/Avatar/avatar04.jpg"),
-    User("Andi Lane", "brian@exchange.com", "Nest Lane Olivette", "Feb 2, 2024", "assets/Manager/Avatar/avatar05.jpg"),
-  ];
-
-  List<User> selectedUsers = [];
-
   @override
-  Widget build(BuildContext context) {
-    final isMobile = defaultTargetPlatform == TargetPlatform.iOS ||
-        defaultTargetPlatform == TargetPlatform.android;
+  void initState() {
+    super.initState();
+    _loadUsers();
+    _searchCtrl.addListener(_onSearchChanged);
+  }
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        flexibleSpace: SafeArea(
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              const Center(
-                child: Text(
-                  "Danh sách Người dùng",
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                    color: Colors.black,
-                  ),
-                ),
+  Future<void> _loadUsers() async {
+    setState(() => _isLoading = true);
+    try {
+      // Lấy danh sách user (loại trừ admin)
+      final all = await _service.fetchUsers();
+      setState(() {
+        _users = all;
+        _filtered = all;
+        _selectedIds.clear();
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Load thất bại: $e')));
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _onSearchChanged() {
+    final q = _searchCtrl.text.toLowerCase();
+    setState(() {
+      _filtered = _users.where((u) {
+        return u.fullName.toLowerCase().contains(q) ||
+            u.email.toLowerCase().contains(q);
+      }).toList();
+    });
+  }
+
+  void _clearSelection() => setState(() => _selectedIds.clear());
+
+  void _toggleSelection(User u) {
+    setState(() {
+      if (_selectedIds.contains(u.id)) {
+        _selectedIds.remove(u.id);
+      } else {
+        _selectedIds.add(u.id);
+      }
+    });
+  }
+
+  AppBar _buildAppBar() {
+    if (_selectedIds.isNotEmpty) {
+      return AppBar(
+        backgroundColor: Colors.blueGrey,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.white),
+          onPressed: _clearSelection,
+        ),
+        title: Text(
+          '${_selectedIds.length} đã chọn',
+          style: const TextStyle(color: Colors.white),
+        ),
+      );
+    }
+
+    return AppBar(
+      backgroundColor: Colors.white,
+      title: const Text('Danh sách Người dùng',
+          style: TextStyle(color: Colors.black)),
+      elevation: 0,
+      centerTitle: true,
+      leading: (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS)
+          ? IconButton(
+        icon: const Icon(Icons.arrow_back, color: Colors.black),
+        onPressed: () => Navigator.pop(context),
+      )
+          : null,
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(56),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: TextField(
+            controller: _searchCtrl,
+            decoration: InputDecoration(
+              hintText: 'Tìm kiếm...',
+              prefixIcon: const Icon(Icons.search),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(24),
+                borderSide: BorderSide.none,
               ),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: (defaultTargetPlatform == TargetPlatform.android ||
-                    defaultTargetPlatform == TargetPlatform.iOS)
-                    ? IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.black),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                )
-                    : const SizedBox(),
-              ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.info_outline, color: Colors.black),
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text("Thông tin"),
-                            content: const Text(
-                                "Đây là danh sách người dùng với thông tin chi tiết của họ."),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => const UserDetailsScreen()),
-                                  );
-                                },
-                                child: const Text("OK"),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                    PopupMenuButton<int>(
-                      icon: const Icon(Icons.more_horiz, color: Colors.black),
-                      color: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      onSelected: (value) {
-                        switch (value) {
-                          case 0:
-                            setState(() {
-                              selectedUsers = List.from(users);
-                            });
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Đã chọn tất cả người dùng.')),
-                            );
-                            break;
-                          case 1:
-                          // Logic sửa tất cả người dùng
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Đã sửa tất cả người dùng.')),
-                            );
-                            break;
-                          case 2:
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Xác nhận'),
-                                content: const Text('Bạn có chắc muốn xóa tất cả người dùng?'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: const Text('Hủy'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                      setState(() {
-                                        users.clear();
-                                      });
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('Đã xóa tất cả người dùng.')),
-                                      );
-                                    },
-                                    child: const Text('Xóa'),
-                                  ),
-                                ],
-                              ),
-                            );
-                            break;
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: 0,
-                          child: Row(
-                            children: const [
-                              Expanded(child: Text('Chọn tất cả')),
-                              Icon(Icons.select_all, size: 18, color: Colors.grey),
-                            ],
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: 1,
-                          child: Row(
-                            children: const [
-                              Expanded(child: Text('Sửa tất cả')),
-                              Icon(Icons.edit, size: 18, color: Colors.grey),
-                            ],
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: 2,
-                          child: Row(
-                            children: const [
-                              Expanded(child: Text('Xóa tất cả')),
-                              Icon(Icons.delete, size: 18, color: Colors.grey),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
-      backgroundColor: Colors.grey.shade100,
-      body: Padding(
-        padding: const EdgeInsets.all(16),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    return Scaffold(
+      appBar: _buildAppBar(),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _filtered.isEmpty
+          ? Center(
+        child: Text(_searchCtrl.text.isEmpty
+            ? 'Chưa có người dùng'
+            : 'Không tìm thấy "${_searchCtrl.text}"'),
+      )
+          : RefreshIndicator(
+        onRefresh: _loadUsers,
         child: ListView.builder(
-          itemCount: users.length,
-          itemBuilder: (context, index) {
+          padding: const EdgeInsets.all(16),
+          itemCount: _filtered.length,
+          itemBuilder: (ctx, i) {
+            final u = _filtered[i];
             return AnimatedUserCard(
-              user: users[index],
-              delay: index * 150,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => UserInformation()),
-                );
-              },
-              onLongPress: () {
-                setState(() {
-                  if (selectedUsers.contains(users[index])) {
-                    selectedUsers.remove(users[index]);
-                  } else {
-                    selectedUsers.add(users[index]);
-                  }
-                });
-              },
+              user: u,
+              delay: i * 100,
+              isSelected: _selectedIds.contains(u.id),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) =>
+                      UserInformation(userId: u.id),
+                ),
+              ),
+              onLongPress: () => _toggleSelection(u),
             );
           },
         ),
@@ -209,11 +168,7 @@ class _UserListScreenState extends State<UserListScreen> {
       bottomNavigationBar: isMobile
           ? MobileNavigationBar(
         selectedIndex: _currentIndex,
-        onItemTapped: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        onItemTapped: (i) => setState(() => _currentIndex = i),
         isLoggedIn: true,
         role: 'manager',
       )
@@ -225,48 +180,151 @@ class _UserListScreenState extends State<UserListScreen> {
 class AnimatedUserCard extends StatefulWidget {
   final User user;
   final int delay;
+  final bool isSelected;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
 
-  const AnimatedUserCard({super.key, required this.user, required this.delay, required this.onTap, required this.onLongPress});
+  const AnimatedUserCard({
+    super.key,
+    required this.user,
+    required this.delay,
+    required this.isSelected,
+    required this.onTap,
+    required this.onLongPress,
+  });
 
   @override
   _AnimatedUserCardState createState() => _AnimatedUserCardState();
 }
 
-class _AnimatedUserCardState extends State<AnimatedUserCard> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<Offset> _offsetAnimation;
-  late Animation<double> _opacity;
+class _AnimatedUserCardState extends State<AnimatedUserCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<Offset> _offsetAnim;
+  late final Animation<double> _opacityAnim;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 400),
     );
-
-    _offsetAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
-
-    _opacity = Tween<double>(begin: 0, end: 1).animate(_controller);
+    _offsetAnim = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    _opacityAnim = Tween<double>(begin: 0, end: 1).animate(_ctrl);
 
     Future.delayed(Duration(milliseconds: widget.delay), () {
-      if (mounted) _controller.forward();
+      if (mounted) _ctrl.forward();
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    // Decode avatar (base64 or URL)
+    Uint8List? avatarBytes;
+    final raw = widget.user.avatarUrl;
+    if (raw != null && raw.isNotEmpty) {
+      if (raw.startsWith('data:')) {
+        final b64 = raw.split(',').last;
+        try {
+          avatarBytes = base64Decode(b64);
+        } catch (_) {}
+      }
+    }
+
+    // 1) find the default address (or use an empty placeholder)
+    final defaultAddr = widget.user.addresses.firstWhere(
+          (a) => a.isDefault,
+      orElse: () => Address(
+        receiverName: '',
+        phone: '',
+        addressLine: '-',
+        commune: null,
+        district: null,
+        city: null,
+        isDefault: false,
+      ),
+    );
+
+// 2) build a full-line string, skipping any null/empty parts
+    final parts = [
+      defaultAddr.addressLine,
+      defaultAddr.commune,
+      defaultAddr.district,
+      defaultAddr.city,
+    ]
+        .where((s) => s != null && s.trim().isNotEmpty)
+        .cast<String>()
+        .toList();
+
+    final addressText = parts.join(', ');
+
+    // Build date string
+    final dateText = DateFormat.yMMMd()
+        .add_jm()
+        .format(widget.user.createdAt.toLocal());
+
     return SlideTransition(
-      position: _offsetAnimation,
+      position: _offsetAnim,
       child: FadeTransition(
-        opacity: _opacity,
-        child: GestureDetector(
-          onTap: widget.onTap,
-          onLongPress: widget.onLongPress,
-          child: UserCard(user: widget.user),
+        opacity: _opacityAnim,
+        child: Card(
+          shape: RoundedRectangleBorder(
+            side: widget.isSelected
+                ? BorderSide(
+                color: Theme.of(context).colorScheme.primary, width: 2)
+                : BorderSide.none,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: widget.onTap,
+            onLongPress: widget.onLongPress,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  if (widget.isSelected)
+                    Checkbox(
+                      value: widget.isSelected,
+                      onChanged: (_) => widget.onLongPress(),
+                    ),
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundImage: avatarBytes != null
+                        ? MemoryImage(avatarBytes)
+                        : (widget.user.avatarUrl != null &&
+                        !widget.user.avatarUrl!.startsWith('data:')
+                        ? NetworkImage(widget.user.avatarUrl!)
+                        : const AssetImage(
+                        'assets/Manager/Avatar/avatar.jpg')) as ImageProvider,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(widget.user.fullName,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 16)),
+                        const SizedBox(height: 4),
+                        Text(widget.user.email,
+                            style: const TextStyle(color: Colors.grey)),
+                        const SizedBox(height: 2),
+                        Text(addressText,
+                            style: const TextStyle(color: Colors.grey)),
+                        const SizedBox(height: 2),
+                        Text(dateText,
+                            style: const TextStyle(color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.arrow_forward_ios, size: 16),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
@@ -274,73 +332,7 @@ class _AnimatedUserCardState extends State<AnimatedUserCard> with SingleTickerPr
 
   @override
   void dispose() {
-    _controller.dispose();
+    _ctrl.dispose();
     super.dispose();
   }
-}
-
-class UserCard extends StatelessWidget {
-  final User user;
-
-  const UserCard({super.key, required this.user});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundImage: AssetImage(user.avatar),
-            radius: 28,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(user.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.email, size: 16, color: Colors.grey),
-                    const SizedBox(width: 6),
-                    Text(user.email, style: const TextStyle(color: Colors.grey)),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.location_on, size: 16, color: Colors.grey),
-                    const SizedBox(width: 6),
-                    Text(user.address, style: const TextStyle(color: Colors.grey)),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
-                    const SizedBox(width: 6),
-                    Text(user.time, style: const TextStyle(color: Colors.grey)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class User {
-  final String name, email, address, time, avatar;
-
-  User(this.name, this.email, this.address, this.time, this.avatar);
 }

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("OrderManagementService")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c98c47e463a0d565d5631c631a1d014b0ada8b32")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+61ba0cc73018cd619e7e19a3fea740447b17dfd5")]
 [assembly: System.Reflection.AssemblyProductAttribute("OrderManagementService")]
 [assembly: System.Reflection.AssemblyTitleAttribute("OrderManagementService")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

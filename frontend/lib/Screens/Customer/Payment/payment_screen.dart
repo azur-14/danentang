@@ -120,7 +120,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        user.userName,
+                        user.fullName,
                         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       Text(
