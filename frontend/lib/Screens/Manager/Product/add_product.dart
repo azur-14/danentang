@@ -3,6 +3,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:bson/bson.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:danentang/models/product.dart';
@@ -31,10 +32,7 @@ class _Add_ProductState extends State<Add_Product> {
   List<Category> _categories = [];
   String? _selectedCategoryId;
 
-  /// Now hold base64 strings (or null if none picked)
   final List<String?> _imageBase64 = [];
-
-  // Variants remain as before
   final List<TextEditingController> _variantNameCtrls  = [];
   final List<TextEditingController> _variantPriceCtrls = [];
   final List<TextEditingController> _variantInvCtrls   = [];
@@ -51,7 +49,6 @@ class _Add_ProductState extends State<Add_Product> {
   void initState() {
     super.initState();
 
-    // Basic info controllers
     _nameCtl     = TextEditingController(text: widget.product?.name ?? '');
     _brandCtl    = TextEditingController(text: widget.product?.brand ?? '');
     _descCtl     = TextEditingController(text: widget.product?.description ?? '');
@@ -59,15 +56,13 @@ class _Add_ProductState extends State<Add_Product> {
     _discountCtl = TextEditingController(text: widget.product?.discountPercentage.toString() ?? '');
     _selectedCategoryId = widget.product?.categoryId;
 
-    // Initialize existing images as Base64 strings
     if (widget.product != null) {
       for (var img in widget.product!.images) {
-        _imageBase64.add(img.url); // assuming `url` holds base64 when loaded
+        _imageBase64.add(img.url);
       }
     }
     if (_imageBase64.isEmpty) _addImageField();
 
-    // Variants
     if (widget.product != null) {
       for (var v in widget.product!.variants) {
         _variantNameCtrls.add(TextEditingController(text: v.variantName));
@@ -77,7 +72,6 @@ class _Add_ProductState extends State<Add_Product> {
     }
     if (_variantNameCtrls.isEmpty) _addVariantField();
 
-    // Load categories
     ProductService.fetchAllCategories().then((cats) {
       setState(() {
         _categories = cats;
@@ -86,9 +80,7 @@ class _Add_ProductState extends State<Add_Product> {
     });
   }
 
-  void _addImageField() {
-    _imageBase64.add(null);
-  }
+  void _addImageField() => _imageBase64.add(null);
 
   void _addVariantField() {
     _variantNameCtrls.add(TextEditingController());
@@ -120,24 +112,29 @@ class _Add_ProductState extends State<Add_Product> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
 
-    // Map images: base64 strings into ProductImage
     final images = List<ProductImage>.generate(
       _imageBase64.length,
           (i) => ProductImage(
-        id: widget.product?.images[i].id,
-        url: _imageBase64[i] ?? '',
-        sortOrder: i, // or allow custom ordering?
+            id: (widget.product?.images.length ?? 0) > i && widget.product!.images[i].id.isNotEmpty
+                ? widget.product!.images[i].id
+                : ObjectId().toHexString(),
+            url: _imageBase64[i] ?? '',
+        sortOrder: i,
       ),
     );
 
     final variants = List<ProductVariant>.generate(
       _variantNameCtrls.length,
           (i) => ProductVariant(
-        id: widget.product?.variants[i].id,
+            id: (widget.product?.variants.length ?? 0) > i &&
+                widget.product!.variants[i].id.isNotEmpty
+                ? widget.product!.variants[i].id
+                : ObjectId().toHexString(),createdAt: (widget.product?.variants.length ?? 0) > i
+            ? widget.product!.variants[i].createdAt
+            : DateTime.now(),
         variantName: _variantNameCtrls[i].text.trim(),
         additionalPrice: double.tryParse(_variantPriceCtrls[i].text) ?? 0,
         inventory: int.tryParse(_variantInvCtrls[i].text) ?? 0,
-        createdAt: widget.product?.variants[i].createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
       ),
     );
@@ -194,7 +191,6 @@ class _Add_ProductState extends State<Add_Product> {
           key: _formKey,
           child: ListView(
             children: [
-              // Basic fields...
               TextFormField(
                 controller: _nameCtl,
                 decoration: _baseDecoration.copyWith(labelText: 'Name'),
@@ -216,14 +212,14 @@ class _Add_ProductState extends State<Add_Product> {
                 controller: _priceCtl,
                 decoration: _baseDecoration.copyWith(labelText: 'Price'),
                 keyboardType: TextInputType.number,
-                validator: (v) => v == null || double.tryParse(v)==null ? 'Invalid' : null,
+                validator: (v) => v == null || double.tryParse(v) == null ? 'Invalid' : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _discountCtl,
                 decoration: _baseDecoration.copyWith(labelText: 'Discount %'),
                 keyboardType: TextInputType.number,
-                validator: (v) => v == null || int.tryParse(v)==null ? 'Invalid' : null,
+                validator: (v) => v == null || int.tryParse(v) == null ? 'Invalid' : null,
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
@@ -235,8 +231,6 @@ class _Add_ProductState extends State<Add_Product> {
                 onChanged: (v) => setState(() => _selectedCategoryId = v),
               ),
               const SizedBox(height: 24),
-
-              // Images picker section
               ExpansionTile(
                 title: const Text('Images'),
                 children: [
@@ -245,7 +239,6 @@ class _Add_ProductState extends State<Add_Product> {
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       child: Row(
                         children: [
-                          // thumbnail or placeholder
                           Container(
                             width: 64,
                             height: 64,
@@ -254,12 +247,7 @@ class _Add_ProductState extends State<Add_Product> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: _imageBase64[i] != null && _imageBase64[i]!.isNotEmpty
-                                ? Image.memory(
-                              base64Decode(_imageBase64[i]!),
-                              width: 64,
-                              height: 64,
-                              fit: BoxFit.cover,
-                            )
+                                ? _safeBase64Image(_imageBase64[i]!, width: 64, height: 64)
                                 : const Icon(Icons.image, size: 32, color: Colors.grey),
                           ),
                           const SizedBox(width: 12),
@@ -285,8 +273,6 @@ class _Add_ProductState extends State<Add_Product> {
                   ),
                 ],
               ),
-
-              // Variants section (unchanged)
               ExpansionTile(
                 title: const Text('Variants'),
                 children: [
@@ -337,7 +323,6 @@ class _Add_ProductState extends State<Add_Product> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 24),
               Center(
                 child: ElevatedButton(
@@ -364,5 +349,34 @@ class _Add_ProductState extends State<Add_Product> {
       )
           : null,
     );
+  }
+
+  Widget _safeBase64Image(String base64String, {double? width, double? height}) {
+    try {
+      final bytes = base64Decode(base64String);
+      return Image.memory(
+        bytes,
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: width,
+            height: height,
+            color: Colors.grey.shade300,
+            alignment: Alignment.center,
+            child: const Icon(Icons.broken_image, color: Colors.grey),
+          );
+        },
+      );
+    } catch (e) {
+      return Container(
+        width: width,
+        height: height,
+        color: Colors.grey.shade300,
+        alignment: Alignment.center,
+        child: const Icon(Icons.broken_image, color: Colors.grey),
+      );
+    }
   }
 }

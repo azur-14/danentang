@@ -56,32 +56,60 @@ class Product {
         .map((e) => ProductVariant.fromJson(e as Map<String, dynamic>))
         .toList(),
   );
+
+  // copyWith ở đây:
+  Product copyWith({
+    String? name,
+    String? brand,
+    String? description,
+    double? price,
+    int? discountPercentage,
+    String? categoryId,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    List<ProductImage>? images,
+    List<ProductVariant>? variants,
+  }) {
+    return Product(
+      id: this.id,
+      name: name ?? this.name,
+      brand: brand ?? this.brand,
+      description: description ?? this.description,
+      price: price ?? this.price,
+      discountPercentage: discountPercentage ?? this.discountPercentage,
+      categoryId: categoryId ?? this.categoryId,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      images: images ?? this.images,
+      variants: variants ?? this.variants,
+    );
+  }
 }
 
 class ProductImage {
-  final String? id;      // cho phép null
+  final String id;      // cho phép null
   final String url;
   final int sortOrder;
 
   ProductImage({
-    this.id,
+    required this.id,
     required this.url,
     required this.sortOrder,
   });
   Map<String, dynamic> toJson() => {
-    if (id != null) 'id': id,
+    'id': id,
     'url': url,
     'sortOrder': sortOrder,
   };
   factory ProductImage.fromJson(Map<String, dynamic> json) => ProductImage(
-    id: json['id'] as String?,         // parse nullable
-    url: json['url'] as String,
-    sortOrder: json['sortOrder'] as int,
+    id: json['id'] ?? '', // <-- lỗi thường ở đây nếu quên
+    url: json['url'],
+    sortOrder: json['sortOrder'] ?? 0,
   );
 }
 
 class ProductVariant {
-  final String? id;      // cho phép null
+  final String id;      // cho phép null
   final String variantName;
   final double additionalPrice;
   final int inventory;
@@ -89,7 +117,7 @@ class ProductVariant {
   final DateTime updatedAt;
 
   ProductVariant({
-    this.id,
+    required this.id,
     required this.variantName,
     required this.additionalPrice,
     required this.inventory,
@@ -97,14 +125,16 @@ class ProductVariant {
     required this.updatedAt,
   });
   Map<String, dynamic> toJson() => {
-    if (id != null) 'id': id,
+    'id': id,
     'variantName': variantName,
     'additionalPrice': additionalPrice,
     'inventory': inventory,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
   };
   factory ProductVariant.fromJson(Map<String, dynamic> json) =>
       ProductVariant(
-        id: json['id'] as String?,
+        id: json['id'] as String,
         variantName: json['variantName'] as String,
         additionalPrice: (json['additionalPrice'] as num).toDouble(),
         inventory: json['inventory'] as int,

@@ -1,5 +1,3 @@
-// lib/services/order_service.dart
-
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:http/http.dart' as http;
@@ -65,6 +63,36 @@ class OrderService {
     throw Exception('createCart failed (${resp.statusCode})');
   }
 
+  Future<void> upsertCartItemSmart(Cart cart, CartItem newItem) async {
+    final existing = cart.items.firstWhere(
+          (i) => i.productVariantId == newItem.productVariantId,
+      orElse: () => CartItem.empty(),
+    );
+    if (existing.productId != null) {
+      existing.quantity += newItem.quantity;
+      await replaceCartItems(cart.id, cart.items);
+    } else {
+      await upsertCartItem(cart.id, newItem);
+    }
+  }
+
+  Future<void> replaceCartItems(String cartId, List<CartItem> items) async {
+    final uri = Uri.parse('$_baseUrl/carts/$cartId');
+    final payload = json.encode(items.map((e) => e.toJson()).toList());
+    final resp = await _http.patch(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: payload,
+    );
+    if (resp.statusCode != 204) {
+      throw Exception('replaceCartItems failed (${resp.statusCode})');
+    }
+  }
+
+  Future<void> clearCart(String cartId) async {
+    await replaceCartItems(cartId, []);
+  }
+
   Future<void> upsertCartItem(String cartId, CartItem item) async {
     final uri = Uri.parse('$_baseUrl/carts/$cartId/items');
     final body = json.encode(item.toJson());
@@ -101,9 +129,7 @@ class OrderService {
     debugPrint('← ${resp.statusCode} ${resp.body}');
     if (resp.statusCode == 200) {
       final data = json.decode(resp.body) as List<dynamic>;
-      return data
-          .map((e) => Coupon.fromJson(e as Map<String, dynamic>))
-          .toList();
+      return data.map((e) => Coupon.fromJson(e)).toList();
     }
     throw Exception('fetchAllCoupons failed (${resp.statusCode})');
   }
@@ -114,9 +140,18 @@ class OrderService {
     final resp = await _http.get(uri);
     debugPrint('← ${resp.statusCode} ${resp.body}');
     if (resp.statusCode == 200) {
-      return Coupon.fromJson(json.decode(resp.body) as Map<String, dynamic>);
+      return Coupon.fromJson(json.decode(resp.body));
     }
     throw Exception('getCouponById failed (${resp.statusCode})');
+  }
+
+  Future<Coupon> validateCoupon(String code) async {
+    final uri = Uri.parse('$_baseUrl/coupons/validate/$code');
+    final resp = await _http.get(uri);
+    if (resp.statusCode == 200) {
+      return Coupon.fromJson(json.decode(resp.body));
+    }
+    throw Exception('Coupon không hợp lệ (${resp.statusCode})');
   }
 
   Future<Coupon> createCoupon(Coupon coupon) async {
@@ -130,7 +165,7 @@ class OrderService {
     );
     debugPrint('← ${resp.statusCode} ${resp.body}');
     if (resp.statusCode == 201) {
-      return Coupon.fromJson(json.decode(resp.body) as Map<String, dynamic>);
+      return Coupon.fromJson(json.decode(resp.body));
     }
     throw Exception('createCoupon failed (${resp.statusCode})');
   }
@@ -171,9 +206,7 @@ class OrderService {
     debugPrint('← ${resp.statusCode} ${resp.body}');
     if (resp.statusCode == 200) {
       final data = json.decode(resp.body) as List<dynamic>;
-      return data
-          .map((e) => Order.fromJson(e as Map<String, dynamic>))
-          .toList();
+      return data.map((e) => Order.fromJson(e)).toList();
     }
     throw Exception('fetchAllOrders failed (${resp.statusCode})');
   }
@@ -184,7 +217,7 @@ class OrderService {
     final resp = await _http.get(uri);
     debugPrint('← ${resp.statusCode} ${resp.body}');
     if (resp.statusCode == 200) {
-      return Order.fromJson(json.decode(resp.body) as Map<String, dynamic>);
+      return Order.fromJson(json.decode(resp.body));
     }
     throw Exception('getOrderById failed (${resp.statusCode})');
   }
@@ -200,7 +233,7 @@ class OrderService {
     );
     debugPrint('← ${resp.statusCode} ${resp.body}');
     if (resp.statusCode == 201) {
-      return Order.fromJson(json.decode(resp.body) as Map<String, dynamic>);
+      return Order.fromJson(json.decode(resp.body));
     }
     throw Exception('createOrder failed (${resp.statusCode})');
   }
@@ -230,8 +263,7 @@ class OrderService {
     }
   }
 
-  Future<void> updateOrderStatus(
-      String id, OrderStatusHistory history) async {
+  Future<void> updateOrderStatus(String id, OrderStatusHistory history) async {
     final uri = Uri.parse('$_baseUrl/orders/$id/status');
     final body = json.encode(history.toJson());
     debugPrint('→ PATCH $uri  body=$body');
