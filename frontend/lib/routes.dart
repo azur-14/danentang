@@ -12,6 +12,7 @@ import 'package:danentang/Screens/Customer/User/personal_info_screen.dart';
 import 'package:danentang/Screens/Customer/User/account_settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'Screens/Customer/Login/ChangePassword.dart';
 import 'Screens/Customer/Login/Intro.dart';
 import 'Screens/Customer/Product/test_product_details.dart';
 import 'Screens/Manager/Support/customer_support.dart';
@@ -57,7 +58,7 @@ class ProductsScreen extends StatelessWidget {
 
 final GoRouter router = GoRouter(
   // Always land on the home page first
-  initialLocation: '/manager-dashboard',
+  initialLocation: '/change_password',
   routes: [
 
     /// Splash / Intro
@@ -84,6 +85,10 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/signup',
       builder: (context, state) => const Signup(email: ""),
+    ),
+    GoRoute(
+      path: '/change_password',
+      builder: (context, state) => const ForgotPasswordScreen(),
     ),
 
     /// Product listing & details

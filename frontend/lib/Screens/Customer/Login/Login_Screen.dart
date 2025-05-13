@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -45,11 +44,15 @@ class _LoginScreenState extends State<LoginScreen> {
       final data = jsonDecode(resp.body) as Map<String, dynamic>;
       final token = data['token'] as String;
       final userId = data['userId'] as String;   // ← lấy thẳng userId
+      final userName = data['userName'] as String; // Thêm tên người dùng
+      final userEmail = data['email'] as String; // Thêm email người dùng
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', token);
       await prefs.setString('email', emailController.text.trim());
       await prefs.setString('userId', userId);   // ← lưu userId
+      await prefs.setString('userName', userName); // Lưu tên người dùng
+      await prefs.setString('userEmail', userEmail); // Lưu email người dùng
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Đăng nhập thành công!')),
@@ -69,6 +72,31 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  // Thêm màn hình quên mật khẩu
+  Future<void> sendOTP() async {
+    try {
+      final resp = await http.post(
+        Uri.parse('https://api.yoursite.com/auth/forgot-password'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': emailController.text.trim()}),
+      );
+
+      if (resp.statusCode != 200) {
+        throw Exception('Gửi OTP thất bại: ${resp.body}');
+      }
+
+      final data = jsonDecode(resp.body) as Map<String, dynamic>;
+      final message = data['message'] as String;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi: $e')),
+      );
+    }
+  }
 
   Widget _buildMobileLayout() {
     final h = MediaQuery.of(context).size.height;
@@ -92,8 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               child: SingleChildScrollView(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -145,8 +172,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               borderRadius: BorderRadius.circular(10)),
                         ),
                         child: isLoading
-                            ? const CircularProgressIndicator(
-                            color: Colors.white)
+                            ? const CircularProgressIndicator(color: Colors.white)
                             : Text(
                           "Login",
                           style: TextStyle(
@@ -155,6 +181,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             color: Colors.white,
                           ),
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 15),
+                    TextButton(
+                      onPressed: sendOTP,
+                      child: const Text(
+                        "Forgot Password?",
+                        style: TextStyle(color: Colors.black),
                       ),
                     ),
                     const Spacer(),
@@ -196,8 +230,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const Text(
                       "Login to access exclusive deals and a seamless digital experience.",
                       textAlign: TextAlign.center,
-                      style:
-                      TextStyle(fontSize: 20, color: Colors.white70, height: 1.3),
+                      style: TextStyle(fontSize: 20, color: Colors.white70, height: 1.3),
                     ),
                   ],
                 ),
@@ -277,8 +310,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   borderRadius: BorderRadius.circular(10)),
                             ),
                             child: isLoading
-                                ? const CircularProgressIndicator(
-                                color: Colors.white)
+                                ? const CircularProgressIndicator(color: Colors.white)
                                 : const Text(
                               "Login",
                               style: TextStyle(
@@ -289,6 +321,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const SizedBox(height: 20),
+                        TextButton(
+                          onPressed: sendOTP,
+                          child: const Text(
+                            "Forgot Password?",
+                            style: TextStyle(color: Colors.black),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -308,7 +347,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// Giả sử bạn đã có HomePage ở chỗ khác
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
   @override

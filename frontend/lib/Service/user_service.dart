@@ -19,6 +19,7 @@ class UserService {
     String userBase = kIsWeb ? 'http://localhost:5012/api/user' : 'http://10.0.2.2:5012/api/user',
   })  : _authBase = authBase,
         _userBase = userBase;
+  final String baseUrl = 'https://your-api-domain.com/api';
 
   // ─── AuthController ─────────────────────────────────────────────────────────
 
@@ -231,4 +232,34 @@ class UserService {
       throw Exception('deleteAddress failed: ${res.statusCode}');
     }
   }
+
+  Future<void> resetPassword({
+    required String email,
+    required String otp,
+    required String newPassword,
+  }) async {
+    final url = Uri.parse('$baseUrl/users/reset-password');
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'email': email,
+        'otp': otp,
+        'newPassword': newPassword,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      // Reset password thành công
+      return;
+    } else {
+      // Thất bại, trả về lỗi
+      final responseBody = jsonDecode(response.body);
+      final errorMessage = responseBody['message'] ?? 'Đã xảy ra lỗi';
+      throw Exception(errorMessage);
+    }
+  }
 }
+
