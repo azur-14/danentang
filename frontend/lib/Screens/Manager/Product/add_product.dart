@@ -7,7 +7,7 @@ import 'package:bson/bson.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:danentang/models/product.dart';
-import 'package:danentang/models/category.dart';
+import 'package:danentang/models/Category.dart';
 import 'package:danentang/Service/product_service.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
 

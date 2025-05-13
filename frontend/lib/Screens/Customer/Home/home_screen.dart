@@ -3,9 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:danentang/data/user_data.dart';
 
 import '../../../models/product.dart';
-import '../../../models/category.dart';
+import '../../../models/Category.dart';
 import '../../../models/tag.dart';
-import '../../../service/product_service.dart';
+import '../../../Service/product_service.dart';
 import '../../../widgets/banner_section.dart';
 import '../../../widgets/product_section.dart';
 import '../../../widgets/category_icon.dart';

@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:animations/animations.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
+import 'package:danentang/models/Category.dart' as model;
+import 'package:danentang/Service/product_service.dart';
 
 class CategoriesManagement extends StatelessWidget {
   const CategoriesManagement({super.key});
@@ -12,11 +14,29 @@ class CategoriesManagement extends StatelessWidget {
   }
 }
 
-//================================//
-//       Responsive Wrapper       //
-//================================//
-class ResponsiveCategoriesScreen extends StatelessWidget {
+class ResponsiveCategoriesScreen extends StatefulWidget {
   const ResponsiveCategoriesScreen({super.key});
+
+  @override
+  State<ResponsiveCategoriesScreen> createState() => _ResponsiveCategoriesScreenState();
+}
+
+class _ResponsiveCategoriesScreenState extends State<ResponsiveCategoriesScreen> {
+  late Future<List<model.Category>> _futureCategories;
+
+  @override
+  void initState() {
+    super.initState();
+    _futureCategories = ProductService.fetchAllCategories();
+  }
+
+  void _refresh() {
+    final future = ProductService.fetchAllCategories(); // tạo trước
+    setState(() {
+      _futureCategories = future; // gán trong setState một cách đồng bộ
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -32,38 +52,114 @@ class ResponsiveCategoriesScreen extends StatelessWidget {
             child: child,
           ),
           child: isMobile
-              ? const MobileCategoriesScreen(key: ValueKey("Di động"))
-              : const WebCategoriesScreen(key: ValueKey("Website")),
+              ? MobileCategoriesScreen(
+            key: const ValueKey("Di động"),
+            categoriesFuture: _futureCategories,
+            onRefresh: _refresh,
+          )
+              : WebCategoriesScreen(
+            key: const ValueKey("Website"),
+            categoriesFuture: _futureCategories,
+            onRefresh: _refresh,
+          ),
         );
       },
     );
   }
 }
 
-//===========================//
-//        Mobile Layout      //
-//===========================//
 class MobileCategoriesScreen extends StatefulWidget {
-  const MobileCategoriesScreen({super.key});
+  final Future<List<model.Category>> categoriesFuture;
+  final VoidCallback onRefresh;
+  const MobileCategoriesScreen({super.key, required this.categoriesFuture, required this.onRefresh});
 
   @override
-  _MobileCategoriesScreenState createState() => _MobileCategoriesScreenState();
+  State<MobileCategoriesScreen> createState() => _MobileCategoriesScreenState();
 }
 
 class _MobileCategoriesScreenState extends State<MobileCategoriesScreen> {
   int _selectedIndex = 0;
+  final _nameCtrl = TextEditingController();
+  final _descCtrl = TextEditingController();
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+  void _onItemTapped(int index) => setState(() => _selectedIndex = index);
+
+  void _createCategory() async {
+    final name = _nameCtrl.text.trim();
+    final desc = _descCtrl.text.trim();
+    if (name.isEmpty) return;
+    final success = await ProductService.createCategory(model.Category(
+      name: name,
+      description: desc,
+      createdAt: DateTime.now(),
+    ));
+    if (success != null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tạo thành công')));
+      _nameCtrl.clear();
+      _descCtrl.clear();
+      widget.onRefresh();
+    }
   }
 
-  void _handleBack(BuildContext context) {
-    if (Navigator.canPop(context)) {
-      Navigator.pop(context);
+  void _editCategory(model.Category cat) async {
+    final nameCtrl = TextEditingController(text: cat.name);
+    final descCtrl = TextEditingController(text: cat.description ?? "");
+
+    final updated = await showDialog<model.Category>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Sửa danh mục'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Tên')),
+            TextField(controller: descCtrl, decoration: const InputDecoration(labelText: 'Mô tả')),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
+          TextButton(
+            onPressed: () {
+              final updatedCat = model.Category(
+                id: cat.id,
+                name: nameCtrl.text.trim(),
+                description: descCtrl.text.trim(),
+                createdAt: cat.createdAt,
+              );
+              Navigator.pop(context, updatedCat);
+            },
+            child: const Text('Lưu'),
+          ),
+        ],
+      ),
+    );
+
+    if (updated != null) {
+      await ProductService.updateCategory(updated.id!, updated); // ✅ đúng
+      widget.onRefresh();
+    }
+
+  }
+
+  void _deleteCategory(String id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Xác nhận'),
+        content: const Text('Bạn có chắc muốn xóa danh mục này không?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Xóa')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final ok = await ProductService.deleteCategory(id);
+    if (ok) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã xóa danh mục.')));
+      widget.onRefresh();
     } else {
-      Navigator.of(context).maybePop();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Không thể xóa danh mục.')));
     }
   }
 
@@ -74,33 +170,56 @@ class _MobileCategoriesScreenState extends State<MobileCategoriesScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: const Text(
-          "Quản lý danh mục",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
-        automaticallyImplyLeading: !kIsWeb,
-        leading: kIsWeb
-            ? null
-            : IconButton(
+        title: const Text("Quản lý danh mục", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+        leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => _handleBack(context),
+          onPressed: () => Navigator.maybePop(context),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.black),
-            onPressed: () {},
-          ),
-        ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _categoryTile("Laptop", Icons.laptop),
-            _categoryTile("Điện Thoại", Icons.phone_android),
-            _categoryTile("Phụ Kiện", Icons.build),
-            const SizedBox(height: 20),
-            const CategoryForm(),
-          ],
+      body: RefreshIndicator(
+        onRefresh: () async => widget.onRefresh(),
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                FutureBuilder<List<model.Category>>(
+                  future: widget.categoriesFuture,
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) return const CircularProgressIndicator();
+                    return Column(
+                      children: snapshot.data!
+                          .map((cat) => ListTile(
+                        title: Text(cat.name),
+                        subtitle: Text(cat.description ?? ""),
+                        trailing: Wrap(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () => _editCategory(cat),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _deleteCategory(cat.id!),
+                            ),
+                          ],
+                        ),
+                      ))
+                          .toList(),
+                    );
+                  },
+                ),
+                const Divider(height: 32),
+                const Text("Thêm danh mục mới", style: TextStyle(fontWeight: FontWeight.bold)),
+                TextField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Tên danh mục')),
+                const SizedBox(height: 8),
+                TextField(controller: _descCtrl, decoration: const InputDecoration(labelText: 'Mô tả')),
+                const SizedBox(height: 8),
+                ElevatedButton(onPressed: _createCategory, child: const Text("Tạo danh mục")),
+              ],
+            ),
+          ),
         ),
       ),
       bottomNavigationBar: MobileNavigationBar(
@@ -111,136 +230,162 @@ class _MobileCategoriesScreenState extends State<MobileCategoriesScreen> {
       ),
     );
   }
-
-  Widget _categoryTile(String title, IconData icon) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-      decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 50),
-              const SizedBox(width: 10),
-              Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ],
-          ),
-          const Text("Xem Chi Tiết", style: TextStyle(fontSize: 14)),
-        ],
-      ),
-    );
-  }
 }
 
-//===========================//
-//         Web Layout        //
-//===========================//
 class WebCategoriesScreen extends StatelessWidget {
-  const WebCategoriesScreen({super.key});
+  final Future<List<model.Category>> categoriesFuture;
+  final VoidCallback onRefresh;
 
-  Widget _categoryTile(String title, IconData icon) {
-    return Card(
-      elevation: 3,
-      margin: const EdgeInsets.all(8),
-      child: ListTile(
-        leading: Icon(icon, size: 40, color: Colors.purple),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        trailing: const Text("Xem Chi Tiết"),
-      ),
-    );
-  }
+  const WebCategoriesScreen({super.key, required this.categoriesFuture, required this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
+    final _nameCtrl = TextEditingController();
+    final _descCtrl = TextEditingController();
+
+    void _createCategory() async {
+      final name = _nameCtrl.text.trim();
+      final desc = _descCtrl.text.trim();
+      if (name.isEmpty) return;
+      final success = await ProductService.createCategory(model.Category(
+        name: name,
+        description: desc,
+        createdAt: DateTime.now(),
+      ));
+      if (success != null) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tạo thành công')));
+        _nameCtrl.clear();
+        _descCtrl.clear();
+        onRefresh();
+      }
+    }
+
+    void _deleteCategory(String id) async {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text('Xác nhận'),
+          content: const Text('Bạn có chắc muốn xóa danh mục này không?'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy')),
+            TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Xóa')),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+      final ok = await ProductService.deleteCategory(id);
+      if (ok) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đã xóa danh mục.')));
+        onRefresh();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Không thể xóa danh mục.')));
+      }
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Quản lý Danh mục",
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
+        title: const Text("Quản lý Danh mục", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.white,
         elevation: 1,
         centerTitle: true,
-        automaticallyImplyLeading: false,
       ),
       body: Row(
         children: [
+          // Danh sách danh mục
           Expanded(
             flex: 2,
             child: Container(
               color: Colors.grey[100],
-              child: ListView(
-                children: [
-                  _categoryTile("Laptop", Icons.laptop),
-                  _categoryTile("Điện Thoại", Icons.phone_android),
-                  _categoryTile("Phụ Kiện", Icons.build),
-                ],
+              child: FutureBuilder<List<model.Category>>(
+                future: categoriesFuture,
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                  return ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: snapshot.data!
+                        .map((cat) => ListTile(
+                      title: Text(cat.name),
+                      subtitle: Text(cat.description ?? ''),
+                      trailing: Wrap(
+                        spacing: 8,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.blue),
+                            onPressed: () async {
+                              final nameCtrl = TextEditingController(text: cat.name);
+                              final descCtrl = TextEditingController(text: cat.description ?? '');
+                              final edited = await showDialog<bool>(
+                                context: context,
+                                builder: (_) => AlertDialog(
+                                  title: const Text('Sửa danh mục'),
+                                  content: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Tên')),
+                                      const SizedBox(height: 8),
+                                      TextField(controller: descCtrl, decoration: const InputDecoration(labelText: 'Mô tả')),
+                                    ],
+                                  ),
+                                  actions: [
+                                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
+                                    ElevatedButton(
+                                      onPressed: () async {
+                                        final name = nameCtrl.text.trim();
+                                        final desc = descCtrl.text.trim();
+                                        if (name.isEmpty) return;
+                                        final success = await ProductService.updateCategory(
+                                          cat.id!,
+                                          model.Category(
+                                            id: cat.id,
+                                            name: name,
+                                            description: desc,
+                                            createdAt: cat.createdAt,
+                                          ),
+                                        );
+                                        if (success) Navigator.pop(context, true);
+                                      },
+                                      child: const Text('Lưu'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (edited == true) onRefresh();
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () => _deleteCategory(cat.id!),
+                          ),
+                        ],
+                      ),
+                    ))
+                        .toList(),
+                  );
+                },
               ),
             ),
           ),
+          // Form tạo mới
           Expanded(
             flex: 3,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-              child: const CategoryForm(),
+              padding: const EdgeInsets.all(40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("Tạo danh mục mới", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                  const SizedBox(height: 12),
+                  TextField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Tên danh mục')),
+                  const SizedBox(height: 8),
+                  TextField(controller: _descCtrl, decoration: const InputDecoration(labelText: 'Mô tả')),
+                  const SizedBox(height: 12),
+                  ElevatedButton(onPressed: _createCategory, child: const Text("Tạo danh mục")),
+                ],
+              ),
             ),
-          ),
+          )
         ],
       ),
-    );
-  }
-}
-
-//===========================//
-//      Category Form        //
-//===========================//
-class CategoryForm extends StatelessWidget {
-  const CategoryForm({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text("Thêm Mới Danh Mục", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 20),
-        const Text("Tên Danh Mục"),
-        const SizedBox(height: 5),
-        const TextField(
-          decoration: InputDecoration(
-            border: OutlineInputBorder(),
-            contentPadding: EdgeInsets.symmetric(horizontal: 10),
-          ),
-        ),
-        const SizedBox(height: 10),
-        const Text("Ảnh Danh Mục"),
-        ElevatedButton(onPressed: () {}, child: const Text("Browse")),
-        const SizedBox(height: 10),
-        const Text("Mô Tả"),
-        const TextField(
-          maxLines: 3,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(),
-            contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-          ),
-        ),
-        const SizedBox(height: 20),
-        Center(
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.purple,
-              padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-            ),
-            onPressed: () {},
-            child: const Text("Tạo Danh Mục", style: TextStyle(color: Colors.white)),
-          ),
-        ),
-      ],
     );
   }
 }

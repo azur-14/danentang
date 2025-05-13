@@ -8,7 +8,7 @@ import 'delete_product.dart';
 import 'product_detail_screen.dart';
 import 'package:danentang/Service/product_service.dart';
 import 'package:danentang/models/product.dart';
-import 'package:danentang/models/category.dart';
+import 'package:danentang/models/Category.dart';
 import 'package:danentang/models/tag.dart';
 import 'package:danentang/widgets/Footer/mobile_navigation_bar.dart';
 

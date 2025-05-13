@@ -5,7 +5,7 @@ import 'package:bson/bson.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:http/http.dart' as http;
 import '../models/product.dart';
-import '../models/category.dart';
+import '../models/Category.dart';
 import '../models/tag.dart';
 import '../models/ProductRating.dart';
 import '../models/Review.dart';
@@ -116,6 +116,77 @@ class ProductService {
     }
     return [];
   }
+  /// GET /api/categories/{id}
+  static Future<Category?> getCategoryById(String id) async {
+    final uri = Uri.parse('$_categoriesPath/$id');
+    debugPrint('→ GET $uri');
+    try {
+      final resp = await http.get(uri);
+      debugPrint('← ${resp.statusCode} ${resp.body}');
+      if (resp.statusCode == 200) {
+        return Category.fromJson(json.decode(resp.body));
+      } else if (resp.statusCode == 404) {
+        return null;
+      }
+      debugPrint('‼️ getCategoryById API error ${resp.statusCode}');
+    } catch (e, st) {
+      debugPrint('❌ getCategoryById exception: $e\n$st');
+    }
+    return null;
+  }
+
+  /// POST /api/categories
+  static Future<Category?> createCategory(Category category) async {
+    final uri = Uri.parse(_categoriesPath);
+    final body = jsonEncode(category.toJson());
+    debugPrint('→ POST $uri\n$body');
+    try {
+      final resp = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+      debugPrint('← ${resp.statusCode} ${resp.body}');
+      if (resp.statusCode == 200 || resp.statusCode == 201) {
+        return Category.fromJson(json.decode(resp.body));
+      } else {
+        debugPrint('‼️ createCategory failed: ${resp.statusCode}');
+      }
+    } catch (e, st) {
+      debugPrint('❌ createCategory exception: $e\n$st');
+    }
+    return null;
+  }
+
+  /// DELETE /api/categories/{id}
+  static Future<bool> deleteCategory(String id) async {
+    final uri = Uri.parse('$_categoriesPath/$id');
+    debugPrint('→ DELETE $uri');
+    try {
+      final resp = await http.delete(uri);
+      debugPrint('← ${resp.statusCode}');
+      if (resp.statusCode == 204) return true;
+      if (resp.statusCode == 400) {
+        debugPrint('‼️ Cannot delete category in use.');
+      }
+    } catch (e, st) {
+      debugPrint('❌ deleteCategory exception: $e\n$st');
+    }
+    return false;
+  }
+  static Future<bool> updateCategory(String id, Category updated) async {
+    final uri = Uri.parse('$_categoriesPath/$id');
+    final body = jsonEncode(updated.toJson());
+
+    final resp = await http.put(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: body,
+    );
+
+    debugPrint('← PUT $uri: ${resp.statusCode}');
+    return resp.statusCode == 204;
+  }
 
   /// GET /api/categories
   static Future<List<Category>> fetchAllCategories() async {
@@ -137,6 +208,7 @@ class ProductService {
     }
     return [];
   }
+
   static Future<void> createProductItemsForVariant({
     required String productId,
     required String variantId,
