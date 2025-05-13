@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using OrderManagementService.Data;
@@ -40,6 +40,17 @@ namespace OrderManagementService.Controllers
 
             await _carts.InsertOneAsync(cart);
             return CreatedAtAction(nameof(GetByUser), new { userId = cart.UserId }, cart);
+        }
+        [HttpPatch("{cartId:length(24)}")]
+        public async Task<IActionResult> UpdateCart(string cartId, [FromBody] List<CartItem> items)
+        {
+            var update = Builders<Cart>.Update
+                .Set(c => c.Items, items)
+                .CurrentDate(c => c.UpdatedAt);
+
+            var result = await _carts.UpdateOneAsync(c => c.Id == cartId, update);
+            if (result.MatchedCount == 0) return NotFound();
+            return NoContent();
         }
 
         // PATCH api/carts/{cartId}/items

@@ -194,6 +194,15 @@ class OrderService {
       throw Exception('deleteCoupon failed (${resp.statusCode})');
     }
   }
+  Future<Coupon> applyCoupon(String code, String orderId) async {
+    final uri = Uri.parse('$_baseUrl/coupons/apply/$code?orderId=$orderId');
+    final resp = await _http.post(uri);
+    debugPrint('← ${resp.statusCode} ${resp.body}');
+    if (resp.statusCode == 200) {
+      return Coupon.fromJson(json.decode(resp.body));
+    }
+    throw Exception('applyCoupon failed (${resp.statusCode})');
+  }
 
   // ───────────────────────────────────────────────
   // ORDERS

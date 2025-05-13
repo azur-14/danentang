@@ -20,49 +20,64 @@ namespace OrderManagementService.Controllers
             _coupons = context.Coupons;
         }
 
-        // GET api/coupons
+        // GET: api/coupons
         [HttpGet]
         public async Task<ActionResult<List<Coupon>>> GetAll() =>
-            await _coupons.Find(_ => true).ToListAsync();
+            await _coupons.Find(_ => true).SortByDescending(c => c.CreatedAt).ToListAsync();
 
-        // GET api/coupons/{id}
+        // GET: api/coupons/{id}
         [HttpGet("{id:length(24)}")]
         public async Task<ActionResult<Coupon>> Get(string id)
         {
             var coupon = await _coupons.Find(c => c.Id == id).FirstOrDefaultAsync();
-            if (coupon == null) return NotFound();
-            return coupon;
+            return coupon == null ? NotFound() : coupon;
         }
 
-        // POST api/coupons
         [HttpPost]
         public async Task<ActionResult<Coupon>> Create([FromBody] Coupon coupon)
         {
-            ModelState.Remove(nameof(coupon.Id));
-
             coupon.Id = ObjectId.GenerateNewId().ToString();
             coupon.CreatedAt = DateTime.UtcNow;
+            coupon.UsageCount = 0;
+            coupon.OrderIds = new List<string>();
+
             await _coupons.InsertOneAsync(coupon);
             return CreatedAtAction(nameof(Get), new { id = coupon.Id }, coupon);
         }
 
-        // PUT api/coupons/{id}
+
+        // PUT: api/coupons/{id}
         [HttpPut("{id:length(24)}")]
         public async Task<IActionResult> Update(string id, [FromBody] Coupon updated)
         {
             updated.Id = id;
             var result = await _coupons.ReplaceOneAsync(c => c.Id == id, updated);
-            if (result.MatchedCount == 0) return NotFound();
-            return NoContent();
+            return result.MatchedCount == 0 ? NotFound() : NoContent();
         }
 
-        // DELETE api/coupons/{id}
+        // DELETE: api/coupons/{id}
         [HttpDelete("{id:length(24)}")]
         public async Task<IActionResult> Delete(string id)
         {
             var result = await _coupons.DeleteOneAsync(c => c.Id == id);
-            if (result.DeletedCount == 0) return NotFound();
-            return NoContent();
+            return result.DeletedCount == 0 ? NotFound() : NoContent();
+        }
+
+        // POST: api/coupons/apply/{code}?orderId=xxx
+        [HttpPost("apply/{code}")]
+        public async Task<IActionResult> ApplyCoupon(string code, [FromQuery] string orderId)
+        {
+            var coupon = await _coupons.Find(c => c.Code == code).FirstOrDefaultAsync();
+            if (coupon == null) return NotFound("Coupon not found.");
+
+            if (coupon.UsageCount >= coupon.UsageLimit)
+                return BadRequest("Coupon usage limit reached.");
+
+            coupon.UsageCount++;
+            coupon.OrderIds.Add(orderId);
+
+            var result = await _coupons.ReplaceOneAsync(c => c.Id == coupon.Id, coupon);
+            return result.ModifiedCount > 0 ? Ok(coupon) : StatusCode(500, "Failed to apply coupon.");
         }
     }
 }

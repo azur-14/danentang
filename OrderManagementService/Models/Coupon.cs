@@ -1,6 +1,7 @@
-using MongoDB.Bson;
+﻿using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System;
+using System.Collections.Generic;
 
 namespace OrderManagementService.Models
 {
@@ -8,9 +9,9 @@ namespace OrderManagementService.Models
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; }
+        public string? Id { get; set; }
 
-        public string Code { get; set; }
+        public string Code { get; set; } = null!;
 
         public decimal DiscountValue { get; set; }
 
@@ -19,5 +20,8 @@ namespace OrderManagementService.Models
         public int UsageCount { get; set; } = 0;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        [BsonRepresentation(BsonType.ObjectId)]
+        public List<string> OrderIds { get; set; } = new();
     }
 }

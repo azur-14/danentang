@@ -23,6 +23,58 @@ namespace ProductManagementService.Controllers
         // -----------------------
         // PRODUCT CRUD
         // -----------------------
+        [HttpPut("{id:length(24)}")]
+        public async Task<IActionResult> UpdateProduct(string id, [FromBody] Product updated)
+        {
+            updated.Id = id;
+            updated.UpdatedAt = DateTime.UtcNow;
+
+            // Kiểm tra variant nào bị thiếu id
+            if (updated.Variants.Any(v => string.IsNullOrEmpty(v.Id)))
+                return BadRequest("All variants must have valid id.");
+
+            var existing = await _products.Find(p => p.Id == id).FirstOrDefaultAsync();
+            if (existing == null)
+                return NotFound("Product not found.");
+
+            // Khởi tạo product item collection
+            var _productItems = HttpContext
+                .RequestServices
+                .GetService(typeof(MongoDbContext)) is MongoDbContext ctx
+                ? ctx.ProductItems
+                : throw new Exception("Cannot resolve ProductItems collection");
+
+            // Tạo thêm product items nếu tăng số lượng
+            foreach (var updatedVariant in updated.Variants)
+            {
+                var oldVariant = existing.Variants.FirstOrDefault(v => v.Id == updatedVariant.Id);
+                if (oldVariant != null && updatedVariant.Inventory > oldVariant.Inventory)
+                {
+                    int addedCount = updatedVariant.Inventory - oldVariant.Inventory;
+                    var now = DateTime.UtcNow;
+
+                    var items = Enumerable.Range(0, addedCount)
+                        .Select(_ => new ProductItem
+                        {
+                            Id = ObjectId.GenerateNewId().ToString(),
+                            ProductId = id,
+                            VariantId = updatedVariant.Id,
+                            Status = "available",
+                            CreatedAt = now,
+                            UpdatedAt = now
+                        }).ToList();
+
+                    if (items.Count > 0)
+                        await _productItems.InsertManyAsync(items);
+                }
+            }
+
+            var result = await _products.ReplaceOneAsync(p => p.Id == id, updated);
+            if (result.MatchedCount == 0)
+                return NotFound("Product not found during update.");
+
+            return NoContent();
+        }
 
         [HttpPost]
         public async Task<IActionResult> CreateProduct([FromBody] Product product)
@@ -64,18 +116,6 @@ namespace ProductManagementService.Controllers
             if (product == null)
                 return NotFound("Product not found.");
             return Ok(product);
-        }
-
-        [HttpPut("{id:length(24)}")]
-        public async Task<IActionResult> UpdateProduct(string id, [FromBody] Product updated)
-        {
-            updated.Id = id;
-            updated.UpdatedAt = DateTime.UtcNow;
-
-            var result = await _products.ReplaceOneAsync(p => p.Id == id, updated);
-            if (result.MatchedCount == 0)
-                return NotFound("Product not found.");
-            return NoContent();
         }
 
         [HttpDelete("{id:length(24)}")]
