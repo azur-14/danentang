@@ -7,6 +7,7 @@ import 'package:danentang/widgets/Product/product_image_carousel.dart';
 import 'package:danentang/widgets/Product/product_info.dart';
 import 'package:danentang/widgets/Product/product_tabs.dart';
 import 'package:danentang/widgets/Product/recommended_products.dart';
+import 'package:go_router/go_router.dart';
 import '../../../Service/product_service.dart';
 
 class ProductDetailsScreen extends StatefulWidget {

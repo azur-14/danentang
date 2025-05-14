@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:danentang/models/product.dart';
 import 'package:danentang/models/ProductRating.dart';
 import 'package:danentang/widgets/Product/buy_now_dialog.dart';
+import 'package:danentang/widgets/Product/AddToCartDialog.dart'; // Import AddToCartDialog
 
 class ProductInfo extends StatelessWidget {
   final Product product;
@@ -177,7 +178,14 @@ class ProductInfo extends StatelessWidget {
                   size: 24,
                 ),
                 onPressed: () {
-                  // Handle add to cart action
+                  // Hiển thị AddToCartDialog khi nhấn vào giỏ hàng
+                  showDialog(
+                    context: context,
+                    builder: (context) => AddToCartDialog(
+                      product: product,
+                      discountedPrice: discountedPrice,
+                    ),
+                  );
                 },
               ),
             ),
