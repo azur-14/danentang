@@ -15,6 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'Screens/Customer/Login/ChangePassword.dart';
 import 'Screens/Customer/Login/Intro.dart';
 import 'Screens/Customer/Product/test_product_details.dart';
+import 'Screens/Customer/Search/search_v2.dart';
 import 'Screens/Manager/Support/customer_support.dart';
 import 'Screens/Manager/DashBoard/MobileDashboard.dart';
 import 'models/product.dart';
@@ -58,7 +59,7 @@ class ProductsScreen extends StatelessWidget {
 
 final GoRouter router = GoRouter(
   // Always land on the home page first
-  initialLocation: '/change_password',
+  initialLocation: '/manager-dashboard',
   routes: [
 
     /// Splash / Intro
@@ -89,6 +90,11 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/change_password',
       builder: (context, state) => const ForgotPasswordScreen(),
+    ),
+
+    GoRoute(
+      path: '/search',
+      builder: (context, state) => const Searching(),
     ),
 
     /// Product listing & details

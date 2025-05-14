@@ -48,7 +48,6 @@ class _OrdersListScreenState extends State<OrdersListScreen> {
   }
 
   void _editSelected() {
-    // Placeholder logic: you can replace this with your own
     if (selectedIndexes.length == 1) {
       final index = selectedIndexes.first;
       final order = orders[index];
