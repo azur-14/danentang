@@ -1,11 +1,16 @@
 using System;
+using MongoDB.Bson.Serialization.Attributes;
+
 
 namespace OrderManagementService.Models
 {
     public class OrderStatusHistory
     {
+        [BsonElement("status")]
         public string Status { get; set; }
 
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        [BsonElement("timestamp")]
+        public DateTime Timestamp { get; set; }
     }
+
 }

@@ -1,5 +1,3 @@
-
-/// Represents a single order item (product + optional variant).
 class OrderItem {
   final String productId;
   final String? productVariantId;
@@ -7,6 +5,7 @@ class OrderItem {
   final String variantName;
   final int quantity;
   final double price;
+  final List<String> productItemIds;
 
   OrderItem({
     required this.productId,
@@ -15,28 +14,26 @@ class OrderItem {
     required this.variantName,
     required this.quantity,
     required this.price,
+    this.productItemIds = const [],
   });
 
   factory OrderItem.fromJson(Map<String, dynamic> json) => OrderItem(
-    productId: json['productId'] as String,
-    productVariantId: json['productVariantId'] as String?,
-    productName: json['productName'] as String,
-    variantName: json['variantName'] as String,
-    quantity: json['quantity'] as int,
+    productId: json['productId'],
+    productVariantId: json['productVariantId'],
+    productName: json['productName'],
+    variantName: json['variantName'],
+    quantity: json['quantity'],
     price: (json['price'] as num).toDouble(),
+    productItemIds: List<String>.from(json['productItemIds'] ?? []),
   );
 
-  Map<String, dynamic> toJson() {
-    final map = <String, dynamic>{
-      'productId': productId,
-      'productName': productName,
-      'variantName': variantName,
-      'quantity': quantity,
-      'price': price,
-    };
-    if (productVariantId != null) {
-      map['productVariantId'] = productVariantId;
-    }
-    return map;
-  }
+  Map<String, dynamic> toJson() => {
+    'productId': productId,
+    if (productVariantId != null) 'productVariantId': productVariantId,
+    'productName': productName,
+    'variantName': variantName,
+    'quantity': quantity,
+    'price': price,
+    'productItemIds': productItemIds,
+  };
 }

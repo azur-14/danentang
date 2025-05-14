@@ -8,22 +8,26 @@ namespace OrderManagementService.Models
 {
     public class OrderItem
     {
-        [BsonRepresentation(BsonType.ObjectId)]
+        [BsonElement("productId")]
         public string ProductId { get; set; }
 
-        [BsonRepresentation(BsonType.ObjectId)]
+        [BsonElement("productVariantId")]
         public string ProductVariantId { get; set; }
 
-        // ✅ Danh sách các ProductItem đã gán
-        [BsonRepresentation(BsonType.ObjectId)]
-        public List<string> ProductItemIds { get; set; } = new();
-
+        [BsonElement("productName")]
         public string ProductName { get; set; }
 
+        [BsonElement("variantName")]
         public string VariantName { get; set; }
 
+        [BsonElement("quantity")]
         public int Quantity { get; set; }
 
+        [BsonElement("price")]
         public decimal Price { get; set; }
+
+        [BsonElement("productItemIds")]
+        public List<string> ProductItemIds { get; set; } = new();
     }
+
 }
