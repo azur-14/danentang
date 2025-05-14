@@ -80,14 +80,16 @@ class OrderDetailsScreen extends StatelessWidget {
                   const Text('Địa chỉ giao hàng:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF2D3748))),
                   Text(
                     [
-                      order.shippingAddress.street,
+                      order.shippingAddress.addressLine,
+                      order.shippingAddress.ward,
+                      order.shippingAddress.district,
                       order.shippingAddress.city,
-                      order.shippingAddress.state,
-                      order.shippingAddress.postalCode,
-                      order.shippingAddress.country,
-                    ].where((part) => part != null && part.isNotEmpty).join(', '),
+                    ]
+                        .where((part) => part.isNotEmpty)
+                        .join(', '),
                     style: const TextStyle(color: Color(0xFF718096)),
                   ),
+
                   const SizedBox(height: 16),
                   // Danh sách sản phẩm
                   const Text('Sản phẩm:', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF2D3748))),

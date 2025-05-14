@@ -756,12 +756,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
                                     // Convert Address to ShippingAddress with mapping
                                     final shippingAddress = ShippingAddress(
-                                      street: selectedAddress!.addressLine ?? 'No street',
+                                      receiverName: selectedAddress!.receiverName ?? 'Người nhận',
+                                      phoneNumber: selectedAddress!.phone ?? '0000000000',
+                                      addressLine: selectedAddress!.addressLine ?? 'No address',
+                                      ward: selectedAddress!.commune?? 'No ward',
+                                      district: selectedAddress!.district ?? 'No district',
                                       city: selectedAddress!.city ?? 'No city',
-                                      state: selectedAddress!.district ?? 'No district',
-                                      postalCode: '00000', // Default value, adjust as needed
-                                      country: 'Vietnam', // Default value, adjust as needed
                                     );
+
 
                                     // Create the Order object
                                     final order = Order(
