@@ -1,15 +1,12 @@
-// lib/models/CartItem.dart
-
-/// Represents one line in the cart.
 class CartItem {
   final String productId;
   final String? productVariantId;
   int quantity;
 
-  /// Fetched on the fly in the UI (not part of JSON).
+  /// Fetched on the fly in the UI (not part of backend JSON)
   double currentPrice;
 
-  /// Has the user checked this item for subtotal?
+  /// Indicates if user has selected this item
   bool isSelected;
 
   CartItem({
@@ -17,15 +14,19 @@ class CartItem {
     this.productVariantId,
     required this.quantity,
     this.currentPrice = 0.0,
-    this.isSelected = false,    // default to false
+    this.isSelected = false,
   });
+
+  /// Tạo object rỗng cho logic xử lý smart add/update
+  factory CartItem.empty() => CartItem(productId: '', quantity: 0);
 
   factory CartItem.fromJson(Map<String, dynamic> json) {
     return CartItem(
       productId: json['productId'] as String,
       productVariantId: json['productVariantId'] as String?,
       quantity: json['quantity'] as int,
-      // currentPrice & isSelected keep their defaults
+      currentPrice: (json['currentPrice'] ?? 0.0).toDouble(),
+      isSelected: json['isSelected'] ?? false,
     );
   }
 
@@ -39,12 +40,4 @@ class CartItem {
     }
     return map;
   }
-  factory CartItem.empty() => CartItem(
-    productId: '',
-    productVariantId: null,
-    quantity: 0,
-    currentPrice: 0.0,
-    isSelected: false,
-  );
-
 }

@@ -1,18 +1,17 @@
+// lib/widgets/Product/add_to_cart_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:danentang/models/product.dart';
-import 'package:danentang/Screens/Customer/Payment/payment_screen.dart';
-import 'package:danentang/data/user_data.dart';
 
-class BuyNowDialog extends StatefulWidget {
+class AddToCartDialog extends StatefulWidget {
   final Product product;
   final double discountedPrice;
-  const BuyNowDialog({super.key, required this.product, required this.discountedPrice});
+  const AddToCartDialog({super.key, required this.product, required this.discountedPrice});
 
   @override
-  _BuyNowDialogState createState() => _BuyNowDialogState();
+  _AddToCartDialogState createState() => _AddToCartDialogState();
 }
 
-class _BuyNowDialogState extends State<BuyNowDialog> {
+class _AddToCartDialogState extends State<AddToCartDialog> {
   String selectedColor = '';
   int quantity = 1;
 
@@ -26,7 +25,7 @@ class _BuyNowDialogState extends State<BuyNowDialog> {
       if (screenWidth <= 800) {
         showModalBottomSheet(
           context: context,
-          isScrollControlled: true, // Cho phép cuộn toàn màn hình
+          isScrollControlled: true,
           backgroundColor: Colors.transparent,
           builder: (context) => _buildDialogContent(isMobile: true),
         ).then((_) => Navigator.pop(context));
@@ -43,7 +42,7 @@ class _BuyNowDialogState extends State<BuyNowDialog> {
 
         return Container(
           width: double.infinity,
-          height: isMobile ? MediaQuery.of(context).size.height * 0.9 : null, // Tăng chiều cao để tránh overflow
+          height: isMobile ? MediaQuery.of(context).size.height * 0.9 : null,
           decoration: isMobile
               ? const BoxDecoration(
             color: Colors.white,
@@ -51,12 +50,12 @@ class _BuyNowDialogState extends State<BuyNowDialog> {
           )
               : null,
           child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(), // Đảm bảo luôn cuộn được
+            physics: const AlwaysScrollableScrollPhysics(),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min, // Chỉ chiếm không gian cần thiết
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   if (isMobile)
                     Row(
@@ -201,20 +200,18 @@ class _BuyNowDialogState extends State<BuyNowDialog> {
                   Center(
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PaymentScreen(
-                              products: [
-                                {
-                                  'product': widget.product,
-                                  'color': localSelectedColor,
-                                  'quantity': localQuantity,
-                                },
-                              ],
-                              total: widget.discountedPrice * localQuantity,
-                              user: UserData.toUser(),
-                            ),
+                        // Logic thêm vào giỏ hàng (tạm thời in ra để kiểm tra)
+                        print('Thêm vào giỏ hàng: ${widget.product.name}, '
+                            'Biến thể: $localSelectedColor, Số lượng: $localQuantity');
+
+                        // Đóng dialog
+                        Navigator.pop(context);
+
+                        // Hiển thị thông báo thành công
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Đã thêm sản phẩm vào giỏ hàng!'),
+                            duration: Duration(seconds: 2),
                           ),
                         );
                       },
@@ -224,12 +221,12 @@ class _BuyNowDialogState extends State<BuyNowDialog> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                       ),
                       child: const Text(
-                        'Mua ngay',
+                        'Thêm vào giỏ hàng',
                         style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16), // Thêm khoảng trống cuối để tránh nội dung bị che
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
@@ -257,7 +254,7 @@ class _BuyNowDialogState extends State<BuyNowDialog> {
     return isDesktop
         ? AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      contentPadding: EdgeInsets.zero, // Loại bỏ padding mặc định của AlertDialog
+      contentPadding: EdgeInsets.zero,
       content: SingleChildScrollView(
         child: _buildDialogContent(isMobile: false),
       ),

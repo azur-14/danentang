@@ -49,10 +49,9 @@ namespace ProductManagementService.Models
     [BsonIgnoreExtraElements]
     public class ProductImage
     {
-        // Map đúng JSON field "id" (không phải _id)
-        [BsonElement("id")]
+        [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; } = null!;
+        public string Id { get; set; }
 
         [BsonElement("url")]
         public string Url { get; set; } = null!;
@@ -64,9 +63,9 @@ namespace ProductManagementService.Models
     [BsonIgnoreExtraElements]
     public class ProductVariant
     {
-        [BsonElement("id")]
+        [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; } = null!;
+        public string Id { get; set; }
 
         [BsonElement("variantName")]
         public string VariantName { get; set; } = null!;

@@ -1,37 +1,46 @@
-
-/// Represents a discount coupon.
 class Coupon {
-  final String id;
+  final String? id;
   final String code;
-  final double discountValue;
+  final int discountValue;
   final int usageLimit;
   final int usageCount;
   final DateTime createdAt;
+  final List<String> orderIds;
 
   Coupon({
-    required this.id,
+    this.id,
     required this.code,
     required this.discountValue,
-    this.usageLimit = 10,
-    this.usageCount = 0,
+    required this.usageLimit,
+    required this.usageCount,
     required this.createdAt,
+    required this.orderIds,
   });
 
-  factory Coupon.fromJson(Map<String, dynamic> json) => Coupon(
-    id: json['_id'] as String,
-    code: json['code'] as String,
-    discountValue: (json['discountValue'] as num).toDouble(),
-    usageLimit: json['usageLimit'] as int,
-    usageCount: json['usageCount'] as int,
-    createdAt: DateTime.parse(json['createdAt'] as String),
-  );
+  factory Coupon.fromJson(Map<String, dynamic> json) {
+    return Coupon(
+      id: json['id'],
+      code: json['code'],
+      discountValue: json['discountValue'],
+      usageLimit: json['usageLimit'],
+      usageCount: json['usageCount'],
+      createdAt: DateTime.parse(json['createdAt']),
+      orderIds: List<String>.from(json['orderIds'] ?? []),
+    );
+  }
 
-  Map<String, dynamic> toJson() => {
-    '_id': id,
-    'code': code,
-    'discountValue': discountValue,
-    'usageLimit': usageLimit,
-    'usageCount': usageCount,
-    'createdAt': createdAt.toIso8601String(),
-  };
+  Map<String, dynamic> toJson() {
+    final map = {
+      'code': code,
+      'discountValue': discountValue,
+      'usageLimit': usageLimit,
+      'usageCount': usageCount,
+      'createdAt': createdAt.toIso8601String(),
+      'orderIds': orderIds,
+    };
+    if (id != null && id!.isNotEmpty) {
+      map['id'] = id as Object;
+    }
+    return map;
+  }
 }
