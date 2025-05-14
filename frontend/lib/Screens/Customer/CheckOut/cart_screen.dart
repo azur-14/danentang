@@ -144,7 +144,7 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Cart'),
-        leading: BackButton(onPressed: () => context.go('/')),
+        leading: BackButton(onPressed: () => context.go('/homepage')),
         actions: [
           TextButton(
             onPressed: () => setState(() => isEditing = !isEditing),
