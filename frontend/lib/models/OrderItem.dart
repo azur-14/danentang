@@ -1,5 +1,4 @@
-
-/// Represents a single order item (product + optional variant).
+// Represents a single order item (product + optional variant).
 class OrderItem {
   final String productId;
   final String? productVariantId;

@@ -12,17 +12,36 @@ import 'package:danentang/models/card_info.dart';
 import 'package:danentang/widgets/Header/web_header.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
+import 'package:uuid/uuid.dart'; // For generating unique IDs
+
+// Import the Order model and related classes
+import 'package:danentang/models/Order.dart';
+import 'package:danentang/models/OrderItem.dart';
+import 'package:danentang/models/OrderStatusHistory.dart';
+import 'package:danentang/models/ShippingAddress.dart'; // Original ShippingAddress model
 
 class PaymentScreen extends StatefulWidget {
   final List<Map<String, dynamic>> products;
   final double total;
   final User user;
+  final ShippingMethod? shippingMethod;
+  final String? paymentMethod;
+  final String? sellerNote;
+  final Voucher? voucher;
+  final Address? address;
+  final CardInfo? card;
 
   const PaymentScreen({
     super.key,
     required this.products,
     required this.total,
     required this.user,
+    this.shippingMethod,
+    this.paymentMethod,
+    this.sellerNote,
+    this.voucher,
+    this.address,
+    this.card,
   });
 
   @override
@@ -31,7 +50,7 @@ class PaymentScreen extends StatefulWidget {
 
 class _PaymentScreenState extends State<PaymentScreen> {
   ShippingMethod? selectedShippingMethod;
-  String selectedPaymentMethod = 'Credit Card';
+  String? selectedPaymentMethod;
   String? sellerNote;
   Voucher? selectedVoucher;
   Address? selectedAddress;
@@ -43,15 +62,23 @@ class _PaymentScreenState extends State<PaymentScreen> {
   @override
   void initState() {
     super.initState();
-    selectedShippingMethod = ShippingMethod(
-      name: 'Tiết kiệm',
-      estimatedArrival: DateTime.now().add(const Duration(days: 7)).toString().split(' ')[0], // 2025-05-21
-      price: 20000,
-    );
-    selectedAddress = widget.user.addresses.firstWhere(
-          (addr) => addr.isDefault,
-      //orElse: () => widget.user.addresses.isNotEmpty ? widget.user.addresses.first : null,
-    );
+    selectedShippingMethod = widget.shippingMethod ??
+        ShippingMethod(
+          name: 'Tiết kiệm',
+          estimatedArrival: DateTime.now().add(const Duration(days: 7)).toString().split(' ')[0],
+          price: 20000,
+        );
+    selectedPaymentMethod = widget.paymentMethod ?? 'Credit Card';
+    sellerNote = widget.sellerNote;
+    selectedVoucher = widget.voucher;
+    selectedAddress = widget.address ??
+        (widget.user.addresses.isNotEmpty
+            ? widget.user.addresses.firstWhere(
+              (addr) => addr.isDefault,
+          orElse: () => widget.user.addresses.first,
+        )
+            : null);
+    selectedCard = widget.card;
     _loadCards();
   }
 
@@ -61,7 +88,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       final List<dynamic> cardsList = jsonDecode(cardsJson);
       setState(() {
         cards = cardsList.map((cardJson) => CardInfo.fromJson(cardJson)).toList();
-        if (cards.isNotEmpty) {
+        if (cards.isNotEmpty && selectedCard == null) {
           selectedCard = cards.first;
         }
       });
@@ -74,7 +101,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
             cardHolderName: 'Nguyen Van A',
           ),
         ];
-        selectedCard = cards.first;
+        if (selectedCard == null) {
+          selectedCard = cards.first;
+        }
         _saveCards();
       });
     }
@@ -120,7 +149,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final user = widget.user;
     final screenWidth = MediaQuery.of(context).size.width;
     final isWeb = screenWidth > 800;
     final contentWidth = isWeb ? 800.0 : double.infinity;
@@ -189,7 +217,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       ),
       body: Column(
         children: [
-          if (isWeb) const WebHeader(userData: {}),
+          if (isWeb) WebHeader(userData: {'name': widget.user.fullName}),
           Expanded(
             child: Center(
               child: Container(
@@ -205,7 +233,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         child: Card(
                           elevation: _isHovered ? 6 : 2,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          color: _isHovered ? Colors.white.withOpacity(0.95) : Colors.white,
+                          color: _isHovered ? Colors.white.withAlpha(242) : Colors.white,
                           child: InkWell(
                             onTap: () async {
                               final chosenAddress = await Navigator.push<Address?>(
@@ -466,67 +494,153 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           child: const Divider(height: 32, color: Color(0xFFE2E8F0)),
                         ),
                       ),
-                      InkWell(
-                        onTap: () async {
-                          final result = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => PaymentMethodScreen(
-                                initialPaymentMethod: selectedPaymentMethod,
-                                initialCard: selectedCard,
-                                cards: cards,
-                              ),
-                            ),
-                          );
-                          if (result != null) {
-                            setState(() {
-                              selectedPaymentMethod = result['paymentMethod'];
-                              selectedCard = result['card'];
-                              cards = result['cards'];
-                              _saveCards();
-                            });
-                          }
-                        },
-                        child: const Text(
-                          'Chọn phương thức thanh toán',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF2D3748)),
-                        ),
+                      const Text(
+                        'Chọn phương thức thanh toán',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF2D3748)),
                       ),
                       Card(
                         elevation: 2,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         margin: const EdgeInsets.symmetric(vertical: 8),
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(minHeight: cardMinHeight, maxWidth: cardMaxWidth),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.all(16),
-                            leading: Icon(
-                              selectedPaymentMethod == 'Paypal'
-                                  ? Icons.paypal
-                                  : selectedPaymentMethod == 'Credit Card'
-                                  ? Icons.credit_card
-                                  : Icons.money,
-                              color: selectedPaymentMethod == 'Paypal'
-                                  ? const Color(0xFF4299E1)
-                                  : selectedPaymentMethod == 'Credit Card'
-                                  ? const Color(0xFF4299E1)
-                                  : const Color(0xFF38B2AC),
-                            ),
-                            title: Text(
-                              selectedPaymentMethod == 'Credit Card' && selectedCard != null
-                                  ? 'Thẻ tín dụng ${selectedCard!.cardNumber}'
-                                  : selectedPaymentMethod == 'Paypal'
-                                  ? 'Paypal'
-                                  : 'Tiền mặt',
-                              style: const TextStyle(color: Color(0xFF2D3748)),
-                            ),
-                            subtitle: selectedPaymentMethod == 'Credit Card' && selectedCard != null
-                                ? Text(
-                              'Hết hạn: ${selectedCard!.expiryDate}',
-                              style: const TextStyle(color: Color(0xFF718096)),
-                            )
-                                : null,
-                            trailing: const Icon(Icons.chevron_right, color: Color(0xFF718096)),
+                        child: Container(
+                          constraints: BoxConstraints(maxWidth: cardMaxWidth),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Column(
+                            children: [
+                              RadioListTile<String>(
+                                value: 'Paypal',
+                                groupValue: selectedPaymentMethod,
+                                onChanged: (value) {
+                                  setState(() {
+                                    selectedPaymentMethod = value!;
+                                  });
+                                },
+                                title: const Text(
+                                  'Paypal',
+                                  style: TextStyle(color: Color(0xFF2D3748)),
+                                ),
+                                secondary: const Icon(
+                                  Icons.paypal,
+                                  color: Color(0xFF4299E1),
+                                  size: 20,
+                                ),
+                              ),
+                              RadioListTile<String>(
+                                value: 'Credit Card',
+                                groupValue: selectedPaymentMethod,
+                                onChanged: (value) {
+                                  setState(() {
+                                    selectedPaymentMethod = value!;
+                                  });
+                                },
+                                title: const Text(
+                                  'Credit Card',
+                                  style: TextStyle(color: Color(0xFF2D3748)),
+                                ),
+                                secondary: const Icon(
+                                  Icons.credit_card,
+                                  color: Color(0xFF4299E1),
+                                  size: 20,
+                                ),
+                              ),
+                              if (selectedPaymentMethod == 'Credit Card') ...[
+                                Container(
+                                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF7FAFC),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              selectedCard != null
+                                                  ? 'Thẻ tín dụng ${selectedCard!.cardNumber}'
+                                                  : 'Chưa có thẻ được chọn',
+                                              style: const TextStyle(
+                                                color: Color(0xFF2D3748),
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            if (selectedCard != null)
+                                              Text(
+                                                'Hết hạn: ${selectedCard!.expiryDate}',
+                                                style: const TextStyle(
+                                                  color: Color(0xFF718096),
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      TextButton(
+                                        onPressed: () async {
+                                          final result = await Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => PaymentMethodScreen(
+                                                initialPaymentMethod: selectedPaymentMethod!,
+                                                initialCard: selectedCard,
+                                                cards: cards,
+                                              ),
+                                            ),
+                                          );
+                                          if (result != null) {
+                                            setState(() {
+                                              selectedPaymentMethod = result['paymentMethod'];
+                                              selectedCard = result['card'];
+                                              cards = result['cards'];
+                                              _saveCards();
+                                            });
+                                          }
+                                        },
+                                        style: TextButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                          backgroundColor: const Color(0xFF5A4FCF).withAlpha(26),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          'Chọn thẻ',
+                                          style: TextStyle(
+                                            color: Color(0xFF5A4FCF),
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                              RadioListTile<String>(
+                                value: 'Cash',
+                                groupValue: selectedPaymentMethod,
+                                onChanged: (value) {
+                                  setState(() {
+                                    selectedPaymentMethod = value!;
+                                  });
+                                },
+                                title: const Text(
+                                  'Cash',
+                                  style: TextStyle(color: Color(0xFF2D3748)),
+                                ),
+                                secondary: const Icon(
+                                  Icons.money,
+                                  color: Color(0xFF38B2AC),
+                                  size: 20,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -617,6 +731,62 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                       );
                                       return;
                                     }
+                                    if (selectedAddress == null) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Vui lòng chọn địa chỉ giao hàng')),
+                                      );
+                                      return;
+                                    }
+
+                                    // Create OrderItems from the products list
+                                    final List<OrderItem> orderItems = widget.products.map((item) {
+                                      final product = item['product'];
+                                      final qty = item['quantity'] as int;
+                                      final variant = item['color']?.toString() ?? 'Không có biến thể';
+
+                                      return OrderItem(
+                                        productId: product.id ?? const Uuid().v4(), // Assuming product has an id, otherwise generate one
+                                        productVariantId: null, // You may need to adjust this based on your data model
+                                        productName: product.name,
+                                        variantName: variant,
+                                        quantity: qty,
+                                        price: product.price,
+                                      );
+                                    }).toList();
+
+                                    // Convert Address to ShippingAddress with mapping
+                                    final shippingAddress = ShippingAddress(
+                                      street: selectedAddress!.addressLine ?? 'No street',
+                                      city: selectedAddress!.city ?? 'No city',
+                                      state: selectedAddress!.district ?? 'No district',
+                                      postalCode: '00000', // Default value, adjust as needed
+                                      country: 'Vietnam', // Default value, adjust as needed
+                                    );
+
+                                    // Create the Order object
+                                    final order = Order(
+                                      id: const Uuid().v4(), // Generate a unique ID for the order
+                                      userId: widget.user.id ?? const Uuid().v4(), // Assuming User has an id
+                                      orderNumber: 'ORD-${DateTime.now().millisecondsSinceEpoch}', // Generate a unique order number
+                                      shippingAddress: shippingAddress,
+                                      items: orderItems,
+                                      totalAmount: total,
+                                      discountAmount: discount,
+                                      couponCode: selectedVoucher?.code,
+                                      loyaltyPointsUsed: 0, // Adjust if you have loyalty points logic
+                                      status: 'pending',
+                                      statusHistory: [
+                                        OrderStatusHistory(
+                                          status: 'pending',
+                                          timestamp: DateTime.now(),
+
+                                        ),
+                                      ],
+                                      createdAt: DateTime.now(),
+                                      updatedAt: DateTime.now(),
+                                    );
+
+                                    // Navigate to OrderSuccessScreen with the order details
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
@@ -624,11 +794,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                           products: widget.products,
                                           total: total,
                                           shippingMethod: selectedShippingMethod,
-                                          paymentMethod: selectedPaymentMethod,
+                                          paymentMethod: selectedPaymentMethod!,
                                           sellerNote: sellerNote,
                                           voucher: selectedVoucher,
-                                          address: selectedAddress,
+                                          address: selectedAddress!,
                                           card: selectedCard,
+                                          //order: order, // Pass the order object if needed
                                         ),
                                       ),
                                     );

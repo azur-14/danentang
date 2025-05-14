@@ -11,56 +11,25 @@ import 'package:danentang/Screens/Customer/User/profile_page.dart';
 import 'package:danentang/Screens/Customer/User/personal_info_screen.dart';
 import 'package:danentang/Screens/Customer/User/account_settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import 'Screens/Customer/Login/ChangePassword.dart';
-import 'Screens/Customer/Login/Intro.dart';
-import 'Screens/Customer/Product/test_product_details.dart';
-import 'Screens/Manager/Support/customer_support.dart';
-import 'Screens/Manager/DashBoard/MobileDashboard.dart';
-import 'models/product.dart';
-
-class ProfileScreen extends StatelessWidget {
-  final bool isLoggedIn;
-  const ProfileScreen({Key? key, required this.isLoggedIn}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Hồ sơ")),
-      body: const Center(child: Text("Hồ sơ")),
-    );
-  }
-}
-
-class ChatScreen extends StatelessWidget {
-  const ChatScreen({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Chat")),
-      body: const Center(child: Text("Chat")),
-    );
-  }
-}
-
-class ProductsScreen extends StatelessWidget {
-  const ProductsScreen({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Sản phẩm")),
-      body: const Center(child: Text("Danh sách sản phẩm")),
-    );
-  }
-}
+import 'package:danentang/Screens/Customer/Login/ChangePassword.dart';
+import 'package:danentang/Screens/Customer/Login/Intro.dart';
+import 'package:danentang/Screens/Customer/Product/test_product_details.dart';
+import 'package:danentang/Screens/Manager/Support/customer_support.dart';
+import 'package:danentang/Screens/Manager/DashBoard/MobileDashboard.dart';
+import 'package:danentang/models/product.dart';
+import 'package:danentang/Screens/Customer/Payment/order_success_screen.dart';
+import 'package:danentang/Screens/Customer/Payment/payment_method_screen.dart';
+import 'package:danentang/Screens/Customer/Payment/add_card_screen.dart';
+import 'package:danentang/models/card_info.dart';
+import 'package:danentang/models/ship.dart';
+import 'package:danentang/models/voucher.dart';
+import 'package:danentang/models/Address.dart';
+import 'package:danentang/Screens/Customer/Order/MyOrdersScreen.dart';
+import 'package:danentang/models/Order.dart';
 
 final GoRouter router = GoRouter(
-  // Always land on the home page first
   initialLocation: '/homepage',
   routes: [
-
     /// Splash / Intro
     GoRoute(
       path: '/intro',
@@ -94,7 +63,7 @@ final GoRouter router = GoRouter(
     /// Product listing & details
     GoRoute(
       path: '/products',
-      builder: (context, state) => const ProductsScreen(),
+      builder: (context, state) => const ProductDetailsScreen(productId: ''),
     ),
     GoRoute(
       path: '/products/:title',
@@ -139,6 +108,59 @@ final GoRouter router = GoRouter(
             );
           },
         );
+      },
+    ),
+
+    /// Payment Flow
+    GoRoute(
+      path: '/payment-method',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        return PaymentMethodScreen(
+          initialPaymentMethod: extra?['initialPaymentMethod'] ?? 'Credit Card',
+          initialCard: extra?['initialCard'] as CardInfo?,
+          cards: extra?['cards'] as List<CardInfo> ?? [],
+        );
+      },
+    ),
+    GoRoute(
+      path: '/add-card',
+      builder: (context, state) => const AddCardScreen(),
+    ),
+    GoRoute(
+      path: '/order-success',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>;
+        final address = extra['address'] as Address? ?? Address(
+          receiverName: 'Unknown',
+          phone: '0000000000',
+          addressLine: 'N/A',
+          commune: 'N/A',
+          district: 'N/A',
+          city: 'N/A',
+          isDefault: false,
+        );
+        return OrderSuccessScreen(
+          products: extra['products'] as List<Map<String, dynamic>>,
+          total: extra['total'] as double,
+          shippingMethod: extra['shippingMethod'] as ShippingMethod?,
+          paymentMethod: extra['paymentMethod'] as String,
+          sellerNote: extra['sellerNote'] as String?,
+          voucher: extra['voucher'] as Voucher?,
+          address: address,
+          card: extra['card'] as CardInfo?,
+          order: extra['order'] as Order?, // Pass the order
+        );
+      },
+    ),
+
+    /// Orders
+    GoRoute(
+      path: '/my-orders',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final orders = extra?['orders'] as List<Order>? ?? [];
+        return MyOrdersScreen(orders: orders);
       },
     ),
 
