@@ -19,7 +19,7 @@ class UserService {
     String userBase = kIsWeb ? 'http://localhost:5012/api/user' : 'http://10.0.2.2:5012/api/user',
   })  : _authBase = authBase,
         _userBase = userBase;
-  final String baseUrl = 'https://your-api-domain.com/api';
+
 
   // ─── AuthController ─────────────────────────────────────────────────────────
 
@@ -125,6 +125,38 @@ class UserService {
     throw Exception('fetchUserById failed: ${res.statusCode}');
   }
 
+  /// Gửi OTP, trả về otp string
+  Future<String> sendOtp(String email) async {
+    final resp = await http.post(
+      Uri.parse('$_authBase/forgot-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email}),
+    );
+    if (resp.statusCode != 200) {
+      throw Exception('Gửi OTP thất bại (${resp.statusCode}): ${resp.body}');
+    }
+    final data = jsonDecode(resp.body) as Map<String, dynamic>;
+    return data['otp'] as String;
+  }
+
+  /// Đổi mật khẩu: email + newPassword
+  Future<void> resetPassword({
+    required String email,
+    required String newPassword,
+  }) async {
+    final resp = await http.post(
+      Uri.parse('$_authBase/reset-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'newPassword': newPassword,
+      }),
+    );
+    if (resp.statusCode != 200) {
+      throw Exception(
+          'Reset password thất bại (${resp.statusCode}): ${resp.body}');
+    }
+  }
   /// Fetches the raw JSON map for the user.
   Future<Map<String, dynamic>> _fetchRawUserJson(String id) async {
     final res = await http.get(Uri.parse('$_userBase/$id'));
@@ -233,33 +265,5 @@ class UserService {
     }
   }
 
-  Future<void> resetPassword({
-    required String email,
-    required String otp,
-    required String newPassword,
-  }) async {
-    final url = Uri.parse('$baseUrl/users/reset-password');
-    final response = await http.post(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'email': email,
-        'otp': otp,
-        'newPassword': newPassword,
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      // Reset password thành công
-      return;
-    } else {
-      // Thất bại, trả về lỗi
-      final responseBody = jsonDecode(response.body);
-      final errorMessage = responseBody['message'] ?? 'Đã xảy ra lỗi';
-      throw Exception(errorMessage);
-    }
-  }
 }
 

@@ -2,6 +2,8 @@
 using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
 using System;
+using System.Net;
+using System.Net.Mail;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -182,10 +184,86 @@ namespace UserManagementService.Controllers
 
             return Ok(dto);
         }
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> SendOtp([FromBody] ForgotPasswordDto dto)
+        {
+            // 1. Kiểm tra email tồn tại
+            var userExists = await _context.Users
+                .Find(u => u.Email == dto.Email)
+                .AnyAsync();
+            if (!userExists)
+                return BadRequest("Email không tồn tại.");
+
+            // 2. Sinh mã OTP 6 chữ số
+            var otp = new Random().Next(100000, 999999).ToString();
+
+            // 3. Đọc cấu hình SMTP
+            var smtpHost = _configuration["Smtp:Host"]!;
+            var smtpPort = int.Parse(_configuration["Smtp:Port"]!);
+            var smtpUser = _configuration["Smtp:Username"]!;
+            var smtpPass = _configuration["Smtp:Password"]!;
+            var fromEmail = _configuration["Smtp:FromEmail"]!;
+
+            // 4. Gửi email
+            try
+            {
+                var mail = new MailMessage();
+                mail.From = new MailAddress(fromEmail, "Hoalahe");
+                mail.To.Add(dto.Email);
+                mail.Subject = "Mã OTP đặt lại mật khẩu";
+                mail.Body = $"Mã OTP của bạn là: <b>{otp}</b> (hết hạn sau 5 phút)";
+                mail.IsBodyHtml = true;
+
+                using var client = new SmtpClient(smtpHost, smtpPort)
+                {
+                    Credentials = new NetworkCredential(smtpUser, smtpPass),
+                    EnableSsl = true
+                };
+                await client.SendMailAsync(mail);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Gửi email thất bại: {ex.Message}");
+            }
+
+            // 5. Trả OTP về client
+            return Ok(new { otp });
+        }
+
+        /// <summary>
+        /// POST /api/auth/reset-password
+        /// </summary>
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto)
+        {
+            // 1. Tìm user theo email
+            var filter = Builders<User>.Filter.Eq(u => u.Email, dto.Email);
+            var user = await _context.Users.Find(filter).FirstOrDefaultAsync();
+            if (user == null)
+                return NotFound("Không tìm thấy user với email này.");
+
+            // 2. Hash mật khẩu mới
+            var newHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+
+            // 3. Update vào Mongo
+            var update = Builders<User>.Update
+                .Set(u => u.PasswordHash, newHash)
+                .Set(u => u.UpdatedAt, DateTime.UtcNow);
+
+            await _context.Users.UpdateOneAsync(filter, update);
+
+            return Ok(new { message = "Đổi mật khẩu thành công." });
+        }
     }
 
+    // --- DTO cho đổi mật khẩu ---
+    public class ResetPasswordDto
+    {
+        public string Email { get; set; } = null!;
+        public string NewPassword { get; set; } = null!;
+    }
     // ---  DTO nhận từ client khi register ---
-public class RegisterDto
+    public class RegisterDto
 {
     public string Email { get; set; } = null!;
     public string FullName { get; set; } = null!;
@@ -200,7 +278,10 @@ public class RegisterDto
     public string? City { get; set; }
 }
 
-
+    public class ForgotPasswordDto
+    {
+        public string Email { get; set; } = null!;
+    }
     // --- DTO nhận từ client khi login ---
     public class LoginDto
     {

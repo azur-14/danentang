@@ -59,7 +59,10 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: '/change_password',
-      builder: (context, state) => const ForgotPasswordScreen(),
+      builder: (context, state) {
+        final email = state.extra as String? ?? '';
+        return ForgotPasswordScreen(email: email);
+      },
     ),
 
     /// Product listing & details

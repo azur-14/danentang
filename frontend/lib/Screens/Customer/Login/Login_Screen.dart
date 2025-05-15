@@ -187,8 +187,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 15),
                     TextButton(
-                      onPressed: () => context.go('/change_password'),
-                      child: const Text("Forgot Password?"),
+                      onPressed: () => context.go(
+                        '/change_password',
+                        extra: emailController.text.trim(),
+                      ),
+                        child: const Text("Forgot Password?"),
                     ),
                     const Spacer(),
                   ],
@@ -323,8 +326,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 15),
                         TextButton(
-                          onPressed: () => context.go('/change_password'),
-                          child: const Text("Forgot Password?"),
+                          onPressed: () => context.go(
+                            '/change_password',
+                            extra: emailController.text.trim(),
+                          ),
+                            child: const Text("Forgot Password?"),
                         ),
 
                       ],
