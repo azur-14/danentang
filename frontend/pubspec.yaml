@@ -56,6 +56,7 @@ dependencies:
   flutter_secure_storage: ^9.0.0
   bson: ^5.0.4
 
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -98,6 +99,8 @@ flutter:
     - assets/images/macbook_thumb1.jpg
     - assets/images/macbook_thumb2.jpg
     - assets/images/logo.png
+    - assets/images/laptop.jpg
+    - assets/images/headphones.jpg
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

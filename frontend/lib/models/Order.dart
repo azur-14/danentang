@@ -14,10 +14,10 @@ class Order {
   final double discountAmount;
   final String? couponCode;
   final int loyaltyPointsUsed;
-  final String status;
+  String status; // Removed 'final'
   final List<OrderStatusHistory> statusHistory;
   final DateTime createdAt;
-  final DateTime updatedAt;
+  DateTime updatedAt; // Removed 'final'
 
   Order({
     required this.id,
@@ -39,8 +39,7 @@ class Order {
     id: json['_id'] as String,
     userId: json['userId'] as String,
     orderNumber: json['orderNumber'] as String,
-    shippingAddress:
-    ShippingAddress.fromJson(json['shippingAddress'] as Map<String, dynamic>),
+    shippingAddress: ShippingAddress.fromJson(json['shippingAddress'] as Map<String, dynamic>),
     items: (json['items'] as List<dynamic>)
         .map((e) => OrderItem.fromJson(e as Map<String, dynamic>))
         .toList(),

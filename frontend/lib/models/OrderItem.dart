@@ -6,6 +6,7 @@ class OrderItem {
   final String variantName;
   final int quantity;
   final double price;
+  final String? imageUrl; // Added field for the product image
 
   OrderItem({
     required this.productId,
@@ -14,6 +15,7 @@ class OrderItem {
     required this.variantName,
     required this.quantity,
     required this.price,
+    this.imageUrl, // Make it optional in the constructor
   });
 
   factory OrderItem.fromJson(Map<String, dynamic> json) => OrderItem(
@@ -23,6 +25,7 @@ class OrderItem {
     variantName: json['variantName'] as String,
     quantity: json['quantity'] as int,
     price: (json['price'] as num).toDouble(),
+    imageUrl: json['imageUrl'] as String?, // Parse imageUrl from JSON
   );
 
   Map<String, dynamic> toJson() {
@@ -35,6 +38,9 @@ class OrderItem {
     };
     if (productVariantId != null) {
       map['productVariantId'] = productVariantId;
+    }
+    if (imageUrl != null) {
+      map['imageUrl'] = imageUrl; // Include imageUrl in JSON serialization
     }
     return map;
   }
