@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 class MobileHeader extends StatelessWidget implements PreferredSizeWidget {
   final bool isLoggedIn;
   final String userName;
@@ -25,25 +26,25 @@ class MobileHeader extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
-        // luôn show giỏ hàng
+        // 1. Icon giỏ hàng luôn hiện
         Stack(
           children: [
             IconButton(
               icon: const Icon(Icons.shopping_cart, color: Colors.black),
-              onPressed: () {
-                context.go('/checkout', extra: isLoggedIn);
-              },
+              onPressed: () => context.go('/checkout', extra: isLoggedIn),
             ),
-            // ví dụ số lượng 1
             const Positioned(
-              right: 8, top: 8,
+              right: 8,
+              top: 8,
               child: _Badge(count: 1),
             ),
           ],
         ),
 
-        // chỉ show chat khi đã login
-        if (isLoggedIn)
+        const SizedBox(width: 8),
+
+        // 2. Nếu đã login: show chat icon, ngược lại: nút Đăng nhập
+        if (isLoggedIn) ...[
           Stack(
             children: [
               IconButton(
@@ -51,11 +52,23 @@ class MobileHeader extends StatelessWidget implements PreferredSizeWidget {
                 onPressed: () => context.go('/chat'),
               ),
               const Positioned(
-                right: 8, top: 8,
+                right: 8,
+                top: 8,
                 child: _Badge(count: 1),
               ),
             ],
           ),
+        ] else ...[
+          TextButton(
+            onPressed: () => context.go('/login-signup'),
+            child: const Text(
+              'Đăng nhập',
+              style: TextStyle(color: Colors.black, fontSize: 16),
+            ),
+          ),
+        ],
+
+        const SizedBox(width: 8),
       ],
     );
   }
@@ -64,7 +77,6 @@ class MobileHeader extends StatelessWidget implements PreferredSizeWidget {
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }
 
-// Mỗi badge:
 class _Badge extends StatelessWidget {
   final int count;
   const _Badge({Key? key, required this.count}) : super(key: key);
@@ -73,7 +85,9 @@ class _Badge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(2),
       decoration: const BoxDecoration(
-          color: Colors.red, shape: BoxShape.circle),
+        color: Colors.red,
+        shape: BoxShape.circle,
+      ),
       constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
       child: Text(
         '$count',
@@ -83,3 +97,4 @@ class _Badge extends StatelessWidget {
     );
   }
 }
+

@@ -6,6 +6,7 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../constants/colors.dart';
 import 'package:danentang/Service/user_service.dart';  // import UserService
+import 'package:danentang/Screens/Customer/Login/ChangePassword.dart';
 
 class LoginScreen extends StatefulWidget {
   final String? email;
@@ -94,6 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
         SnackBar(content: Text('Lỗi: $e')),
       );
     }
+
   }
 
   Widget _buildMobileLayout() {
@@ -185,11 +187,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 15),
                     TextButton(
-                      onPressed: sendOTP,
-                      child: const Text(
-                        "Forgot Password?",
-                        style: TextStyle(color: Colors.black),
-                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                        );
+                      },
+                      child: const Text("Forgot Password?"),
                     ),
                     const Spacer(),
                   ],
@@ -322,7 +326,16 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 15),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+                            );
+                          },
+                          child: const Text("Forgot Password?"),
+                        ),
                       ],
                     ),
                   ),
