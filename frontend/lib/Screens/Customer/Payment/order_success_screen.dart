@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:danentang/models/ship.dart';
 import 'package:danentang/models/voucher.dart';
 import 'package:danentang/models/Address.dart';
-import 'package:danentang/models/card_info.dart'; // Import the shared CardInfo model
+import 'package:danentang/models/card_info.dart';
+import 'package:danentang/Screens/Customer/Order/MyOrdersScreen.dart'; // Import new screen
+import 'package:danentang/models/Order.dart'; // Import Order model
 
 class OrderSuccessScreen extends StatelessWidget {
   final List<Map<String, dynamic>> products;
@@ -13,6 +15,7 @@ class OrderSuccessScreen extends StatelessWidget {
   final Voucher? voucher;
   final Address? address;
   final CardInfo? card;
+  final Order? order; // Add order parameter
 
   const OrderSuccessScreen({
     super.key,
@@ -24,6 +27,7 @@ class OrderSuccessScreen extends StatelessWidget {
     this.voucher,
     this.address,
     this.card,
+    this.order,
   });
 
   @override
@@ -105,6 +109,9 @@ class OrderSuccessScreen extends StatelessWidget {
                             ].where((part) => part != null && part.isNotEmpty).join(', '),
                             style: const TextStyle(color: Color(0xFF718096)),
                           ),
+                        ] else ...[
+                          const SizedBox(height: 8),
+                          const Text('Địa chỉ giao hàng: Chưa có thông tin', style: TextStyle(color: Color(0xFF718096))),
                         ],
                         if (sellerNote != null) ...[
                           const SizedBox(height: 8),
@@ -121,7 +128,12 @@ class OrderSuccessScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MyOrdersScreen(orders: order != null ? [order!] : []), // Pass the current order
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF5A4FCF),
@@ -129,7 +141,7 @@ class OrderSuccessScreen extends StatelessWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   ),
                   child: const Text(
-                    'Quay lại',
+                    'Đến đơn hàng',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,

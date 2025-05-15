@@ -3,7 +3,6 @@ import 'OrderItem.dart';
 import 'OrderStatusHistory.dart';
 import 'ShippingAddress.dart';
 
-/// Represents a placed order.
 class Order {
   final String id;
   final String userId;
@@ -14,6 +13,7 @@ class Order {
   final double discountAmount;
   final String? couponCode;
   final int loyaltyPointsUsed;
+  final int loyaltyPointsEarned; // ✅ mới thêm
   final String status;
   final List<OrderStatusHistory> statusHistory;
   final DateTime createdAt;
@@ -29,6 +29,7 @@ class Order {
     this.discountAmount = 0,
     this.couponCode,
     this.loyaltyPointsUsed = 0,
+    this.loyaltyPointsEarned = 0,
     this.status = 'pending',
     required this.statusHistory,
     required this.createdAt,
@@ -36,24 +37,25 @@ class Order {
   });
 
   factory Order.fromJson(Map<String, dynamic> json) => Order(
-    id: json['_id'] as String,
-    userId: json['userId'] as String,
-    orderNumber: json['orderNumber'] as String,
-    shippingAddress:
-    ShippingAddress.fromJson(json['shippingAddress'] as Map<String, dynamic>),
-    items: (json['items'] as List<dynamic>)
-        .map((e) => OrderItem.fromJson(e as Map<String, dynamic>))
+    id: json['_id'] ?? '', // fallback nếu tạo mới
+    userId: json['userId'],
+    orderNumber: json['orderNumber'],
+    shippingAddress: ShippingAddress.fromJson(json['shippingAddress']),
+    items: (json['items'] as List)
+        .map((e) => OrderItem.fromJson(e))
         .toList(),
     totalAmount: (json['totalAmount'] as num).toDouble(),
-    discountAmount: (json['discountAmount'] as num).toDouble(),
-    couponCode: json['couponCode'] as String?,
-    loyaltyPointsUsed: json['loyaltyPointsUsed'] as int,
-    status: json['status'] as String,
-    statusHistory: (json['statusHistory'] as List<dynamic>)
-        .map((e) => OrderStatusHistory.fromJson(e as Map<String, dynamic>))
+    discountAmount:
+    (json['discountAmount'] as num?)?.toDouble() ?? 0.0,
+    couponCode: json['couponCode'],
+    loyaltyPointsUsed: json['loyaltyPointsUsed'] ?? 0,
+    loyaltyPointsEarned: json['loyaltyPointsEarned'] ?? 0,
+    status: json['status'] ?? 'pending',
+    statusHistory: (json['statusHistory'] as List)
+        .map((e) => OrderStatusHistory.fromJson(e))
         .toList(),
-    createdAt: DateTime.parse(json['createdAt'] as String),
-    updatedAt: DateTime.parse(json['updatedAt'] as String),
+    createdAt: DateTime.parse(json['createdAt']),
+    updatedAt: DateTime.parse(json['updatedAt']),
   );
 
   Map<String, dynamic> toJson() => {
@@ -66,6 +68,7 @@ class Order {
     'discountAmount': discountAmount,
     if (couponCode != null) 'couponCode': couponCode,
     'loyaltyPointsUsed': loyaltyPointsUsed,
+    'loyaltyPointsEarned': loyaltyPointsEarned,
     'status': status,
     'statusHistory': statusHistory.map((e) => e.toJson()).toList(),
     'createdAt': createdAt.toIso8601String(),

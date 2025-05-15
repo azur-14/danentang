@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../constants/colors.dart';
@@ -25,45 +26,33 @@ class _LoginScreenState extends State<LoginScreen> {
     emailController = TextEditingController(text: widget.email ?? '');
   }
 
+
   Future<void> loginUser() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text;
     setState(() => isLoading = true);
+
     try {
-      final resp = await http.post(
-        Uri.parse('https://api.yoursite.com/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': emailController.text.trim(),
-          'password': passwordController.text,
-        }),
+      // 1) Gọi service login, service trả về token
+      final token = await _userService.login(
+        email: email,
+        password: password,
       );
 
-      if (resp.statusCode != 200) {
-        throw Exception('Login failed: ${resp.body}');
-      }
-
-      final data = jsonDecode(resp.body) as Map<String, dynamic>;
-      final token = data['token'] as String;
-      final userId = data['userId'] as String;   // ← lấy thẳng userId
-      final userName = data['userName'] as String; // Thêm tên người dùng
-      final userEmail = data['email'] as String; // Thêm email người dùng
-
+      // 2) Lưu token vào SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', token);
-      await prefs.setString('email', emailController.text.trim());
-      await prefs.setString('userId', userId);   // ← lưu userId
-      await prefs.setString('userName', userName); // Lưu tên người dùng
-      await prefs.setString('userEmail', userEmail); // Lưu email người dùng
+      await prefs.setString('email', email);
 
+      // 3) Show snackbar và điều hướng
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Đăng nhập thành công!')),
       );
+      context.pushReplacement('/homepage');
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomePage()),
-      );
 
     } catch (e) {
+      // nếu service ném Exception thì hiện lỗi
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Đăng nhập thất bại: $e')),
       );
@@ -120,7 +109,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -134,6 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 20),
                     TextField(
                       controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
                         hintText: "Enter your email *",
                         filled: true,
@@ -156,8 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide.none,
                         ),
-                        suffixIcon: const Icon(Icons.remove_red_eye_outlined,
-                            color: Colors.black26),
+                        suffixIcon: const Icon(Icons.remove_red_eye_outlined, color: Colors.black26),
                       ),
                     ),
                     const SizedBox(height: 25),
@@ -172,7 +162,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               borderRadius: BorderRadius.circular(10)),
                         ),
                         child: isLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
+                            ? const CircularProgressIndicator(
+                            color: Colors.white)
                             : Text(
                           "Login",
                           style: TextStyle(
@@ -230,7 +221,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     const Text(
                       "Login to access exclusive deals and a seamless digital experience.",
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 20, color: Colors.white70, height: 1.3),
+                      style:
+                      TextStyle(fontSize: 20, color: Colors.white70, height: 1.3),
                     ),
                   ],
                 ),
@@ -269,9 +261,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               fontWeight: FontWeight.bold,
                               color: Colors.black87),
                         ),
-                        const SizedBox(height: 20),
+                       const SizedBox(height: 20),
                         TextField(
                           controller: emailController,
+                          keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
                             hintText: "Enter your email *",
                             filled: true,
@@ -294,8 +287,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               borderRadius: BorderRadius.circular(10),
                               borderSide: BorderSide.none,
                             ),
-                            suffixIcon: const Icon(Icons.remove_red_eye_outlined,
-                                color: Colors.black26),
+                            suffixIcon: const Icon(Icons.remove_red_eye_outlined, color: Colors.black26),
                           ),
                         ),
                         const SizedBox(height: 25),
@@ -310,7 +302,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   borderRadius: BorderRadius.circular(10)),
                             ),
                             child: isLoading
-                                ? const CircularProgressIndicator(color: Colors.white)
+                                ? const CircularProgressIndicator(
+                                color: Colors.white)
                                 : const Text(
                               "Login",
                               style: TextStyle(
@@ -321,13 +314,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        TextButton(
-                          onPressed: sendOTP,
-                          child: const Text(
-                            "Forgot Password?",
-                            style: TextStyle(color: Colors.black),
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -347,13 +333,3 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Home")),
-      body: const Center(child: Text("Welcome to Home Page!")),
-    );
-  }
-}
