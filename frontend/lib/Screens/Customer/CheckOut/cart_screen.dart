@@ -38,7 +38,8 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
   final OrderService _api = OrderService.instance;
   Future<Cart>? _cartFuture;
   late String _effectiveUserId;
-
+  bool _isLoggedIn = false;
+  String _userName = '';
   bool isEditing = false;
   bool applyPoints = false;
   final TextEditingController _discountController = TextEditingController();
@@ -46,7 +47,15 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
   @override
   void initState() {
     super.initState();
+    _init();
     _initUserIdAndFetchCart();
+  }
+  Future<void> _init() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isLoggedIn = prefs.getString('token') != null;
+      _userName   = prefs.getString('userName') ?? '';
+    });
   }
 
   Future<void> _initUserIdAndFetchCart() async {
@@ -72,54 +81,40 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
     });
   }
 
-  double _subtotal(List<CartItem> items) =>
-      items.fold(0.0, (sum, i) => sum + i.currentPrice * i.quantity);
+  Future<double> _calculateSubtotal(List<CartItem> items) async {
+    double subtotal = 0.0;
+    for (final item in items) {
+      final info = await _api.fetchProductInfo(
+          item.productId, item.productVariantId);
+      subtotal += info['price'] * item.quantity;
+    }
+    return subtotal;
+  }
 
   double get _discount => applyPoints ? 60000 : 0;
+
   double get _shipping => 50000;
+
   double get _vat => 0;
 
   Future<void> _onCheckout(Cart cart) async {
-    final subtotal = _subtotal(cart.items);
-    final total = subtotal + _shipping + _vat - _discount;
-
     final shipping = ShippingAddress(
-      street: '123 Default St',
-      city: 'Hanoi',
-      state: 'Hanoi',
-      postalCode: '100000',
-      country: 'Vietnam',
+      receiverName: 'Nguyễn Văn A',
+      phoneNumber: '0912345678',
+      addressLine: '123 Trần Hưng Đạo',
+      ward: 'Phường 5',
+      district: 'Quận 1',
+      city: 'TP.HCM',
     );
 
-    final order = Order(
-      id: '',
-      userId: _effectiveUserId,
-      orderNumber: Uuid().v4(),
-      shippingAddress: shipping,
-      items: cart.items.map((ci) {
-        return OrderItem(
-          productId: ci.productId,
-          productVariantId: ci.productVariantId,
-          productName: 'Unknown Product',
-          variantName: 'Default Variant',
-          quantity: ci.quantity,
-          price: ci.currentPrice,
-        );
-      }).toList(),
-      totalAmount: total,
-      discountAmount: _discount,
-      couponCode: null,
-      loyaltyPointsUsed: applyPoints ? 100 : 0,
-      status: 'pending',
-      statusHistory: [
-        OrderStatusHistory(status: 'pending', timestamp: DateTime.now()),
-      ],
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
 
     try {
-      final created = await _api.createOrder(order);
+      final created = await _api.createOrderFromCart(
+        cart: cart,
+        shippingAddress: shipping,
+        appliedCoupon: null,
+        applyPoints: applyPoints,
+      );
       context.go('/order-confirmation', extra: created);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -127,6 +122,7 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -136,10 +132,12 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
       );
     }
 
-    final width = MediaQuery.of(context).size.width;
+    final width = MediaQuery
+        .of(context)
+        .size
+        .width;
     return width > 800 ? _buildWeb(context) : _buildMobile(context);
   }
-
   Widget _buildMobile(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -148,8 +146,10 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
         actions: [
           TextButton(
             onPressed: () => setState(() => isEditing = !isEditing),
-            child: Text(isEditing ? 'Done' : 'Edit',
-                style: TextStyle(color: AppColors.hexToColor(AppColors.black))),
+            child: Text(
+              isEditing ? 'Done' : 'Edit',
+              style: TextStyle(color: AppColors.hexToColor(AppColors.black)),
+            ),
           ),
         ],
       ),
@@ -163,67 +163,82 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
           if (snap.hasError) {
             return Center(child: Text('Error: ${snap.error}'));
           }
-          final cart = snap.data!;
-          final subtotal = _subtotal(cart.items);
-          final total = subtotal + _shipping + _vat - _discount;
 
-          return Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  itemCount: cart.items.length,
-                  itemBuilder: (_, i) {
-                    final item = cart.items[i];
-                    final idToRemove = item.productVariantId ?? item.productId;
-                    return CartItemWidget(
-                      item: item,
-                      isEditing: isEditing,
-                      onDelete: () async {
-                        await _api.removeCartItem(cart.id, idToRemove);
-                        await _refresh();
-                      },
-                      onQuantityChanged: (qty) async {
-                        final updated = CartItem(
-                          productId: item.productId,
-                          productVariantId: item.productVariantId,
-                          quantity: qty,
+          final cart = snap.data!;
+
+          return FutureBuilder<double>(
+            future: _calculateSubtotal(cart.items),
+            builder: (context, subSnap) {
+              if (!subSnap.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final subtotal = subSnap.data!;
+              final total = subtotal + _shipping + _vat - _discount;
+
+              return Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: cart.items.length,
+                      itemBuilder: (_, i) {
+                        final item = cart.items[i];
+                        final idToRemove = item.productVariantId ?? item.productId;
+                        return CartItemWidget(
+                          item: item,
+                          isEditing: isEditing,
+                          onDelete: () async {
+                            await _api.removeCartItem(cart.id, idToRemove);
+                            await _refresh();
+                          },
+                          onQuantityChanged: (qty) async {
+                            final updated = CartItem(
+                              productId: item.productId,
+                              productVariantId: item.productVariantId,
+                              quantity: qty,
+                            );
+                            await _api.upsertCartItem(cart.id, updated);
+                            await _refresh();
+                          },
+                          isMobile: true,
                         );
-                        await _api.upsertCartItem(cart.id, updated);
-                        await _refresh();
                       },
-                      isMobile: true,
-                    );
-                  },
-                ),
-              ),
-              OrderSummaryWidget(
-                subtotal: subtotal,
-                vat: _vat,
-                shipping: _shipping,
-                discount: _discount,
-                total: total,
-                applyPoints: applyPoints,
-                discountController: _discountController,
-                onApplyPointsChanged: (v) =>
-                    setState(() => applyPoints = v),
-                onCheckout: () => _onCheckout(cart),
-              ),
-            ],
+                    ),
+                  ),
+                  OrderSummaryWidget(
+                    subtotal: subtotal,
+                    vat: _vat,
+                    shipping: _shipping,
+                    discount: _discount,
+                    total: total,
+                    applyPoints: applyPoints,
+                    discountController: _discountController,
+                    onApplyPointsChanged: (v) =>
+                        setState(() => applyPoints = v),
+                    onCheckout: () => _onCheckout(cart),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),
     );
   }
-
   Widget _buildWeb(BuildContext context) {
+    final bool isLoggedIn = _isLoggedIn;
+
     return Scaffold(
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: WebHeader(isLoggedIn: isLoggedIn),
+      ),
       body: Column(
         children: [
-          const WebHeader(userData: {},),
-          WebSearchBar(isLoggedIn: widget.isLoggedIn),
+          WebSearchBar(isLoggedIn: isLoggedIn),
           Expanded(
             child: FutureBuilder<Cart>(
-              future: _cartFuture!,
+              future: _cartFuture,
               builder: (ctx, snap) {
                 if (snap.connectionState != ConnectionState.done) {
                   return const Center(child: CircularProgressIndicator());
@@ -232,63 +247,72 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
                   return Center(child: Text('Error: ${snap.error}'));
                 }
                 final cart = snap.data!;
-                final subtotal = _subtotal(cart.items);
-                final total = subtotal + _shipping + _vat - _discount;
-
-                return Padding(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: ListView.builder(
-                          itemCount: cart.items.length,
-                          itemBuilder: (_, i) {
-                            final item = cart.items[i];
-                            final idToRemove =
-                                item.productVariantId ?? item.productId;
-                            return CartItemWidget(
-                              item: item,
-                              isEditing: isEditing,
-                              onDelete: () async {
-                                await _api.removeCartItem(
-                                    cart.id, idToRemove);
-                                await _refresh();
-                              },
-                              onQuantityChanged: (qty) async {
-                                final updated = CartItem(
-                                  productId: item.productId,
-                                  productVariantId: item.productVariantId,
-                                  quantity: qty,
+                return FutureBuilder<double>(
+                  future: _calculateSubtotal(cart.items),
+                  builder: (context, subSnap) {
+                    if (!subSnap.hasData) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    final subtotal = subSnap.data!;
+                    final total = subtotal + _shipping + _vat - _discount;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      child: Row(
+                        children: [
+                          // Danh sách items
+                          Expanded(
+                            flex: 3,
+                            child: ListView.builder(
+                              itemCount: cart.items.length,
+                              itemBuilder: (_, i) {
+                                final item = cart.items[i];
+                                final idToRemove = item.productVariantId ?? item.productId;
+                                return CartItemWidget(
+                                  item: item,
+                                  isEditing: isEditing,
+                                  onDelete: () async {
+                                    await _api.removeCartItem(cart.id, idToRemove);
+                                    await _refresh();
+                                  },
+                                  onQuantityChanged: (qty) async {
+                                    await _api.upsertCartItem(
+                                      cart.id,
+                                      CartItem(
+                                        productId: item.productId,
+                                        productVariantId: item.productVariantId,
+                                        quantity: qty,
+                                      ),
+                                    );
+                                    await _refresh();
+                                  },
+                                  isMobile: false,
                                 );
-                                await _api.upsertCartItem(
-                                    cart.id, updated);
-                                await _refresh();
                               },
-                              isMobile: false,
-                            );
-                          },
-                        ),
+                            ),
+                          ),
+
+                          const SizedBox(width: 32),
+
+                          // Order summary
+                          Expanded(
+                            flex: 2,
+                            child: OrderSummaryWidget(
+                              subtotal: subtotal,
+                              vat: _vat,
+                              shipping: _shipping,
+                              discount: _discount,
+                              total: total,
+                              applyPoints: applyPoints,
+                              discountController: _discountController,
+                              onApplyPointsChanged: (v) =>
+                                  setState(() => applyPoints = v),
+                              onCheckout: () => _onCheckout(cart),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 32),
-                      Expanded(
-                        flex: 2,
-                        child: OrderSummaryWidget(
-                          subtotal: subtotal,
-                          vat: _vat,
-                          shipping: _shipping,
-                          discount: _discount,
-                          total: total,
-                          applyPoints: applyPoints,
-                          discountController: _discountController,
-                          onApplyPointsChanged: (v) =>
-                              setState(() => applyPoints = v),
-                          onCheckout: () => _onCheckout(cart),
-                        ),
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 );
               },
             ),

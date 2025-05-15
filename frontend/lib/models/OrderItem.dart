@@ -1,4 +1,3 @@
-// Represents a single order item (product + optional variant).
 class OrderItem {
   final String productId;
   final String? productVariantId;
@@ -6,7 +5,11 @@ class OrderItem {
   final String variantName;
   final int quantity;
   final double price;
+<<<<<<< HEAD
   final String? imageUrl; // Added field for the product image
+=======
+  final List<String> productItemIds;
+>>>>>>> bf92b695419ac74d1dad522fe935bf06c8b4599c
 
   OrderItem({
     required this.productId,
@@ -15,16 +18,21 @@ class OrderItem {
     required this.variantName,
     required this.quantity,
     required this.price,
+<<<<<<< HEAD
     this.imageUrl, // Make it optional in the constructor
+=======
+    this.productItemIds = const [],
+>>>>>>> bf92b695419ac74d1dad522fe935bf06c8b4599c
   });
 
   factory OrderItem.fromJson(Map<String, dynamic> json) => OrderItem(
-    productId: json['productId'] as String,
-    productVariantId: json['productVariantId'] as String?,
-    productName: json['productName'] as String,
-    variantName: json['variantName'] as String,
-    quantity: json['quantity'] as int,
+    productId: json['productId'],
+    productVariantId: json['productVariantId'],
+    productName: json['productName'],
+    variantName: json['variantName'],
+    quantity: json['quantity'],
     price: (json['price'] as num).toDouble(),
+<<<<<<< HEAD
     imageUrl: json['imageUrl'] as String?, // Parse imageUrl from JSON
   );
 
@@ -45,3 +53,18 @@ class OrderItem {
     return map;
   }
 }
+=======
+    productItemIds: List<String>.from(json['productItemIds'] ?? []),
+  );
+
+  Map<String, dynamic> toJson() => {
+    'productId': productId,
+    if (productVariantId != null) 'productVariantId': productVariantId,
+    'productName': productName,
+    'variantName': variantName,
+    'quantity': quantity,
+    'price': price,
+    'productItemIds': productItemIds,
+  };
+}
+>>>>>>> bf92b695419ac74d1dad522fe935bf06c8b4599c

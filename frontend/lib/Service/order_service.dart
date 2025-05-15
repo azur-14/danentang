@@ -9,6 +9,9 @@ import 'package:danentang/models/Coupon.dart';
 import 'package:danentang/models/Order.dart';
 import 'package:danentang/models/OrderStatusHistory.dart';
 
+import '../models/OrderItem.dart';
+import '../models/ShippingAddress.dart';
+
 class OrderService {
   OrderService._();
   static final OrderService instance = OrderService._();
@@ -208,10 +211,10 @@ class OrderService {
   // ORDERS
   // ───────────────────────────────────────────────
 
-  Future<List<Order>> fetchAllOrders() async {
-    final uri = Uri.parse('$_baseUrl/orders');
+  static Future<List<Order>> fetchAllOrders() async {
+    final uri = Uri.parse('$_baseUrl/Orders');
     debugPrint('→ GET $uri');
-    final resp = await _http.get(uri);
+    final resp = await http.get(uri);
     debugPrint('← ${resp.statusCode} ${resp.body}');
     if (resp.statusCode == 200) {
       final data = json.decode(resp.body) as List<dynamic>;
@@ -246,6 +249,84 @@ class OrderService {
     }
     throw Exception('createOrder failed (${resp.statusCode})');
   }
+  Future<Map<String, dynamic>> fetchProductInfo(String productId, String? variantId) async {
+    final productUri = Uri.parse('http://localhost:5005/api/products/$productId');
+    final resp = await http.get(productUri);
+    if (resp.statusCode != 200) throw Exception('Lỗi lấy sản phẩm $productId');
+
+    final data = json.decode(resp.body);
+    String name = data['name'];
+    double price = (data['price'] as num).toDouble();
+
+    String variantName = '';
+    if (variantId != null && data['variants'] is List) {
+      final variant = (data['variants'] as List).firstWhere(
+            (v) => v['_id'] == variantId,
+        orElse: () => null,
+      );
+      if (variant != null) {
+        variantName = variant['name'] ?? '';
+        price = (variant['price'] as num?)?.toDouble() ?? price;
+      }
+    }
+
+    return {
+      'productName': name,
+      'variantName': variantName,
+      'price': price,
+    };
+  }
+  Future<Order> createOrderFromCart({
+    required Cart cart,
+    required ShippingAddress shippingAddress,
+    Coupon? appliedCoupon,
+    bool applyPoints = false,
+  }) async {
+    final List<OrderItem> orderItems = [];
+
+    for (final item in cart.items) {
+      final info = await fetchProductInfo(item.productId, item.productVariantId);
+      orderItems.add(OrderItem(
+        productId: item.productId,
+        productVariantId: item.productVariantId,
+        productName: info['productName'],
+        variantName: info['variantName'],
+        quantity: item.quantity,
+        price: info['price'],
+      ));
+    }
+
+    final subtotal = orderItems.fold<double>(
+      0,
+          (sum, i) => sum + i.price * i.quantity,
+    );
+
+    final discount = appliedCoupon?.discountValue?.toDouble() ?? 0.0;
+    final shipping = 50000.0; // hardcoded or fetch from config
+    final vat = 0.0;
+    final total = subtotal + shipping + vat - discount;
+
+    final order = Order(
+      id: '',
+      userId: cart.userId,
+      orderNumber: const Uuid().v4(),
+      shippingAddress: shippingAddress,
+      items: orderItems,
+      totalAmount: total,
+      discountAmount: discount,
+      couponCode: appliedCoupon?.code,
+      loyaltyPointsUsed: applyPoints ? 100 : 0,
+      status: 'pending',
+      statusHistory: [
+        OrderStatusHistory(status: 'pending', timestamp: DateTime.now()),
+      ],
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    return await createOrder(order);
+  }
+
 
   Future<void> updateOrder(Order order) async {
     final uri = Uri.parse('$_baseUrl/orders/${order.id}');

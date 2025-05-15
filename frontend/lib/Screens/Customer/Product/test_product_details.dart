@@ -8,6 +8,7 @@ import 'package:danentang/widgets/Product/product_info.dart';
 import 'package:danentang/widgets/Product/product_tabs.dart';
 import 'package:danentang/widgets/Product/recommended_products.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../Service/product_service.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
@@ -24,7 +25,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
   late Future<List<Review>> _reviewsFuture;
   late Future<List<Product>> _recommendedFuture;
   late TabController _tabController;
-
+  bool _isLoggedIn = false;
   @override
   void initState() {
     super.initState();
@@ -39,8 +40,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
   void dispose() {
     _tabController.dispose();
     super.dispose();
+    _init();
   }
-
+  Future<void> _init() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isLoggedIn = prefs.getString('token') != null;
+     });
+  }
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -79,7 +86,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
           body: SingleChildScrollView(
             child: Column(
               children: [
-                if (screenWidth > 800) const WebHeader(userData: {},),
+                if (screenWidth > 800) WebHeader(isLoggedIn: _isLoggedIn),
                 screenWidth > 800
                     ? Center(
                   child: ConstrainedBox(

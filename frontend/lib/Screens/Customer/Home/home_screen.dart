@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:danentang/data/user_data.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../models/product.dart';
 import '../../../models/Category.dart';
@@ -24,6 +25,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  bool _isLoggedIn = false;
+  String _userName = '';
   int selectedIndex = 0;
   bool showAllCategories = false;
   bool isLoading = true;
@@ -49,8 +52,18 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadAllData();
+    _init();
   }
+
+  Future<void> _init() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isLoggedIn = prefs.getString('token') != null;
+      _userName   = prefs.getString('userName') ?? '';
+    });
+    await _loadAllData();
+  }
+
 
   Future<void> _loadAllData() async {
     setState(() => isLoading = true);
@@ -82,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onNavTapped(int idx) {
     final bool isLoggedIn = userData['isLoggedIn'] as bool;
     if (!isLoggedIn && idx != 0) {
-      context.go('/login');
+      context.go('/login-signup');
       return;
     }
     setState(() => selectedIndex = idx);
@@ -118,19 +131,32 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMobileLayout(BuildContext context, double w) {
-    final bool isLoggedIn = userData['isLoggedIn'] as bool;
+    // 1. Dùng state login thật sự
+    final bool isLoggedIn = _isLoggedIn;
 
+    // 2. Tính danh sách sản phẩm khuyến mãi
+    final promoProducts = allProducts
+        .where((p) => p.discountPercentage != null && p.discountPercentage! > 0)
+        .toList();
+
+    // 3. Category icons
     const iconSize = 80.0, iconSpacing = 8.0, iconPadding = 16.0;
     final maxCats = _calculateItemsPerRow(w, iconSize, iconSpacing, iconPadding);
     final visibleCats = showAllCategories ? categories : categories.take(maxCats).toList();
 
     return Scaffold(
-      appBar: MobileHeader(userData: userData),
+// trong Scaffold:
+      appBar: MobileHeader(
+        isLoggedIn: _isLoggedIn,
+        userName:  _userName,
+      ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const MobileSearchBar(),
+
+            // Categories
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: iconPadding, vertical: 8),
               child: Row(
@@ -139,11 +165,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   const Text('Categories', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   GestureDetector(
                     onTap: () => setState(() => showAllCategories = !showAllCategories),
-                    child: Text(showAllCategories ? 'Show less' : 'See all', style: const TextStyle(color: Colors.blue)),
+                    child: Text(
+                      showAllCategories ? 'Show less' : 'See all',
+                      style: const TextStyle(color: Colors.blue),
+                    ),
                   ),
                 ],
               ),
             ),
+            // Banner
+            BannerSection(isWeb: false, screenWidth: w),
+
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: iconPadding),
@@ -157,8 +189,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 }).toList(),
               ),
             ),
-            BannerSection(isWeb: false, screenWidth: w),
-            _buildPromoIcons(),
+
+
+            // *** Phần Khuyến mãi ***
+            if (promoProducts.isNotEmpty)
+              ProductSection(
+                title: 'Khuyến mãi',
+                products: promoProducts,
+                isWeb: false,
+                screenWidth: w,
+                onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+              ),
+
             // By Category
             for (final cat in categories)
               if (allProducts.any((p) => p.categoryId == cat.id))
@@ -193,20 +235,37 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildWebLayout(BuildContext context, double w) {
-    final bool isLoggedIn = userData['isLoggedIn'] as bool;
+    final bool isLoggedIn = _isLoggedIn;
+    final promoProducts = allProducts
+        .where((p) => p.discountPercentage != null && p.discountPercentage! > 0)
+        .toList();
 
     const iconSize = 80.0, iconSpacing = 16.0, iconPadding = 32.0;
     final maxCats = _calculateItemsPerRow(w, iconSize, iconSpacing, iconPadding);
     final visibleCats = categories.take(maxCats).toList();
 
     return Scaffold(
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        // Truyền avatarBase64 vào đây
+        child: WebHeader(
+          isLoggedIn:   _isLoggedIn,
+        ),
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            WebHeader(userData: userData),
+            // Header hoặc nút Login
+
+            // Search
             WebSearchBar(isLoggedIn: isLoggedIn),
+
+            // Banner
             BannerSection(isWeb: true, screenWidth: w),
+
+            // Promo icons (nếu vẫn muốn)
             _buildPromoIcons(),
+// Category icons
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: iconPadding, vertical: 16),
               child: Row(
@@ -219,18 +278,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 }).toList(),
               ),
             ),
-            // By Category
-            for (final cat in categories)
-              if (allProducts.any((p) => p.categoryId == cat.id))
-                ProductSection(
-                  title: cat.name,
-                  products: allProducts.where((p) => p.categoryId == cat.id).toList(),
-                  isWeb: true,
-                  screenWidth: w,
-                  onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
-                ),
 
-            // By Tag
+            // *** Phần Khuyến mãi ***
+            if (promoProducts.isNotEmpty)
+              ProductSection(
+                title: 'Khuyến mãi',
+                products: promoProducts,
+                isWeb: true,
+                screenWidth: w,
+                onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+              ),
+
+
             for (final tag in tags)
               if ((productsByTag[tag.id] ?? []).isNotEmpty)
                 ProductSection(
@@ -241,12 +300,24 @@ class _HomeScreenState extends State<HomeScreen> {
                   onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
                 ),
 
+            // By Category
+            for (final cat in categories)
+              if (allProducts.any((p) => p.categoryId == cat.id))
+                ProductSection(
+                  title: cat.name,
+                  products: allProducts.where((p) => p.categoryId == cat.id).toList(),
+                  isWeb: true,
+                  screenWidth: w,
+                  onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+                ),
+            // Footer
             Footer(),
           ],
         ),
       ),
     );
   }
+
 
   Widget _buildPromoIcons() {
     return Padding(

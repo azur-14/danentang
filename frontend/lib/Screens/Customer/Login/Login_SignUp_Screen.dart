@@ -91,7 +91,7 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      "Sign Up",
+                      "Login - Sign up",
                       style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 16),
@@ -231,7 +231,7 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
                           children: [
                             const SizedBox(height: 30),
                             const Text(
-                              "Sign Up",
+                              "Login - Sign Up",
                               style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black87),
                             ),
                             const SizedBox(height: 20),

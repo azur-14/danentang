@@ -1,9 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../constants/colors.dart';
 import 'package:danentang/Service/user_service.dart';  // import UserService
+import 'package:danentang/Screens/Customer/Login/ChangePassword.dart';
 
 class LoginScreen extends StatefulWidget {
   final String? email;
@@ -25,44 +28,40 @@ class _LoginScreenState extends State<LoginScreen> {
     emailController = TextEditingController(text: widget.email ?? '');
   }
 
+
   Future<void> loginUser() async {
     setState(() => isLoading = true);
     try {
-      final resp = await http.post(
-        Uri.parse('https://api.yoursite.com/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': emailController.text.trim(),
-          'password': passwordController.text,
-        }),
+      final token = await _userService.login(
+        email: emailController.text.trim(),
+        password: passwordController.text,
       );
 
-      if (resp.statusCode != 200) {
-        throw Exception('Login failed: ${resp.body}');
-      }
+      // --- Decode payload từ JWT ---
+      final Map<String, dynamic> payload = JwtDecoder.decode(token);
+      // ClaimTypes.Role của .NET thường được map vào key này:
+      final role = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
+          // nếu server của bạn map thành "role" thì dùng payload['role']
+          ?? payload['role']
+          ?? 'customer';
 
-      final data = jsonDecode(resp.body) as Map<String, dynamic>;
-      final token = data['token'] as String;
-      final userId = data['userId'] as String;   // ← lấy thẳng userId
-      final userName = data['userName'] as String; // Thêm tên người dùng
-      final userEmail = data['email'] as String; // Thêm email người dùng
-
+      // --- Lưu token + role vào prefs nếu cần tái dùng ---
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', token);
-      await prefs.setString('email', emailController.text.trim());
-      await prefs.setString('userId', userId);   // ← lưu userId
-      await prefs.setString('userName', userName); // Lưu tên người dùng
-      await prefs.setString('userEmail', userEmail); // Lưu email người dùng
+      await prefs.setString('role', role);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Đăng nhập thành công!')),
       );
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomePage()),
-      );
-
+      // --- Điều hướng theo role ---
+      if (role == 'customer') {
+        context.go('/homepage');
+      } else if (role == 'admin') {
+        context.go('/manager-dashboard');
+      } else {
+        context.go('/homepage'); // fallback
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Đăng nhập thất bại: $e')),
@@ -96,6 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
         SnackBar(content: Text('Lỗi: $e')),
       );
     }
+
   }
 
   Widget _buildMobileLayout() {
@@ -120,7 +120,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -134,6 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 20),
                     TextField(
                       controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
                         hintText: "Enter your email *",
                         filled: true,
@@ -156,8 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide.none,
                         ),
-                        suffixIcon: const Icon(Icons.remove_red_eye_outlined,
-                            color: Colors.black26),
+                        suffixIcon: const Icon(Icons.remove_red_eye_outlined, color: Colors.black26),
                       ),
                     ),
                     const SizedBox(height: 25),
@@ -172,7 +173,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               borderRadius: BorderRadius.circular(10)),
                         ),
                         child: isLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
+                            ? const CircularProgressIndicator(
+                            color: Colors.white)
                             : Text(
                           "Login",
                           style: TextStyle(
@@ -185,11 +187,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 15),
                     TextButton(
-                      onPressed: sendOTP,
-                      child: const Text(
-                        "Forgot Password?",
-                        style: TextStyle(color: Colors.black),
-                      ),
+                      onPressed: () => context.go('/change_password'),
+                      child: const Text("Forgot Password?"),
                     ),
                     const Spacer(),
                   ],
@@ -230,7 +229,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     const Text(
                       "Login to access exclusive deals and a seamless digital experience.",
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 20, color: Colors.white70, height: 1.3),
+                      style:
+                      TextStyle(fontSize: 20, color: Colors.white70, height: 1.3),
                     ),
                   ],
                 ),
@@ -269,9 +269,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               fontWeight: FontWeight.bold,
                               color: Colors.black87),
                         ),
-                        const SizedBox(height: 20),
+                       const SizedBox(height: 20),
                         TextField(
                           controller: emailController,
+                          keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
                             hintText: "Enter your email *",
                             filled: true,
@@ -294,8 +295,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               borderRadius: BorderRadius.circular(10),
                               borderSide: BorderSide.none,
                             ),
-                            suffixIcon: const Icon(Icons.remove_red_eye_outlined,
-                                color: Colors.black26),
+                            suffixIcon: const Icon(Icons.remove_red_eye_outlined, color: Colors.black26),
                           ),
                         ),
                         const SizedBox(height: 25),
@@ -310,7 +310,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   borderRadius: BorderRadius.circular(10)),
                             ),
                             child: isLoading
-                                ? const CircularProgressIndicator(color: Colors.white)
+                                ? const CircularProgressIndicator(
+                                color: Colors.white)
                                 : const Text(
                               "Login",
                               style: TextStyle(
@@ -320,14 +321,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 15),
                         TextButton(
-                          onPressed: sendOTP,
-                          child: const Text(
-                            "Forgot Password?",
-                            style: TextStyle(color: Colors.black),
-                          ),
+                          onPressed: () => context.go('/change_password'),
+                          child: const Text("Forgot Password?"),
                         ),
+
                       ],
                     ),
                   ),
@@ -347,13 +346,3 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Home")),
-      body: const Center(child: Text("Welcome to Home Page!")),
-    );
-  }
-}

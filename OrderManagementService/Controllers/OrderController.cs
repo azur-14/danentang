@@ -25,12 +25,12 @@ namespace OrderManagementService.Controllers
             _httpClientFactory = httpClientFactory;
         }
 
-        // GET api/orders
+        // GET: api/orders
         [HttpGet]
         public async Task<ActionResult<List<Order>>> GetAll() =>
             await _orders.Find(_ => true).ToListAsync();
 
-        // GET api/orders/{id}
+        // GET: api/orders/{id}
         [HttpGet("{id:length(24)}")]
         public async Task<ActionResult<Order>> Get(string id)
         {
@@ -39,15 +39,16 @@ namespace OrderManagementService.Controllers
             return order;
         }
 
-        // POST api/orders
+        // POST: api/orders
         [HttpPost]
         public async Task<ActionResult<Order>> Create([FromBody] Order order)
         {
-            ModelState.Remove(nameof(order.Id));
-
+            // Ensure server-side ID, timestamps
+            ModelState.Remove(nameof(order.Id)); // Optional
             order.Id = ObjectId.GenerateNewId().ToString();
             order.CreatedAt = order.UpdatedAt = DateTime.UtcNow;
 
+            // Validate inventory with ProductService
             var client = _httpClientFactory.CreateClient("ProductService");
 
             foreach (var item in order.Items)
@@ -66,22 +67,28 @@ namespace OrderManagementService.Controllers
                 item.ProductItemIds = selectedItems.Select(i => i.Id).ToList();
             }
 
+            // ✅ Tính điểm tích lũy dựa trên tổng tiền sau giảm
+            var totalAfterDiscount = order.TotalAmount - order.DiscountAmount;
+            order.LoyaltyPointsEarned = (int)(totalAfterDiscount / 10000); // ví dụ: 1 điểm / 10k
+
             await _orders.InsertOneAsync(order);
             return CreatedAtAction(nameof(Get), new { id = order.Id }, order);
         }
 
-        // PUT api/orders/{id}
+
+        // PUT: api/orders/{id}
         [HttpPut("{id:length(24)}")]
         public async Task<IActionResult> Update(string id, [FromBody] Order updated)
         {
             updated.Id = id;
             updated.UpdatedAt = DateTime.UtcNow;
+
             var result = await _orders.ReplaceOneAsync(o => o.Id == id, updated);
             if (result.MatchedCount == 0) return NotFound();
             return NoContent();
         }
 
-        // DELETE api/orders/{id}
+        // DELETE: api/orders/{id}
         [HttpDelete("{id:length(24)}")]
         public async Task<IActionResult> Delete(string id)
         {
@@ -90,7 +97,7 @@ namespace OrderManagementService.Controllers
             return NoContent();
         }
 
-        // PATCH api/orders/{id}/status
+        // PATCH: api/orders/{id}/status
         [HttpPatch("{id:length(24)}/status")]
         public async Task<IActionResult> UpdateStatus(string id, [FromBody] OrderStatusHistory history)
         {
@@ -102,7 +109,7 @@ namespace OrderManagementService.Controllers
             var result = await _orders.UpdateOneAsync(o => o.Id == id, update);
             if (result.MatchedCount == 0) return NotFound();
 
-            // Nếu đơn được xác nhận (ví dụ status == "confirmed")
+            // Nếu đơn hàng được xác nhận (ví dụ: status == "confirmed")
             if (history.Status.ToLower() == "confirmed")
             {
                 var order = await _orders.Find(o => o.Id == id).FirstOrDefaultAsync();
@@ -118,6 +125,7 @@ namespace OrderManagementService.Controllers
                                 $"product-items/{productItemId}/status",
                                 new StringContent("\"sold\"", System.Text.Encoding.UTF8, "application/json")
                             );
+
                             if (!patchResp.IsSuccessStatusCode)
                             {
                                 return BadRequest($"Không thể cập nhật trạng thái sản phẩm {productItemId}");
@@ -131,6 +139,7 @@ namespace OrderManagementService.Controllers
         }
     }
 
+    // Tạm dùng để deserialize từ ProductService
     public class ProductItemDto
     {
         public string Id { get; set; }
