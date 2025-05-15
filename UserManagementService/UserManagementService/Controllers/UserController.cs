@@ -146,6 +146,21 @@ namespace UserManagementService.Controllers
             var result = await _context.Users.ReplaceOneAsync(u => u.Id == id, user);
             return result.MatchedCount == 1 ? NoContent() : NotFound();
         }
+        // --- 7. GET user by email ---
+        // GET /api/user/by-email?email=abc@example.com
+        [HttpGet("by-email")]
+        public async Task<IActionResult> GetByEmail([FromQuery] string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return BadRequest("Email is required.");
+
+            var user = await _context.Users.Find(u => u.Email == email).FirstOrDefaultAsync();
+            if (user == null)
+                return NotFound();
+
+            return Ok(user);
+        }
+
     }
 
     public class StatusDto
