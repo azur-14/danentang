@@ -1,10 +1,14 @@
+import 'dart:convert';
+import 'dart:typed_data';
+import 'package:danentang/ultis/image_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:danentang/data/order_data.dart';
 import 'package:danentang/models/Order.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-
+import 'package:danentang/Service/product_service.dart';
 import '../../../models/OrderStatusHistory.dart';
+import '../../../models/product.dart';
 
 class OrderDetailsScreen extends StatefulWidget {
   final String orderId;
@@ -16,6 +20,24 @@ class OrderDetailsScreen extends StatefulWidget {
 }
 
 class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
+  List<Product> products = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProducts();
+  }
+
+  Future<void> _loadProducts() async {
+    final result = await ProductService.fetchAllProducts(); // <-- await là bắt buộc
+    setState(() {
+      products = result;
+      _isLoading = false;
+    });
+  }
+
+
   void _confirmDelivery() {
     final order = testOrders.firstWhere((o) => o.id == widget.orderId);
     setState(() {
@@ -168,26 +190,41 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        order.shippingAddress.street,
+                        'Tên người nhận: ${order.shippingAddress.receiverName}',
+                        style: const TextStyle(color: Color(0xFF2D3748)),
+                      ),
+                      Text(
+                        order.shippingAddress.addressLine,
                         style: const TextStyle(color: Color(0xFF2D3748)),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${order.shippingAddress.city}, ${order.shippingAddress.state}',
+                        'Phường/Xã: ${order.shippingAddress.ward}',
                         style: const TextStyle(color: Color(0xFF2D3748)),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Mã bưu điện: ${order.shippingAddress.postalCode}',
+                        'Quận/Huyện: ${order.shippingAddress.district}',
                         style: const TextStyle(color: Color(0xFF2D3748)),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Quốc gia: ${order.shippingAddress.country}',
+                        'Thành phố: ${order.shippingAddress.city}',
+                        style: const TextStyle(color: Color(0xFF2D3748)),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Người nhận: ${order.shippingAddress.receiverName}',
+                        style: const TextStyle(color: Color(0xFF2D3748)),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Số điện thoại: ${order.shippingAddress.phoneNumber}',
                         style: const TextStyle(color: Color(0xFF2D3748)),
                       ),
                     ],
                   ),
+
                 ),
               ),
               const SizedBox(height: 24),
@@ -201,65 +238,78 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              ...order.items.map((item) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.asset(
-                        item.imageUrl != null ? item.imageUrl! : 'assets/placeholder.png',
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.cover,
+              ...order.items.map((item) {
+                final product = products.firstWhere(
+                      (p) => p.variants.any((v) => v.id == item.productVariantId),
+                  orElse: () => Product(
+                    id: '', name: '', price: 0, discountPercentage: 0,
+                    categoryId: '', createdAt: DateTime.now(), updatedAt: DateTime.now(),
+                    images: [], variants: [],
+                  ),
+                );
+
+                final base64Image = product.images.isNotEmpty ? product.images.first.url : null;
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: imageFromBase64String(
+                          base64Image,
+                          width: 80,
+                          height: 80,
+                          placeholder: const AssetImage('assets/placeholder.png'),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            item.productName,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF2D3748),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.productName,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF2D3748),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Biến thể: ${item.variantName} | Số lượng: ${item.quantity}',
-                            style: const TextStyle(
-                              color: Color(0xFF718096),
-                              fontSize: 12,
-                            ),
-                          ),
-                          if (item.productVariantId != null) ...[
                             const SizedBox(height: 4),
                             Text(
-                              'Mã biến thể: ${item.productVariantId}',
+                              'Biến thể: ${item.variantName} | Số lượng: ${item.quantity}',
                               style: const TextStyle(
                                 color: Color(0xFF718096),
                                 fontSize: 12,
                               ),
                             ),
-                          ],
-                          const SizedBox(height: 8),
-                          Text(
-                            '₫${NumberFormat('#,##0', 'vi_VN').format(item.price * item.quantity)}',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Color(0xFF2D3748),
+                            if (item.productVariantId != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                'Mã biến thể: ${item.productVariantId}',
+                                style: const TextStyle(
+                                  color: Color(0xFF718096),
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 8),
+                            Text(
+                              '₫${NumberFormat('#,##0', 'vi_VN').format(item.price * item.quantity)}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF2D3748),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              )),
+                    ],
+                  ),
+                );
+              }),
               const SizedBox(height: 24),
               // Order Summary
               const Text(
