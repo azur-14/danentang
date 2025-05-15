@@ -1,10 +1,44 @@
 import 'package:flutter/material.dart';
-import 'package:danentang/models/Order.dart';
-import 'package:danentang/models/OrderItem.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../models/Order.dart';
+import '../../models/OrderItem.dart';
 import '../../models/OrderStatusHistory.dart';
+import '../../models/product.dart';
+import 'package:danentang/ultis/image_helper.dart'; // Đảm bảo bạn đã có hàm imageFromBase64String()
+
+// Dữ liệu giả tạm (thay bằng fetch từ API khi cần)
+final List<Product> products = [
+  Product(
+    id: 'p1',
+    name: 'Laptop ABC',
+    brand: 'ASUS',
+    description: 'Mạnh mẽ và gọn nhẹ',
+    price: 20000000,
+    discountPercentage: 10,
+    categoryId: 'c1',
+    createdAt: DateTime.now(),
+    updatedAt: DateTime.now(),
+    images: [
+      ProductImage(
+        id: 'img1',
+        url: '<base64-string-hoặc-để-trống>',
+        sortOrder: 1,
+      ),
+    ],
+    variants: [
+      ProductVariant(
+        id: 'v1',
+        variantName: '16GB RAM',
+        additionalPrice: 0,
+        inventory: 5,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+    ],
+  ),
+];
 
 class OrderCard extends StatefulWidget {
   final Order order;
@@ -45,7 +79,6 @@ class _OrderCardState extends State<OrderCard> {
     final isDelivered = widget.order.status == 'Đã giao';
     final isCanceled = widget.order.status == 'Đã hủy';
 
-    // Determine status color based on statusHistory and current status
     Color statusColor = Colors.grey;
     if (isCanceled) {
       statusColor = Colors.red;
@@ -67,7 +100,6 @@ class _OrderCardState extends State<OrderCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Mã đơn hàng
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -90,7 +122,6 @@ class _OrderCardState extends State<OrderCard> {
               ],
             ),
             const SizedBox(height: 12),
-            // Danh sách sản phẩm
             const Text(
               'Sản phẩm:',
               style: TextStyle(
@@ -102,37 +133,24 @@ class _OrderCardState extends State<OrderCard> {
             const SizedBox(height: 8),
             ...widget.order.items.map((item) => _buildOrderItem(item, isShipped)),
             const SizedBox(height: 16),
-            // Tổng tiền
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
                   'Tổng cộng:',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF333333),
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
                 ),
                 Text(
                   '₫${NumberFormat('#,##0', 'vi_VN').format(widget.order.totalAmount)}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF333333),
-                  ),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF333333)),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            // Ngày đặt và trạng thái
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Ngày đặt:',
-                  style: TextStyle(fontSize: 14, color: Color(0xFF333333)),
-                ),
+                const Text('Ngày đặt:', style: TextStyle(fontSize: 14, color: Color(0xFF333333))),
                 Text(
                   DateFormat('dd MMM yyyy, HH:mm').format(widget.order.createdAt),
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
@@ -140,7 +158,6 @@ class _OrderCardState extends State<OrderCard> {
               ],
             ),
             const SizedBox(height: 16),
-            // Nút hành động
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -149,9 +166,7 @@ class _OrderCardState extends State<OrderCard> {
                     onPressed: _cancelOrder,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     child: const Text('Hủy đơn', style: TextStyle(color: Colors.white)),
                   ),
@@ -162,49 +177,35 @@ class _OrderCardState extends State<OrderCard> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue[700],
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   ),
                   child: const Text('Xem chi tiết', style: TextStyle(color: Colors.white)),
                 ),
                 if (isDelivered) ...[
                   const SizedBox(width: 8),
                   ElevatedButton(
-                    onPressed: () {
-                      context.push('/review/${widget.order.id}');
-                    },
+                    onPressed: () => context.push('/review/${widget.order.id}'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     child: const Text('Đánh giá', style: TextStyle(color: Colors.white)),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
-                    onPressed: () {
-                      context.push('/reorder/${widget.order.id}');
-                    },
+                    onPressed: () => context.push('/reorder/${widget.order.id}'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.grey[600],
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     child: const Text('Mua lại', style: TextStyle(color: Colors.white)),
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
-                    onPressed: () {
-                      context.push('/return/${widget.order.id}');
-                    },
+                    onPressed: () => context.push('/return/${widget.order.id}'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red[400],
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     child: const Text('Trả hàng', style: TextStyle(color: Colors.white)),
                   ),
@@ -218,29 +219,40 @@ class _OrderCardState extends State<OrderCard> {
   }
 
   Widget _buildOrderItem(OrderItem item, bool isShipped) {
+    final Product product = products.firstWhere(
+          (p) => p.variants.any((v) => v.id == item.productVariantId),
+      orElse: () => Product(
+        id: '',
+        name: '',
+        brand: '',
+        description: '',
+        price: 0,
+        discountPercentage: 0,
+        categoryId: '',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        images: [],
+        variants: [],
+      ),
+    );
+
+    final base64 = product.images.isNotEmpty ? product.images.first.url : null;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Hình ảnh sản phẩm
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.asset(
-              item.imageUrl != null ? item.imageUrl! : 'assets/placeholder.png',
+            child: imageFromBase64String(
+              base64,
               width: 80,
               height: 80,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Image.asset(
-                'assets/placeholder.png',
-                width: 80,
-                height: 80,
-                fit: BoxFit.cover,
-              ),
+              placeholder: const AssetImage('assets/placeholder.png'),
             ),
           ),
           const SizedBox(width: 12),
-          // Thông tin sản phẩm
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -256,10 +268,7 @@ class _OrderCardState extends State<OrderCard> {
                 const SizedBox(height: 4),
                 Text(
                   'Biến thể: ${item.variantName} | Số lượng: ${item.quantity}',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -273,21 +282,15 @@ class _OrderCardState extends State<OrderCard> {
               ],
             ),
           ),
-          // Nút Xác nhận (chỉ hiển thị cho trạng thái Đang giao)
           if (isShipped)
             ElevatedButton(
               onPressed: _confirmDelivery,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 padding: const EdgeInsets.symmetric(horizontal: 8),
               ),
-              child: const Text(
-                'Xác nhận',
-                style: TextStyle(color: Colors.white, fontSize: 12),
-              ),
+              child: const Text('Xác nhận', style: TextStyle(color: Colors.white, fontSize: 12)),
             ),
         ],
       ),

@@ -7,6 +7,9 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../models/product.dart';
+import '../../../ultis/image_helper.dart';
+
 class ReviewScreen extends StatefulWidget {
   final String orderId;
 
@@ -22,6 +25,34 @@ class _ReviewScreenState extends State<ReviewScreen> {
   final Map<String, double> _ratings = {};
   final Map<String, String> _reviewTexts = {};
   final Map<String, List<File>> _photos = {};
+  // inject sẵn từ OrderDetailsScreen hoặc fetchAll
+  List<Product> products = [
+    Product(
+      id: 'p1',
+      name: 'Laptop ABC',
+      brand: 'XYZ',
+      description: 'Mô tả...',
+      price: 10000000,
+      discountPercentage: 10,
+      categoryId: 'c1',
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      images: [
+        ProductImage(id: 'i1', url: '<base64-encoded-string>', sortOrder: 1),
+      ],
+      variants: [
+        ProductVariant(
+          id: 'v1',
+          variantName: '8GB RAM',
+          additionalPrice: 0,
+          inventory: 5,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      ],
+    ),
+  ];
+
 
   @override
   void initState() {
@@ -160,6 +191,25 @@ class _ReviewScreenState extends State<ReviewScreen> {
   }
 
   Widget _buildReviewItem(OrderItem item) {
+    final Product product = products.firstWhere(
+          (p) => p.variants.any((v) => v.id == item.productVariantId),
+      orElse: () => Product(
+        id: '',
+        name: '',
+        brand: '',
+        description: '',
+        price: 0,
+        discountPercentage: 0,
+        categoryId: '',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        images: [],
+        variants: [],
+      ),
+    );
+
+    final String? base64 = product.images.isNotEmpty ? product.images.first.url : null;
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -174,17 +224,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.asset(
-                    item.imageUrl != null ? item.imageUrl! : 'assets/placeholder.png',
+                  child: imageFromBase64String(
+                    base64,
                     width: 80,
                     height: 80,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Image.asset(
-                      'assets/placeholder.png',
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                    ),
+                    placeholder: const AssetImage('assets/placeholder.png'),
                   ),
                 ),
                 const SizedBox(width: 12),
