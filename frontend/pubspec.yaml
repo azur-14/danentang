@@ -55,6 +55,7 @@ dependencies:
   flutter_staggered_animations: ^1.1.1
   flutter_secure_storage: ^9.0.0
   bson: ^5.0.4
+  jwt_decoder: ^2.0.1
 
 dev_dependencies:
   flutter_test:

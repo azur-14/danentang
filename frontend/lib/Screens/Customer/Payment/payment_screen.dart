@@ -11,6 +11,7 @@ import 'package:danentang/models/Address.dart';
 import 'package:danentang/models/card_info.dart';
 import 'package:danentang/widgets/Header/web_header.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:uuid/uuid.dart'; // For generating unique IDs
 
@@ -58,6 +59,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   List<CardInfo> cards = [];
   CardInfo? selectedCard;
   final _storage = const FlutterSecureStorage();
+  bool _isLoggedIn = false;
 
   @override
   void initState() {
@@ -79,9 +81,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
         )
             : null);
     selectedCard = widget.card;
+    _init();
     _loadCards();
   }
-
+  Future<void> _init() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isLoggedIn = prefs.getString('token') != null;
+      });
+  }
   Future<void> _loadCards() async {
     final cardsJson = await _storage.read(key: 'cards');
     if (cardsJson != null) {
@@ -217,7 +225,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
       ),
       body: Column(
         children: [
-          if (isWeb) WebHeader(userData: {'name': widget.user.fullName}),
+          if (isWeb)
+            WebHeader(isLoggedIn: _isLoggedIn),
           Expanded(
             child: Center(
               child: Container(

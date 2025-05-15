@@ -57,10 +57,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _init() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
     setState(() {
-      _isLoggedIn = token != null;
-      _userName = prefs.getString('userName') ?? '';
+      _isLoggedIn = prefs.getString('token') != null;
+      _userName   = prefs.getString('userName') ?? '';
     });
     await _loadAllData();
   }
@@ -146,16 +145,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final visibleCats = showAllCategories ? categories : categories.take(maxCats).toList();
 
     return Scaffold(
-      appBar: isLoggedIn
-          ? MobileHeader(userData: {'userName': _userName, 'isLoggedIn': true})
-          : AppBar(
-        title: const Text('Your Shop'),
-        actions: [
-          TextButton(
-            onPressed: () => context.go('/login-signup'),
-            child: const Text('Đăng nhập', style: TextStyle(color: Colors.white)),
-          ),
-        ],
+// trong Scaffold:
+      appBar: MobileHeader(
+        isLoggedIn: _isLoggedIn,
+        userName:  _userName,
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -252,25 +245,18 @@ class _HomeScreenState extends State<HomeScreen> {
     final visibleCats = categories.take(maxCats).toList();
 
     return Scaffold(
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        // Truyền avatarBase64 vào đây
+        child: WebHeader(
+          isLoggedIn:   _isLoggedIn,
+        ),
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
             // Header hoặc nút Login
-            if (isLoggedIn)
-              WebHeader(userData: {'userName': _userName, 'isLoggedIn': true})
-            else
-              Padding(
-                padding: const EdgeInsets.fromLTRB(32, 16, 32, 0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () => context.go('/login-signup'),
-                      child: const Text('Đăng nhập'),
-                    ),
-                  ],
-                ),
-              ),
+
             // Search
             WebSearchBar(isLoggedIn: isLoggedIn),
 

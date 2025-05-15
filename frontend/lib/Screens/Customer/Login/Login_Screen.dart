@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../constants/colors.dart';
 import 'package:danentang/Service/user_service.dart';  // import UserService
@@ -28,31 +29,39 @@ class _LoginScreenState extends State<LoginScreen> {
 
 
   Future<void> loginUser() async {
-    final email = emailController.text.trim();
-    final password = passwordController.text;
     setState(() => isLoading = true);
-
     try {
-      // 1) Gọi service login, service trả về token
       final token = await _userService.login(
-        email: email,
-        password: password,
+        email: emailController.text.trim(),
+        password: passwordController.text,
       );
 
-      // 2) Lưu token vào SharedPreferences
+      // --- Decode payload từ JWT ---
+      final Map<String, dynamic> payload = JwtDecoder.decode(token);
+      // ClaimTypes.Role của .NET thường được map vào key này:
+      final role = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
+          // nếu server của bạn map thành "role" thì dùng payload['role']
+          ?? payload['role']
+          ?? 'customer';
+
+      // --- Lưu token + role vào prefs nếu cần tái dùng ---
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', token);
-      await prefs.setString('email', email);
+      await prefs.setString('role', role);
 
-      // 3) Show snackbar và điều hướng
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Đăng nhập thành công!')),
       );
-      context.pushReplacement('/homepage');
 
-
+      // --- Điều hướng theo role ---
+      if (role == 'customer') {
+        context.go('/homepage');
+      } else if (role == 'admin') {
+        context.go('/manager-dashboard');
+      } else {
+        context.go('/homepage'); // fallback
+      }
     } catch (e) {
-      // nếu service ném Exception thì hiện lỗi
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Đăng nhập thất bại: $e')),
       );

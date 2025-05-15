@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
 class MobileHeader extends StatelessWidget implements PreferredSizeWidget {
-  final Map<String, dynamic> userData;
-
-  const MobileHeader({Key? key, required this.userData}) : super(key: key);
+  final bool isLoggedIn;
+  final String userName;
+  const MobileHeader({
+    Key? key,
+    required this.isLoggedIn,
+    this.userName = '',
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final String userName = userData['userName'] as String;
-    final bool isLoggedIn = userData['isLoggedIn'] as bool;
-
     return AppBar(
       backgroundColor: Colors.white,
       elevation: 0,
@@ -19,12 +19,13 @@ class MobileHeader extends StatelessWidget implements PreferredSizeWidget {
           const Icon(Icons.diamond, color: Colors.purple, size: 20),
           const SizedBox(width: 8),
           Text(
-            "Hello $userName",
+            isLoggedIn ? 'Hello $userName' : 'Hoalahe',
             style: const TextStyle(color: Colors.black, fontSize: 18),
           ),
         ],
       ),
       actions: [
+        // luôn show giỏ hàng
         Stack(
           children: [
             IconButton(
@@ -33,68 +34,52 @@ class MobileHeader extends StatelessWidget implements PreferredSizeWidget {
                 context.go('/checkout', extra: isLoggedIn);
               },
             ),
-            Positioned(
-              right: 8,
-              top: 8,
-              child: Container(
-                padding: const EdgeInsets.all(2),
-                decoration: const BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
-                ),
-                constraints: const BoxConstraints(
-                  minWidth: 16,
-                  minHeight: 16,
-                ),
-                child: const Text(
-                  "1",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
+            // ví dụ số lượng 1
+            const Positioned(
+              right: 8, top: 8,
+              child: _Badge(count: 1),
             ),
           ],
         ),
-        Stack(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.message, color: Colors.black),
-              onPressed: () {
-                context.go('/chat');
-              },
-            ),
-            Positioned(
-              right: 8,
-              top: 8,
-              child: Container(
-                padding: const EdgeInsets.all(2),
-                decoration: const BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
-                ),
-                constraints: const BoxConstraints(
-                  minWidth: 16,
-                  minHeight: 16,
-                ),
-                child: const Text(
-                  "1",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
+
+        // chỉ show chat khi đã login
+        if (isLoggedIn)
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.message, color: Colors.black),
+                onPressed: () => context.go('/chat'),
               ),
-            ),
-          ],
-        ),
+              const Positioned(
+                right: 8, top: 8,
+                child: _Badge(count: 1),
+              ),
+            ],
+          ),
       ],
     );
   }
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+}
+
+// Mỗi badge:
+class _Badge extends StatelessWidget {
+  final int count;
+  const _Badge({Key? key, required this.count}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(2),
+      decoration: const BoxDecoration(
+          color: Colors.red, shape: BoxShape.circle),
+      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+      child: Text(
+        '$count',
+        style: const TextStyle(color: Colors.white, fontSize: 10),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
 }

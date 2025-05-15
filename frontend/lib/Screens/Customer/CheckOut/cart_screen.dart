@@ -38,7 +38,8 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
   final OrderService _api = OrderService.instance;
   Future<Cart>? _cartFuture;
   late String _effectiveUserId;
-
+  bool _isLoggedIn = false;
+  String _userName = '';
   bool isEditing = false;
   bool applyPoints = false;
   final TextEditingController _discountController = TextEditingController();
@@ -46,7 +47,15 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
   @override
   void initState() {
     super.initState();
+    _init();
     _initUserIdAndFetchCart();
+  }
+  Future<void> _init() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isLoggedIn = prefs.getString('token') != null;
+      _userName   = prefs.getString('userName') ?? '';
+    });
   }
 
   Future<void> _initUserIdAndFetchCart() async {
@@ -217,14 +226,19 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
     );
   }
   Widget _buildWeb(BuildContext context) {
+    final bool isLoggedIn = _isLoggedIn;
+
     return Scaffold(
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: WebHeader(isLoggedIn: isLoggedIn),
+      ),
       body: Column(
         children: [
-          const WebHeader(userData: {}),
-          WebSearchBar(isLoggedIn: widget.isLoggedIn),
+          WebSearchBar(isLoggedIn: isLoggedIn),
           Expanded(
             child: FutureBuilder<Cart>(
-              future: _cartFuture!,
+              future: _cartFuture,
               builder: (ctx, snap) {
                 if (snap.connectionState != ConnectionState.done) {
                   return const Center(child: CircularProgressIndicator());
@@ -232,47 +246,43 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
                 if (snap.hasError) {
                   return Center(child: Text('Error: ${snap.error}'));
                 }
-
                 final cart = snap.data!;
-
                 return FutureBuilder<double>(
                   future: _calculateSubtotal(cart.items),
                   builder: (context, subSnap) {
                     if (!subSnap.hasData) {
                       return const Center(child: CircularProgressIndicator());
                     }
-
                     final subtotal = subSnap.data!;
                     final total = subtotal + _shipping + _vat - _discount;
-
                     return Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 32, vertical: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                       child: Row(
                         children: [
+                          // Danh sách items
                           Expanded(
                             flex: 3,
                             child: ListView.builder(
                               itemCount: cart.items.length,
                               itemBuilder: (_, i) {
                                 final item = cart.items[i];
-                                final idToRemove = item.productVariantId ??
-                                    item.productId;
+                                final idToRemove = item.productVariantId ?? item.productId;
                                 return CartItemWidget(
                                   item: item,
                                   isEditing: isEditing,
                                   onDelete: () async {
-                                    await _api.removeCartItem(
-                                        cart.id, idToRemove);
+                                    await _api.removeCartItem(cart.id, idToRemove);
                                     await _refresh();
                                   },
                                   onQuantityChanged: (qty) async {
-                                    final updated = CartItem(
-                                      productId: item.productId,
-                                      productVariantId: item.productVariantId,
-                                      quantity: qty,
+                                    await _api.upsertCartItem(
+                                      cart.id,
+                                      CartItem(
+                                        productId: item.productId,
+                                        productVariantId: item.productVariantId,
+                                        quantity: qty,
+                                      ),
                                     );
-                                    await _api.upsertCartItem(cart.id, updated);
                                     await _refresh();
                                   },
                                   isMobile: false,
@@ -280,7 +290,10 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
                               },
                             ),
                           ),
+
                           const SizedBox(width: 32),
+
+                          // Order summary
                           Expanded(
                             flex: 2,
                             child: OrderSummaryWidget(
