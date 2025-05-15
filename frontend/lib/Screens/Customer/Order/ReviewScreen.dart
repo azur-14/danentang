@@ -6,14 +6,18 @@ import 'package:danentang/models/OrderItem.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
-
-import '../../../models/product.dart';
-import '../../../ultis/image_helper.dart';
+import 'package:danentang/models/product.dart'; // Import để sử dụng Product
+import 'package:danentang/ultis/image_helper.dart'; // Giữ import để tham khảo
 
 class ReviewScreen extends StatefulWidget {
   final String orderId;
+  final List<Product> products; // Thêm tham số products để truyền từ bên ngoài
 
-  const ReviewScreen({super.key, required this.orderId});
+  const ReviewScreen({
+    super.key,
+    required this.orderId,
+    required this.products, // Yêu cầu truyền products
+  });
 
   @override
   _ReviewScreenState createState() => _ReviewScreenState();
@@ -25,34 +29,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
   final Map<String, double> _ratings = {};
   final Map<String, String> _reviewTexts = {};
   final Map<String, List<File>> _photos = {};
-  // inject sẵn từ OrderDetailsScreen hoặc fetchAll
-  List<Product> products = [
-    Product(
-      id: 'p1',
-      name: 'Laptop ABC',
-      brand: 'XYZ',
-      description: 'Mô tả...',
-      price: 10000000,
-      discountPercentage: 10,
-      categoryId: 'c1',
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-      images: [
-        ProductImage(id: 'i1', url: '<base64-encoded-string>', sortOrder: 1),
-      ],
-      variants: [
-        ProductVariant(
-          id: 'v1',
-          variantName: '8GB RAM',
-          additionalPrice: 0,
-          inventory: 5,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ),
-      ],
-    ),
-  ];
-
 
   @override
   void initState() {
@@ -191,7 +167,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
   }
 
   Widget _buildReviewItem(OrderItem item) {
-    final Product product = products.firstWhere(
+    // Tìm sản phẩm tương ứng từ danh sách products
+    final Product product = widget.products.firstWhere(
           (p) => p.variants.any((v) => v.id == item.productVariantId),
       orElse: () => Product(
         id: '',
@@ -208,7 +185,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
       ),
     );
 
-    final String? base64 = product.images.isNotEmpty ? product.images.first.url : null;
+    // Lấy URL ảnh từ sản phẩm (nếu có)
+    final imageUrl = product?.images.isNotEmpty == true ? product!.images.first.url : 'assets/placeholder.png';
 
     return Card(
       elevation: 2,
@@ -224,11 +202,14 @@ class _ReviewScreenState extends State<ReviewScreen> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: imageFromBase64String(
-                    base64,
+                  child: Image(
+                    image: AssetImage(imageUrl),
                     width: 80,
                     height: 80,
-                    placeholder: const AssetImage('assets/placeholder.png'),
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(color: Colors.grey, width: 80, height: 80);
+                    },
                   ),
                 ),
                 const SizedBox(width: 12),

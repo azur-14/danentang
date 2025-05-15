@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.danentang.app-mergeDebugResources-42:/values-te/values-te.xml",
+            "outputFile": "com.example.danentang.app-mergeDebugResources-43:/values-te/values-te.xml",
             "map": [
                 {
                     "source": "C:\\Users\\noob\\.gradle\\caches\\transforms-3\\4f751a6dfd94a09fa00c243b8bcc3794\\transformed\\jetified-play-services-basement-18.3.0\\res\\values-te\\values.xml",

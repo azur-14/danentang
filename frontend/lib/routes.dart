@@ -25,12 +25,13 @@ import 'package:danentang/models/voucher.dart';
 import 'package:danentang/models/Address.dart';
 import 'package:danentang/Screens/Customer/Order/MyOrdersScreen.dart';
 import 'package:danentang/Screens/Customer/Order/OrderDetailsScreen.dart';
-import 'package:danentang/Screens/Customer/Order/ReviewScreen.dart'; // Import ReviewScreen
+import 'package:danentang/Screens/Customer/Order/ReviewScreen.dart';
 import 'package:danentang/models/Order.dart';
-import 'package:danentang/data/order_data.dart'; // Import testOrders
+import 'package:danentang/data/order_data.dart';
+import 'package:danentang/models/ShippingAddress.dart';
 
 final GoRouter router = GoRouter(
-  initialLocation: '/homepage',
+  initialLocation: '/intro',
   routes: [
     /// Splash / Intro
     GoRoute(
@@ -68,17 +69,21 @@ final GoRouter router = GoRouter(
     /// Product listing & details
     GoRoute(
       path: '/products',
-      builder: (context, state) => const ProductDetailsScreen(productId: ''),
+      builder: (context, state) => const ProductListScreen(
+        title: 'All Products',
+        products: [],
+        isWeb: false,
+      ),
     ),
     GoRoute(
       path: '/products/:title',
       builder: (context, state) {
         final title = state.pathParameters['title']!;
-        final extra = state.extra as Map<String, dynamic>;
+        final extra = state.extra as Map<String, dynamic>? ?? {};
         return ProductListScreen(
           title: title,
-          products: extra['products'] as List<Product>,
-          isWeb: extra['isWeb'] as bool,
+          products: extra['products'] as List<Product>? ?? [],
+          isWeb: extra['isWeb'] as bool? ?? false,
         );
       },
     ),
@@ -124,7 +129,7 @@ final GoRouter router = GoRouter(
         return PaymentMethodScreen(
           initialPaymentMethod: extra?['initialPaymentMethod'] ?? 'Credit Card',
           initialCard: extra?['initialCard'] as CardInfo?,
-          cards: extra?['cards'] as List<CardInfo> ?? [],
+          cards: extra?['cards'] as List<CardInfo>? ?? [],
         );
       },
     ),
@@ -146,15 +151,15 @@ final GoRouter router = GoRouter(
           isDefault: false,
         );
         return OrderSuccessScreen(
-          products: extra['products'] as List<Map<String, dynamic>>,
-          total: extra['total'] as double,
+          products: extra['products'] as List<Map<String, dynamic>>? ?? [],
+          total: extra['total'] as double? ?? 0.0,
           shippingMethod: extra['shippingMethod'] as ShippingMethod?,
-          paymentMethod: extra['paymentMethod'] as String,
+          paymentMethod: extra['paymentMethod'] as String? ?? 'Unknown',
           sellerNote: extra['sellerNote'] as String?,
           voucher: extra['voucher'] as Voucher?,
           address: address,
           card: extra['card'] as CardInfo?,
-          order: extra['order'] as Order?, // Pass the order
+          order: extra['order'] as Order?,
         );
       },
     ),
@@ -166,23 +171,191 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: '/order-details/:orderId',
-      builder: (context, state) => OrderDetailsScreen(
-        orderId: state.pathParameters['orderId']!,
-      ),
+      builder: (context, state) {
+        final orderId = state.pathParameters['orderId']!;
+        // Tìm order từ testOrders
+        final order = testOrders.firstWhere(
+              (o) => o.id == orderId,
+          orElse: () => Order(
+            id: '',
+            userId: '',
+            orderNumber: 'Not Found',
+            shippingAddress: ShippingAddress(
+              receiverName: '',
+              phoneNumber: '',
+              addressLine: '',
+              ward: '',
+              district: '',
+              city: '',
+            ),
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: 'Not Found',
+            totalAmount: 0.0,
+            discountAmount: 0.0,
+            couponCode: null,
+            loyaltyPointsUsed: 0,
+            items: [],
+            statusHistory: [],
+          ),
+        );
+
+        if (order.id.isEmpty) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Lỗi')),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Đơn hàng không tồn tại! (Order ID: $orderId)'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => context.go('/my-orders'),
+                    child: const Text('Quay lại danh sách đơn hàng'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Tạo danh sách products từ testOrders
+        final products = testOrders
+            .expand((o) => o.items)
+            .map((item) => Product(
+          id: item.productId,
+          name: item.productName,
+          brand: '',
+          description: '',
+          price: item.price,
+          discountPercentage: 0,
+          categoryId: '',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          images: [
+            ProductImage(
+              id: 'img001',
+              url: 'assets/images/laptop.jpg',
+              sortOrder: 1,
+            ),
+          ],
+          variants: [
+            ProductVariant(
+              id: item.productVariantId ?? '',
+              variantName: item.variantName,
+              additionalPrice: 0,
+              inventory: 0,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          ],
+        ))
+            .toSet()
+            .toList();
+
+        return OrderDetailsScreen(
+          order: order,
+          products: products,
+        );
+      },
     ),
     GoRoute(
       path: '/review/:orderId',
-      builder: (context, state) => ReviewScreen(
-        orderId: state.pathParameters['orderId']!,
-      ),
+      builder: (context, state) {
+        final orderId = state.pathParameters['orderId']!;
+        // Tìm order từ testOrders
+        final order = testOrders.firstWhere(
+              (o) => o.id == orderId,
+          orElse: () => Order(
+            id: '',
+            userId: '',
+            orderNumber: 'Not Found',
+            shippingAddress: ShippingAddress(
+              receiverName: '',
+              phoneNumber: '',
+              addressLine: '',
+              ward: '',
+              district: '',
+              city: '',
+            ),
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            status: 'Not Found',
+            totalAmount: 0.0,
+            discountAmount: 0.0,
+            couponCode: null,
+            loyaltyPointsUsed: 0,
+            items: [],
+            statusHistory: [],
+          ),
+        );
+
+        if (order.id.isEmpty) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Lỗi')),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Đơn hàng không tồn tại! (Order ID: $orderId)'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => context.go('/my-orders'),
+                    child: const Text('Quay lại danh sách đơn hàng'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Tạo danh sách products từ testOrders
+        final products = testOrders
+            .expand((o) => o.items)
+            .map((item) => Product(
+          id: item.productId,
+          name: item.productName,
+          brand: '',
+          description: '',
+          price: item.price,
+          discountPercentage: 0,
+          categoryId: '',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          images: [
+            ProductImage(
+              id: 'img001',
+              url: 'assets/images/laptop.jpg',
+              sortOrder: 1,
+            ),
+          ],
+          variants: [
+            ProductVariant(
+              id: item.productVariantId ?? '',
+              variantName: item.variantName,
+              additionalPrice: 0,
+              inventory: 0,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ),
+          ],
+        ))
+            .toSet()
+            .toList();
+
+        return ReviewScreen(
+          orderId: orderId,
+          products: products,
+        );
+      },
     ),
     GoRoute(
       path: '/reorder/:orderId',
-      builder: (context, state) => Placeholder(), // Replace with ReorderScreen
+      builder: (context, state) => Placeholder(),
     ),
     GoRoute(
       path: '/return/:orderId',
-      builder: (context, state) => Placeholder(), // Replace with ReturnScreen
+      builder: (context, state) => Placeholder(),
     ),
 
     /// User profile & settings

@@ -1,49 +1,21 @@
+import 'package:danentang/models/Order.dart';
+import 'package:danentang/models/OrderItem.dart';
+import 'package:danentang/models/OrderStatusHistory.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-
-import '../../models/Order.dart';
-import '../../models/OrderItem.dart';
-import '../../models/OrderStatusHistory.dart';
-import '../../models/product.dart';
-import 'package:danentang/ultis/image_helper.dart'; // Đảm bảo bạn đã có hàm imageFromBase64String()
-
-// Dữ liệu giả tạm (thay bằng fetch từ API khi cần)
-final List<Product> products = [
-  Product(
-    id: 'p1',
-    name: 'Laptop ABC',
-    brand: 'ASUS',
-    description: 'Mạnh mẽ và gọn nhẹ',
-    price: 20000000,
-    discountPercentage: 10,
-    categoryId: 'c1',
-    createdAt: DateTime.now(),
-    updatedAt: DateTime.now(),
-    images: [
-      ProductImage(
-        id: 'img1',
-        url: '<base64-string-hoặc-để-trống>',
-        sortOrder: 1,
-      ),
-    ],
-    variants: [
-      ProductVariant(
-        id: 'v1',
-        variantName: '16GB RAM',
-        additionalPrice: 0,
-        inventory: 5,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-    ],
-  ),
-];
+import 'package:danentang/models/product.dart';
+import 'package:danentang/ultis/image_helper.dart'; // Giả định hàm imageFromBase64String vẫn tồn tại
 
 class OrderCard extends StatefulWidget {
   final Order order;
+  final List<Product> products;
 
-  const OrderCard({super.key, required this.order});
+  const OrderCard({
+    super.key,
+    required this.order,
+    required this.products,
+  });
 
   @override
   _OrderCardState createState() => _OrderCardState();
@@ -51,25 +23,43 @@ class OrderCard extends StatefulWidget {
 
 class _OrderCardState extends State<OrderCard> {
   void _cancelOrder() {
-    setState(() {
-      widget.order.status = 'Đã hủy';
-      widget.order.statusHistory.add(OrderStatusHistory(
-        status: 'Đã hủy',
-        timestamp: DateTime.now(),
-      ));
-      widget.order.updatedAt = DateTime.now();
-    });
+    if (widget.order.status == 'Đặt hàng' || widget.order.status == 'Đang chờ xử lý') {
+      setState(() {
+        widget.order.status = 'Đã hủy';
+        widget.order.statusHistory.add(OrderStatusHistory(
+          status: 'Đã hủy',
+          timestamp: DateTime.now(),
+        ));
+        widget.order.updatedAt = DateTime.now();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đơn hàng đã được hủy!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Không thể hủy đơn hàng ở trạng thái hiện tại!')),
+      );
+    }
   }
 
   void _confirmDelivery() {
-    setState(() {
-      widget.order.status = 'Đã giao';
-      widget.order.statusHistory.add(OrderStatusHistory(
-        status: 'Đã giao',
-        timestamp: DateTime.now(),
-      ));
-      widget.order.updatedAt = DateTime.now();
-    });
+    if (widget.order.status == 'Đang giao') {
+      setState(() {
+        widget.order.status = 'Đã giao';
+        widget.order.statusHistory.add(OrderStatusHistory(
+          status: 'Đã giao',
+          timestamp: DateTime.now(),
+        ));
+        widget.order.updatedAt = DateTime.now();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đơn hàng đã được xác nhận giao!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Chỉ có thể xác nhận giao khi đơn hàng đang giao!')),
+      );
+    }
   }
 
   @override
@@ -131,7 +121,13 @@ class _OrderCardState extends State<OrderCard> {
               ),
             ),
             const SizedBox(height: 8),
-            ...widget.order.items.map((item) => _buildOrderItem(item, isShipped)),
+            if (widget.order.items.isNotEmpty)
+              ...widget.order.items.map((item) => _buildOrderItem(item, isShipped))
+            else
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 6),
+                child: Text('Không có sản phẩm trong đơn hàng', style: TextStyle(color: Colors.grey)),
+              ),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -219,7 +215,60 @@ class _OrderCardState extends State<OrderCard> {
   }
 
   Widget _buildOrderItem(OrderItem item, bool isShipped) {
-    final Product product = products.firstWhere(
+    if (widget.products.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image(
+                image: const AssetImage('assets/placeholder.png'),
+                width: 80,
+                height: 80,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(color: Colors.grey, width: 80, height: 80);
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.productName,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF333333),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Biến thể: ${item.variantName} | Số lượng: ${item.quantity}',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '₫${NumberFormat('#,##0', 'vi_VN').format(item.price * item.quantity)}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF333333),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final Product? product = widget.products.firstWhere(
           (p) => p.variants.any((v) => v.id == item.productVariantId),
       orElse: () => Product(
         id: '',
@@ -236,8 +285,7 @@ class _OrderCardState extends State<OrderCard> {
       ),
     );
 
-    final base64 = product.images.isNotEmpty ? product.images.first.url : null;
-
+    final imageUrl = product?.images.isNotEmpty == true ? product!.images.first.url : 'assets/placeholder.png';
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -245,11 +293,14 @@ class _OrderCardState extends State<OrderCard> {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: imageFromBase64String(
-              base64,
+            child: Image(
+              image: AssetImage(imageUrl),
               width: 80,
               height: 80,
-              placeholder: const AssetImage('assets/placeholder.png'),
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(color: Colors.grey, width: 80, height: 80);
+              },
             ),
           ),
           const SizedBox(width: 12),

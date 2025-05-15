@@ -21,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController passwordController = TextEditingController();
   final UserService _userService = UserService();  // khởi tạo service
   bool isLoading = false;
+  bool isPasswordVisible = false; // Biến trạng thái mới
 
   @override
   void initState() {
@@ -106,9 +107,16 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: AppColors.brandPrimary,
       body: Column(
         children: [
-          const SizedBox(height: 40),
-          Center(child: Image.asset('assets/Logo.png', width: 180)),
-          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(20),
+            color: AppColors.brandPrimary,
+            child: Column(
+              children: [
+                Image.asset('assets/Logo.png', width: 150),
+                const SizedBox(height: 10),
+              ],
+            ),
+          ),
           Expanded(
             child: Container(
               width: double.infinity,
@@ -120,17 +128,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               child: SingleChildScrollView(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       "Login",
                       style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black),
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
                     ),
                     const SizedBox(height: 20),
                     TextField(
@@ -149,7 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 15),
                     TextField(
                       controller: passwordController,
-                      obscureText: true,
+                      obscureText: !isPasswordVisible, // Dựa trên trạng thái
                       decoration: InputDecoration(
                         hintText: "Enter your password *",
                         filled: true,
@@ -158,7 +166,19 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(10),
                           borderSide: BorderSide.none,
                         ),
-                        suffixIcon: const Icon(Icons.remove_red_eye_outlined, color: Colors.black26),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            isPasswordVisible
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: Colors.black26,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              isPasswordVisible = !isPasswordVisible; // Đổi trạng thái
+                            });
+                          },
+                        ),
                       ),
                     ),
                     const SizedBox(height: 25),
@@ -170,15 +190,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.brandSecondary,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                         child: isLoading
-                            ? const CircularProgressIndicator(
-                            color: Colors.white)
-                            : Text(
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text(
                           "Login",
                           style: TextStyle(
-                            fontSize: w * 0.05,
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
@@ -186,14 +206,26 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 15),
-                    TextButton(
-                      onPressed: () => context.go(
-                        '/change_password',
-                        extra: emailController.text.trim(),
-                      ),
+                    Center(
+                      child: TextButton(
+                        onPressed: sendOTP,
                         child: const Text("Forgot Password?"),
+                      ),
                     ),
-                    const Spacer(),
+                    const SizedBox(height: 10),
+                    Center(
+                      child: Text(
+                        "You do not have an account? Sign up now.",
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ),
+                    Center(
+                      child: TextButton(
+                        onPressed: () => context.go('/signup'),
+                        child: const Text("Sign up now"),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -203,7 +235,6 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
-
   Widget _buildWebLayout() {
     return Scaffold(
       body: Row(

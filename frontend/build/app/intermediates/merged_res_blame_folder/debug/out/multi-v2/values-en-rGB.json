@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.danentang.app-mergeDebugResources-42:/values-en-rGB/values-en-rGB.xml",
+            "outputFile": "com.example.danentang.app-mergeDebugResources-43:/values-en-rGB/values-en-rGB.xml",
             "map": [
                 {
                     "source": "C:\\Users\\noob\\.gradle\\caches\\transforms-3\\a40548f8b20d978c1d694db0bcb309a4\\transformed\\preference-1.2.1\\res\\values-en-rGB\\values-en-rGB.xml",
