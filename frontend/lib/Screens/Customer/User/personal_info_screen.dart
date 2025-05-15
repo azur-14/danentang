@@ -32,11 +32,11 @@ class ProfileManagementScreen extends StatelessWidget {
         ),
       ),
       drawer: !isWideScreen && !kIsWeb
-          ? ProfileDrawer(userData: effectiveUserData)
+          ? ProfileDrawer()
           : null,
       body: Row(
         children: [
-          if (kIsWeb) ProfileDrawer(userData: effectiveUserData),
+          if (kIsWeb) ProfileDrawer(),
           Expanded(
             child: kIsWeb
                 ? ProfileWebLayout(userData: effectiveUserData)

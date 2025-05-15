@@ -1,6 +1,10 @@
 {
   "version": 2,
+<<<<<<< HEAD
+  "dgSpecHash": "PIKIAn5WXgk=",
+=======
   "dgSpecHash": "x49SjTeH8mE=",
+>>>>>>> bf92b695419ac74d1dad522fe935bf06c8b4599c
   "success": true,
   "projectFilePath": "D:\\microservices\\danentang\\OrderManagementService\\OrderManagementService.csproj",
   "expectedPackageFiles": [

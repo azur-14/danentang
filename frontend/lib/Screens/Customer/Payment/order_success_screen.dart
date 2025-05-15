@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:danentang/models/ship.dart';
+import 'package:danentang/models/Order.dart';
 import 'package:danentang/models/voucher.dart';
 import 'package:danentang/models/Address.dart';
 import 'package:danentang/models/card_info.dart';
-import 'package:danentang/Screens/Customer/Order/MyOrdersScreen.dart'; // Import new screen
-import 'package:danentang/models/Order.dart'; // Import Order model
+import 'package:danentang/Service/order_service.dart';
+import 'package:go_router/go_router.dart';
 
 class OrderSuccessScreen extends StatelessWidget {
   final List<Map<String, dynamic>> products;
@@ -15,7 +16,7 @@ class OrderSuccessScreen extends StatelessWidget {
   final Voucher? voucher;
   final Address? address;
   final CardInfo? card;
-  final Order? order; // Add order parameter
+  final Order? order;
 
   const OrderSuccessScreen({
     super.key,
@@ -41,7 +42,8 @@ class OrderSuccessScreen extends StatelessWidget {
       appBar: isWeb
           ? null
           : AppBar(
-        title: const Text('Đặt hàng thành công', style: TextStyle(color: Color(0xFF2D3748))),
+        title: const Text('Đặt hàng thành công',
+            style: TextStyle(color: Color(0xFF2D3748))),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -74,7 +76,8 @@ class OrderSuccessScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 Card(
                   elevation: 2,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -82,24 +85,34 @@ class OrderSuccessScreen extends StatelessWidget {
                       children: [
                         const Text(
                           'Chi tiết đơn hàng',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF2D3748)),
+                          style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF2D3748)),
                         ),
                         const SizedBox(height: 8),
-                        Text('Tổng cộng: ₫${total.toStringAsFixed(0)}', style: const TextStyle(color: Color(0xFF2D3748))),
+                        Text('Tổng cộng: ₫${total.toStringAsFixed(0)}',
+                            style: const TextStyle(color: Color(0xFF2D3748))),
                         const SizedBox(height: 8),
-                        Text('Phương thức thanh toán: $paymentMethod', style: const TextStyle(color: Color(0xFF2D3748))),
+                        Text('Phương thức thanh toán: $paymentMethod',
+                            style: const TextStyle(color: Color(0xFF2D3748))),
                         if (paymentMethod == 'Credit Card' && card != null) ...[
                           const SizedBox(height: 8),
-                          Text('Thẻ: ${card!.cardNumber}', style: const TextStyle(color: Color(0xFF2D3748))),
+                          Text('Thẻ: ${card!.cardNumber}',
+                              style: const TextStyle(color: Color(0xFF2D3748))),
                         ],
                         if (shippingMethod != null) ...[
                           const SizedBox(height: 8),
-                          Text('Phương thức vận chuyển: ${shippingMethod!.name}', style: const TextStyle(color: Color(0xFF2D3748))),
-                          Text('Ước tính giao hàng: ${shippingMethod!.estimatedArrival}', style: const TextStyle(color: Color(0xFF2D3748))),
+                          Text('Phương thức vận chuyển: ${shippingMethod!.name}',
+                              style: const TextStyle(color: Color(0xFF2D3748))),
+                          Text(
+                              'Ước tính giao hàng: ${shippingMethod!.estimatedArrival}',
+                              style: const TextStyle(color: Color(0xFF2D3748))),
                         ],
                         if (address != null) ...[
                           const SizedBox(height: 8),
-                          const Text('Địa chỉ giao hàng:', style: TextStyle(color: Color(0xFF2D3748))),
+                          const Text('Địa chỉ giao hàng:',
+                              style: TextStyle(color: Color(0xFF2D3748))),
                           Text(
                             [
                               address?.addressLine,
@@ -111,15 +124,18 @@ class OrderSuccessScreen extends StatelessWidget {
                           ),
                         ] else ...[
                           const SizedBox(height: 8),
-                          const Text('Địa chỉ giao hàng: Chưa có thông tin', style: TextStyle(color: Color(0xFF718096))),
+                          const Text('Địa chỉ giao hàng: Chưa có thông tin',
+                              style: TextStyle(color: Color(0xFF718096))),
                         ],
                         if (sellerNote != null) ...[
                           const SizedBox(height: 8),
-                          Text('Lời nhắn cho người bán: $sellerNote', style: const TextStyle(color: Color(0xFF2D3748))),
+                          Text('Lời nhắn cho người bán: $sellerNote',
+                              style: const TextStyle(color: Color(0xFF2D3748))),
                         ],
                         if (voucher != null) ...[
                           const SizedBox(height: 8),
-                          Text('Mã giảm giá: ${voucher!.code}', style: const TextStyle(color: Color(0xFF2D3748))),
+                          Text('Mã giảm giá: ${voucher!.code}',
+                              style: const TextStyle(color: Color(0xFF2D3748))),
                         ],
                       ],
                     ),
@@ -127,18 +143,26 @@ class OrderSuccessScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => MyOrdersScreen(orders: order != null ? [order!] : []), // Pass the current order
-                      ),
-                    );
+                  onPressed: () async {
+                    try {
+                      if (order != null) {
+                        // Save the order to the backend
+                        await OrderService.instance.createOrder(order!);
+                      }
+                      // Navigate to MyOrdersScreen, which will fetch orders
+                      context.go('/my-orders');
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Lỗi: $e')),
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF5A4FCF),
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32, vertical: 16),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
                   ),
                   child: const Text(
                     'Đến đơn hàng',

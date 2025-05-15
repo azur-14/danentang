@@ -7,7 +7,6 @@ import 'package:danentang/Screens/Customer/CheckOut/cart_screen.dart';
 import 'package:danentang/Screens/Customer/Login/Login_Screen.dart';
 import 'package:danentang/Screens/Customer/Login/Login_SignUp_Screen.dart';
 import 'package:danentang/Screens/Customer/Login/SignUp.dart';
-import 'package:danentang/Screens/Customer/User/profile_page.dart';
 import 'package:danentang/Screens/Customer/User/personal_info_screen.dart';
 import 'package:danentang/Screens/Customer/User/account_settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -25,7 +24,10 @@ import 'package:danentang/models/ship.dart';
 import 'package:danentang/models/voucher.dart';
 import 'package:danentang/models/Address.dart';
 import 'package:danentang/Screens/Customer/Order/MyOrdersScreen.dart';
+import 'package:danentang/Screens/Customer/Order/OrderDetailsScreen.dart';
+import 'package:danentang/Screens/Customer/Order/ReviewScreen.dart'; // Import ReviewScreen
 import 'package:danentang/models/Order.dart';
+import 'package:danentang/data/order_data.dart'; // Import testOrders
 
 final GoRouter router = GoRouter(
   initialLocation: '/homepage',
@@ -160,11 +162,27 @@ final GoRouter router = GoRouter(
     /// Orders
     GoRoute(
       path: '/my-orders',
-      builder: (context, state) {
-        final extra = state.extra as Map<String, dynamic>?;
-        final orders = extra?['orders'] as List<Order>? ?? [];
-        return MyOrdersScreen(orders: orders);
-      },
+      builder: (context, state) => const MyOrdersScreen(),
+    ),
+    GoRoute(
+      path: '/order-details/:orderId',
+      builder: (context, state) => OrderDetailsScreen(
+        orderId: state.pathParameters['orderId']!,
+      ),
+    ),
+    GoRoute(
+      path: '/review/:orderId',
+      builder: (context, state) => ReviewScreen(
+        orderId: state.pathParameters['orderId']!,
+      ),
+    ),
+    GoRoute(
+      path: '/reorder/:orderId',
+      builder: (context, state) => Placeholder(), // Replace with ReorderScreen
+    ),
+    GoRoute(
+      path: '/return/:orderId',
+      builder: (context, state) => Placeholder(), // Replace with ReturnScreen
     ),
 
     /// User profile & settings

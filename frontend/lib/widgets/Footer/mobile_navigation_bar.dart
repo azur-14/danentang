@@ -57,7 +57,7 @@ class MobileNavigationBar extends StatelessWidget {
           } else if (index == 2) {
             context.go('/profile');
           } else if (index == 3) {
-            context.go('/chat');
+            context.go('/my-orders');
           }
         }
       },

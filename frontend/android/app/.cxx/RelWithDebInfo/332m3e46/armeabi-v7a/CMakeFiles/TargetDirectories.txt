@@ -1,0 +1,2 @@
+D:/nam3 hk2/DaNenTang/Cuoiki3/danentang/frontend/android/app/.cxx/RelWithDebInfo/332m3e46/armeabi-v7a/CMakeFiles/edit_cache.dir
+D:/nam3 hk2/DaNenTang/Cuoiki3/danentang/frontend/android/app/.cxx/RelWithDebInfo/332m3e46/armeabi-v7a/CMakeFiles/rebuild_cache.dir

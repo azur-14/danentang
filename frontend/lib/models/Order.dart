@@ -13,11 +13,15 @@ class Order {
   final double discountAmount;
   final String? couponCode;
   final int loyaltyPointsUsed;
+<<<<<<< HEAD
+  String status; // Removed 'final'
+=======
   final int loyaltyPointsEarned; // ✅ mới thêm
   final String status;
+>>>>>>> bf92b695419ac74d1dad522fe935bf06c8b4599c
   final List<OrderStatusHistory> statusHistory;
   final DateTime createdAt;
-  final DateTime updatedAt;
+  DateTime updatedAt; // Removed 'final'
 
   Order({
     required this.id,
@@ -37,12 +41,21 @@ class Order {
   });
 
   factory Order.fromJson(Map<String, dynamic> json) => Order(
+<<<<<<< HEAD
+    id: json['_id'] as String,
+    userId: json['userId'] as String,
+    orderNumber: json['orderNumber'] as String,
+    shippingAddress: ShippingAddress.fromJson(json['shippingAddress'] as Map<String, dynamic>),
+    items: (json['items'] as List<dynamic>)
+        .map((e) => OrderItem.fromJson(e as Map<String, dynamic>))
+=======
     id: json['_id'] ?? '', // fallback nếu tạo mới
     userId: json['userId'],
     orderNumber: json['orderNumber'],
     shippingAddress: ShippingAddress.fromJson(json['shippingAddress']),
     items: (json['items'] as List)
         .map((e) => OrderItem.fromJson(e))
+>>>>>>> bf92b695419ac74d1dad522fe935bf06c8b4599c
         .toList(),
     totalAmount: (json['totalAmount'] as num).toDouble(),
     discountAmount:

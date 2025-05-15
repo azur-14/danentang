@@ -5,8 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:danentang/models/User.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-//trang nay de tam day thoi ko dung nha
-
 class ProfilePage extends StatelessWidget {
   const ProfilePage({Key? key}) : super(key: key);
 
@@ -78,9 +76,12 @@ class ProfilePage extends StatelessWidget {
               title: const Text('Đơn hàng của tôi'),
               trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Orders feature coming soon!')),
-                );
+                // Điều hướng đến MyOrdersScreen qua route /my-orders
+                if (kIsWeb) {
+                  context.go('/my-orders');
+                } else {
+                  context.push('/my-orders');
+                }
               },
             ),
             ListTile(
@@ -104,7 +105,6 @@ class ProfilePage extends StatelessWidget {
                 context.go('/login');
               },
             ),
-
           ],
         ),
       ),
