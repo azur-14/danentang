@@ -187,12 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 15),
                     TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
-                        );
-                      },
+                      onPressed: () => context.go('/change_password'),
                       child: const Text("Forgot Password?"),
                     ),
                     const Spacer(),
@@ -328,14 +323,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 15),
                         TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
-                            );
-                          },
+                          onPressed: () => context.go('/change_password'),
                           child: const Text("Forgot Password?"),
                         ),
+
                       ],
                     ),
                   ),
