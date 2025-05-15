@@ -4,22 +4,23 @@ import 'package:danentang/models/OrderStatusHistory.dart';
 import 'package:danentang/models/ShippingAddress.dart';
 
 List<Order> testOrders = [
-  // Đơn hàng 1: Đã giao (Delivered)
+  // Đơn hàng 1: Đã giao
   Order(
     id: '1',
     userId: 'USER001',
     orderNumber: 'DH001',
     shippingAddress: ShippingAddress(
-      street: '123 Le Loi Street',
-      city: 'Ho Chi Minh City',
-      state: 'District 1',
-      postalCode: '700000',
-      country: 'Vietnam',
+      receiverName: 'Trần Minh Quân',
+      phoneNumber: '0901234567',
+      addressLine: '123 Lê Lợi',
+      ward: 'Phường Bến Thành',
+      district: 'Quận 1',
+      city: 'TP. Hồ Chí Minh',
     ),
     createdAt: DateTime(2025, 5, 15, 11, 00),
     updatedAt: DateTime(2025, 5, 15, 11, 55),
     status: 'Đã giao',
-    totalAmount: 31000000.0, // Updated to double
+    totalAmount: 31000000.0,
     discountAmount: 0.0,
     couponCode: null,
     loyaltyPointsUsed: 0,
@@ -30,8 +31,7 @@ List<Order> testOrders = [
         productName: 'Laptop Dell Inspiron 15',
         variantName: 'i5 12th Gen',
         quantity: 1,
-        price: 25000000.0, // Updated to double
-        imageUrl: 'assets/images/laptop.jpg',
+        price: 25000000.0,
       ),
       OrderItem(
         productId: 'SP005',
@@ -39,45 +39,34 @@ List<Order> testOrders = [
         productName: 'Tai nghe Sony WH-1000XM5',
         variantName: 'Black',
         quantity: 1,
-        price: 6000000.0, // Updated to double
-        imageUrl: 'assets/images/headphones.jpg',
+        price: 6000000.0,
       ),
     ],
     statusHistory: [
-      OrderStatusHistory(
-        status: 'Đặt hàng',
-        timestamp: DateTime(2025, 5, 15, 11, 00),
-      ),
-      OrderStatusHistory(
-        status: 'Đang xử lý',
-        timestamp: DateTime(2025, 5, 15, 11, 10),
-      ),
-      OrderStatusHistory(
-        status: 'Đang giao',
-        timestamp: DateTime(2025, 5, 15, 11, 30),
-      ),
-      OrderStatusHistory(
-        status: 'Đã giao',
-        timestamp: DateTime(2025, 5, 15, 11, 55),
-      ),
+      OrderStatusHistory(status: 'Đặt hàng', timestamp: DateTime(2025, 5, 15, 11, 00)),
+      OrderStatusHistory(status: 'Đang xử lý', timestamp: DateTime(2025, 5, 15, 11, 10)),
+      OrderStatusHistory(status: 'Đang giao', timestamp: DateTime(2025, 5, 15, 11, 30)),
+      OrderStatusHistory(status: 'Đã giao', timestamp: DateTime(2025, 5, 15, 11, 55)),
     ],
   ),
-  // Đơn hàng 2: Đang giao (Shipped)
+
+  // Đơn hàng 2: Đang giao
   Order(
     id: '2',
     userId: 'USER002',
     orderNumber: 'DH002',
     shippingAddress: ShippingAddress(
-      street: '456 Nguyen Trai Street',
-      city: 'Ha Noi',
-      state: 'Thanh Xuan District',
-      postalCode: '100000',
-      country: 'Vietnam',
+      receiverName: 'Lê Thị Mai',
+      phoneNumber: '0933444555',
+      addressLine: '456 Nguyễn Trãi',
+      ward: 'Phường Thanh Xuân Trung',
+      district: 'Quận Thanh Xuân',
+      city: 'Hà Nội',
     ),
     createdAt: DateTime(2025, 5, 15, 10, 00),
     updatedAt: DateTime(2025, 5, 15, 11, 30),
     status: 'Đang giao',
-    totalAmount: 33000000.0, // Updated to double
+    totalAmount: 33000000.0,
     discountAmount: 0.0,
     couponCode: null,
     loyaltyPointsUsed: 0,
@@ -88,8 +77,7 @@ List<Order> testOrders = [
         productName: 'Laptop HP Pavilion 14',
         variantName: 'i7 11th Gen',
         quantity: 1,
-        price: 28000000.0, // Updated to double
-        imageUrl: 'assets/images/laptop.jpg',
+        price: 28000000.0,
       ),
       OrderItem(
         productId: 'SP006',
@@ -97,41 +85,33 @@ List<Order> testOrders = [
         productName: 'Chuột Logitech MX Master 3',
         variantName: 'Black',
         quantity: 1,
-        price: 5000000.0, // Updated to double
-        imageUrl: 'assets/images/headphones.jpg',
+        price: 5000000.0,
       ),
     ],
     statusHistory: [
-      OrderStatusHistory(
-        status: 'Đặt hàng',
-        timestamp: DateTime(2025, 5, 15, 10, 00),
-      ),
-      OrderStatusHistory(
-        status: 'Đang xử lý',
-        timestamp: DateTime(2025, 5, 15, 10, 30),
-      ),
-      OrderStatusHistory(
-        status: 'Đang giao',
-        timestamp: DateTime(2025, 5, 15, 11, 30),
-      ),
+      OrderStatusHistory(status: 'Đặt hàng', timestamp: DateTime(2025, 5, 15, 10, 00)),
+      OrderStatusHistory(status: 'Đang xử lý', timestamp: DateTime(2025, 5, 15, 10, 30)),
+      OrderStatusHistory(status: 'Đang giao', timestamp: DateTime(2025, 5, 15, 11, 30)),
     ],
   ),
-  // Đơn hàng 3: Đặt hàng (Pending)
+
+  // Đơn hàng 3: Đặt hàng
   Order(
     id: '3',
     userId: 'USER003',
     orderNumber: 'DH003',
     shippingAddress: ShippingAddress(
-      street: '789 Hai Ba Trung Street',
-      city: 'Da Nang',
-      state: 'Hai Chau District',
-      postalCode: '550000',
-      country: 'Vietnam',
+      receiverName: 'Phạm Văn Dũng',
+      phoneNumber: '0988777666',
+      addressLine: '789 Hai Bà Trưng',
+      ward: 'Phường Hải Châu 1',
+      district: 'Quận Hải Châu',
+      city: 'Đà Nẵng',
     ),
     createdAt: DateTime(2025, 5, 15, 11, 58),
     updatedAt: DateTime(2025, 5, 15, 11, 58),
     status: 'Đặt hàng',
-    totalAmount: 35000000.0, // Updated to double
+    totalAmount: 35000000.0,
     discountAmount: 0.0,
     couponCode: null,
     loyaltyPointsUsed: 0,
@@ -142,8 +122,7 @@ List<Order> testOrders = [
         productName: 'Laptop ASUS ZenBook 13',
         variantName: 'i9 13th Gen',
         quantity: 1,
-        price: 30000000.0, // Updated to double
-        imageUrl: 'assets/images/laptop.jpg',
+        price: 30000000.0,
       ),
       OrderItem(
         productId: 'SP007',
@@ -151,33 +130,31 @@ List<Order> testOrders = [
         productName: 'Bàn phím Keychron K8',
         variantName: 'RGB',
         quantity: 1,
-        price: 5000000.0, // Updated to double
-        imageUrl: 'assets/images/headphones.jpg',
+        price: 5000000.0,
       ),
     ],
     statusHistory: [
-      OrderStatusHistory(
-        status: 'Đặt hàng',
-        timestamp: DateTime(2025, 5, 15, 11, 58),
-      ),
+      OrderStatusHistory(status: 'Đặt hàng', timestamp: DateTime(2025, 5, 15, 11, 58)),
     ],
   ),
-  // Đơn hàng 4: Đã hủy (Canceled)
+
+  // Đơn hàng 4: Đã hủy
   Order(
     id: '4',
     userId: 'USER004',
     orderNumber: 'DH004',
     shippingAddress: ShippingAddress(
-      street: '101 Tran Phu Street',
-      city: 'Can Tho',
-      state: 'Ninh Kieu District',
-      postalCode: '900000',
-      country: 'Vietnam',
+      receiverName: 'Ngô Văn Hòa',
+      phoneNumber: '0911888999',
+      addressLine: '101 Trần Phú',
+      ward: 'Phường An Hội',
+      district: 'Quận Ninh Kiều',
+      city: 'Cần Thơ',
     ),
     createdAt: DateTime(2025, 5, 14, 15, 00),
     updatedAt: DateTime(2025, 5, 15, 11, 59),
     status: 'Đã hủy',
-    totalAmount: 31000000.0, // Updated to double
+    totalAmount: 31000000.0,
     discountAmount: 0.0,
     couponCode: null,
     loyaltyPointsUsed: 0,
@@ -188,8 +165,7 @@ List<Order> testOrders = [
         productName: 'Laptop Lenovo ThinkPad X1',
         variantName: 'i5 12th Gen',
         quantity: 1,
-        price: 26000000.0, // Updated to double
-        imageUrl: 'assets/images/laptop.jpg',
+        price: 26000000.0,
       ),
       OrderItem(
         productId: 'SP008',
@@ -197,19 +173,12 @@ List<Order> testOrders = [
         productName: 'Tai nghe JBL Live 650BTNC',
         variantName: 'Black',
         quantity: 1,
-        price: 5000000.0, // Updated to double
-        imageUrl: 'assets/images/headphones.jpg',
+        price: 5000000.0,
       ),
     ],
     statusHistory: [
-      OrderStatusHistory(
-        status: 'Đặt hàng',
-        timestamp: DateTime(2025, 5, 14, 15, 00),
-      ),
-      OrderStatusHistory(
-        status: 'Đã hủy',
-        timestamp: DateTime(2025, 5, 15, 11, 59),
-      ),
+      OrderStatusHistory(status: 'Đặt hàng', timestamp: DateTime(2025, 5, 14, 15, 00)),
+      OrderStatusHistory(status: 'Đã hủy', timestamp: DateTime(2025, 5, 15, 11, 59)),
     ],
   ),
 ];

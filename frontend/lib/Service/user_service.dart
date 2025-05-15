@@ -1,5 +1,3 @@
-// lib/services/user_service.dart
-
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -263,6 +261,13 @@ class UserService {
     if (res.statusCode != 204) {
       throw Exception('deleteAddress failed: ${res.statusCode}');
     }
+  }
+  Future<User> fetchUserByEmail(String email) async {
+    final res = await http.get(Uri.parse('$_userBase/by-email?email=$email'));
+    if (res.statusCode == 200) {
+      return User.fromJson(jsonDecode(res.body));
+    }
+    throw Exception('fetchUserByEmail failed: ${res.statusCode}');
   }
 
 }
