@@ -59,7 +59,7 @@ class ProductsScreen extends StatelessWidget {
 
 final GoRouter router = GoRouter(
   // Always land on the home page first
-  initialLocation: '/manager-dashboard',
+  initialLocation: '/search',
   routes: [
 
     /// Splash / Intro

@@ -6,19 +6,7 @@ class Searching extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Product Search',
-      theme: ThemeData(
-        primarySwatch: Colors.blueGrey,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white,
-          iconTheme: IconThemeData(color: Colors.black),
-          titleTextStyle: TextStyle(color: Colors.black, fontSize: 18),
-          elevation: 0,
-        ),
-      ),
-      home: const SearchScreen(),
-    );
+    return const SearchScreen();
   }
 }
 
@@ -32,6 +20,7 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ElasticSearchService _elasticService = ElasticSearchService();
+
   List<String> _lastSearches = [
     'Iphone 12 pro max',
     'Camera fujifilm',
@@ -49,7 +38,7 @@ class _SearchScreenState extends State<SearchScreen> {
         final suggestions = await _elasticService.autocomplete(query);
         setState(() {
           _autocompleteSuggestions = suggestions;
-          _searchResults = [];
+          _searchResults.clear();
         });
       } catch (e) {
         print('Autocomplete error: $e');
@@ -63,22 +52,22 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _submitSearch(String query) async {
-    if (query.isNotEmpty) {
-      try {
-        final results = await _elasticService.searchProducts(query);
-        setState(() {
-          _searchResults = results.map((e) => e['name'].toString()).toList();
-          _autocompleteSuggestions.clear();
-        });
-        if (!_lastSearches.contains(query)) {
-          _lastSearches.insert(0, query);
-          if (_lastSearches.length > 5) {
-            _lastSearches.removeLast();
-          }
+    if (query.isEmpty) return;
+    try {
+      final results = await _elasticService.searchProducts(query);
+      setState(() {
+        _searchResults = results.map((e) => e['name'].toString()).toList();
+        _autocompleteSuggestions.clear();
+      });
+
+      if (!_lastSearches.contains(query)) {
+        _lastSearches.insert(0, query);
+        if (_lastSearches.length > 5) {
+          _lastSearches.removeLast();
         }
-      } catch (e) {
-        print('Search error: $e');
       }
+    } catch (e) {
+      print('Search error: $e');
     }
   }
 
@@ -96,56 +85,51 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
-            Expanded(
-              child: TextField(
-                controller: _searchController,
-                onChanged: _onSearchChanged,
-                onSubmitted: _submitSearch,
-                decoration: const InputDecoration(
-                  hintText: 'Search products...',
-                  border: InputBorder.none,
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(), // Ẩn bàn phím khi chạm ngoài
+      child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          title: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.pop(context),
+              ),
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: _onSearchChanged,
+                  onSubmitted: _submitSearch,
+                  decoration: const InputDecoration(
+                    hintText: 'Search products...',
+                    border: InputBorder.none,
+                  ),
                 ),
               ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.shopping_cart_outlined),
-              onPressed: () {},
-            ),
-          ],
+              IconButton(
+                icon: const Icon(Icons.shopping_cart_outlined),
+                onPressed: () {}, // Mở giỏ hàng nếu cần
+              ),
+            ],
+          ),
         ),
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
+        body: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (_searchController.text.isEmpty) ...[
+              if (_searchController.text.isEmpty && _lastSearches.isNotEmpty) ...[
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Last search',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
+                    const Text('Last search', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     TextButton(
                       onPressed: _clearSearchHistory,
                       child: const Text('Clear all', style: TextStyle(color: Colors.redAccent)),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
                 ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -167,8 +151,8 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ],
               if (_autocompleteSuggestions.isNotEmpty) ...[
+                const SizedBox(height: 16),
                 const Text('Suggestions', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                const SizedBox(height: 8),
                 ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -187,7 +171,6 @@ class _SearchScreenState extends State<SearchScreen> {
               if (_searchResults.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 const Text('Search Results', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                const SizedBox(height: 8),
                 ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),

@@ -59,5 +59,17 @@ class ElasticSearchService {
     } else {
       throw Exception('Elasticsearch autocomplete failed: ${response.statusCode}');
     }
+
+    /// Gọi API để đồng bộ toàn bộ MongoDB → Elasticsearch
+    Future<void> reindexProducts() async {
+      final url = Uri.parse('http://10.0.2.2:3000/sync-products');
+      final response = await http.post(url);
+
+      if (response.statusCode == 200) {
+        print('✅ Reindex thành công');
+      } else {
+        throw Exception('❌ Reindex thất bại: ${response.statusCode}');
+      }
+    }
   }
 }
