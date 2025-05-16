@@ -23,6 +23,7 @@ class _WebHeaderState extends State<WebHeader> {
   bool _loading = false;
   String? _error;
   final UserService _userService = UserService();
+  String? _role;
 
   @override
   void initState() {
@@ -34,6 +35,7 @@ class _WebHeaderState extends State<WebHeader> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final email = prefs.getString('email');
+      final role = prefs.getString('role') ?? 'customer';
 
       debugPrint('📦 Email from prefs: $email');
 
@@ -96,8 +98,17 @@ class _WebHeaderState extends State<WebHeader> {
           if (loggedIn) ...[
             IconButton(
               icon: const Icon(Icons.message, color: Colors.white),
-              onPressed: () => context.go('/chat'),
+              onPressed: () {
+                if (_role == 'admin') {
+                  // Admin chưa chọn user, show thông báo hoặc chuyển tới danh sách người dùng khiếu nại
+                  context.go('/support'); // bạn có thể dùng '/chat/:userId' nếu có user cụ thể
+                } else {
+                  // Customer, chat với admin mặc định
+                  context.go('/chat');
+                }
+              },
             ),
+
           ] else ...[
             TextButton(
               onPressed: () => context.go('/login-signup'),

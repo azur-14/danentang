@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:danentang/models/User.dart';
+import 'package:danentang/Service/user_service.dart';
 import 'package:danentang/Screens/Manager/Support/customer_service.dart';
+import '../../../ultis/image_helper.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
 class Customer_Support extends StatelessWidget {
@@ -24,7 +27,29 @@ class CustomerSupportScreen extends StatefulWidget {
 
 class _CustomerSupportScreenState extends State<CustomerSupportScreen> {
   int _selectedIndex = 0;
-  List<bool> _selectedTickets = [false, false, false]; // Track selection status of tickets
+  List<User> _users = [];
+  List<bool> _selectedTickets = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUsers();
+  }
+
+  Future<void> _loadUsers() async {
+    try {
+      final userService = UserService();
+      final users = await userService.getComplainingUsers();
+      setState(() {
+        _users = users;
+        _selectedTickets = List.generate(users.length, (_) => false);
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("Lỗi khi tải danh sách người dùng khiếu nại: $e");
+    }
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -32,14 +57,12 @@ class _CustomerSupportScreenState extends State<CustomerSupportScreen> {
     });
   }
 
-  // Toggle the selection of a specific ticket
   void _toggleTicketSelection(int index) {
     setState(() {
       _selectedTickets[index] = !_selectedTickets[index];
     });
   }
 
-  // Select all tickets
   void _selectAllTickets() {
     setState(() {
       for (int i = 0; i < _selectedTickets.length; i++) {
@@ -48,7 +71,6 @@ class _CustomerSupportScreenState extends State<CustomerSupportScreen> {
     });
   }
 
-  // Deselect all tickets
   void _deselectAllTickets() {
     setState(() {
       for (int i = 0; i < _selectedTickets.length; i++) {
@@ -78,10 +100,7 @@ class _CustomerSupportScreenState extends State<CustomerSupportScreen> {
             : const SizedBox(),
         title: const Text(
           "Hỗ trợ người dùng",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
         ),
         actions: [
           PopupMenuButton<String>(
@@ -92,12 +111,6 @@ class _CustomerSupportScreenState extends State<CustomerSupportScreen> {
                   break;
                 case 'deselect_all':
                   _deselectAllTickets();
-                  break;
-                case 'edit_all':
-                // Handle edit all
-                  break;
-                case 'delete_all':
-                // Handle delete all
                   break;
               }
             },
@@ -110,27 +123,22 @@ class _CustomerSupportScreenState extends State<CustomerSupportScreen> {
                 value: 'deselect_all',
                 child: Text('Bỏ chọn tất cả'),
               ),
-              const PopupMenuItem<String>(
-                value: 'edit_all',
-                child: Text('Sửa tất cả'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'delete_all',
-                child: Text('Xóa tất cả'),
-              ),
             ],
           ),
           const SizedBox(width: 10),
         ],
       ),
-      body: ListView.builder(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView.builder(
         padding: const EdgeInsets.all(16.0),
-        itemCount: 3,
+        itemCount: _users.length,
         itemBuilder: (context, index) {
           return AnimatedSupportTicketItem(
             delay: index * 200,
             isSelected: _selectedTickets[index],
             onTap: () => _toggleTicketSelection(index),
+            user: _users[index],
           );
         },
       ),
@@ -144,7 +152,7 @@ class _CustomerSupportScreenState extends State<CustomerSupportScreen> {
               role: 'manager',
             );
           } else {
-            return SizedBox.shrink();
+            return const SizedBox.shrink();
           }
         },
       ),
@@ -156,16 +164,19 @@ class AnimatedSupportTicketItem extends StatefulWidget {
   final int delay;
   final bool isSelected;
   final VoidCallback onTap;
+  final User user;
 
   const AnimatedSupportTicketItem({
     super.key,
     required this.delay,
     required this.isSelected,
     required this.onTap,
+    required this.user,
   });
 
   @override
-  State<AnimatedSupportTicketItem> createState() => _AnimatedSupportTicketItemState();
+  State<AnimatedSupportTicketItem> createState() =>
+      _AnimatedSupportTicketItemState();
 }
 
 class _AnimatedSupportTicketItemState extends State<AnimatedSupportTicketItem>
@@ -182,9 +193,10 @@ class _AnimatedSupportTicketItemState extends State<AnimatedSupportTicketItem>
       duration: const Duration(milliseconds: 500),
     );
 
-    _offsetAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
-
+    _offsetAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+        );
     _opacity = Tween<double>(begin: 0, end: 1).animate(_controller);
 
     Future.delayed(Duration(milliseconds: widget.delay), () {
@@ -199,9 +211,10 @@ class _AnimatedSupportTicketItemState extends State<AnimatedSupportTicketItem>
       child: FadeTransition(
         opacity: _opacity,
         child: GestureDetector(
-          onLongPress: widget.onTap, // Trigger on long press to select the ticket
+          onLongPress: widget.onTap,
           child: SupportTicketItem(
             isSelected: widget.isSelected,
+            user: widget.user,
           ),
         ),
       ),
@@ -217,8 +230,13 @@ class _AnimatedSupportTicketItemState extends State<AnimatedSupportTicketItem>
 
 class SupportTicketItem extends StatelessWidget {
   final bool isSelected;
+  final User user;
 
-  const SupportTicketItem({super.key, required this.isSelected});
+  const SupportTicketItem({
+    super.key,
+    required this.isSelected,
+    required this.user,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -237,10 +255,8 @@ class SupportTicketItem extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Text(
-                "#CM9801",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
+              Text("#${user.id.substring(user.id.length - 5)}",
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -248,34 +264,35 @@ class SupportTicketItem extends StatelessWidget {
                   color: Colors.purple.shade100,
                   borderRadius: BorderRadius.circular(15),
                 ),
-                child: const Text(
-                  "Đang thực hiện",
-                  style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold),
-                ),
+                child: const Text("Đang thực hiện",
+                    style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
           const SizedBox(height: 10),
           Row(
-            children: const [
+            children: [
               CircleAvatar(
-                backgroundImage: AssetImage('assets/Manager/Avatar/avatar.jpg'),
+                backgroundImage: (user.avatarUrl != null && user.avatarUrl!.isNotEmpty)
+                    ? memoryImageProvider(user.avatarUrl!)
+                    : const AssetImage('assets/Manager/Avatar/avatar.jpg') as ImageProvider,
                 radius: 14,
               ),
-              SizedBox(width: 10),
-              Text("Natali Craig", style: TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(width: 10),
+              Text(user.fullName, style: const TextStyle(fontWeight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 10),
-          _buildInfoRow("Sản phẩm mua", "Landing Page"),
-          _buildInfoRow("Địa chỉ", "Meadow Lane Oakland"),
-          _buildInfoRow("Ngày", "Just now"),
+          _buildInfoRow("Email", user.email),
+          _buildInfoRow("Mã người dùng", user.id),
           const SizedBox(height: 14),
           GestureDetector(
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const CustomerServiceScreen()),
+                MaterialPageRoute(
+                  builder: (context) => CustomerServiceScreen(userId: user.id)
+                ),
               );
             },
             child: Center(
@@ -285,10 +302,8 @@ class SupportTicketItem extends StatelessWidget {
                   border: Border.all(color: Colors.black),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text(
-                  "Đã Gửi Đến Bạn Một Tin Nhắn",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
+                child: const Text("Đã Gửi Đến Bạn Một Tin Nhắn",
+                    style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
           ),

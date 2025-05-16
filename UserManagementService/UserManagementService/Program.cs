@@ -7,6 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+// Thêm dòng này để inject cấu hình vào controller
+builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
 // Thêm MongoDbContext
 builder.Services.AddSingleton<MongoDbContext>();

@@ -15,5 +15,6 @@ namespace UserManagementService.Data
         }
 
         public IMongoCollection<User> Users => _database.GetCollection<User>("users");
+        public IMongoCollection<ComplaintMessage> ComplaintMessages => _database.GetCollection<ComplaintMessage>("ComplaintMessages");
     }
 }

@@ -1,4 +1,5 @@
 import 'package:danentang/Screens/Customer/User/profile_page.dart';
+import 'package:danentang/Screens/Manager/Support/customer_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:danentang/Screens/Customer/Home/home_screen.dart';
@@ -156,6 +157,18 @@ final GoRouter router = GoRouter(
           card: extra['card'] as CardInfo?,
           order: extra['order'] as Order?, // Pass the order
         );
+      },
+    ),
+    GoRoute(
+      path: '/chat',
+      builder: (context, state) => const CustomerServiceScreen(), // customer
+    ),
+
+    GoRoute(
+      path: '/chat/:userId',
+      builder: (context, state) {
+        final userId = state.pathParameters['userId'];
+        return CustomerServiceScreen(userId: userId); // admin
       },
     ),
 
