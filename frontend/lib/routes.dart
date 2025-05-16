@@ -269,8 +269,7 @@ final GoRouter router = GoRouter(
             .toList();
 
         return OrderDetailsScreen(
-          order: order,
-          products: products,
+          orderId: '',
         );
       },
     ),
@@ -332,7 +331,6 @@ final GoRouter router = GoRouter(
           name: item.productName,
           brand: '',
           description: '',
-          price: item.price,
           discountPercentage: 0,
           categoryId: '',
           createdAt: DateTime.now(),
@@ -360,7 +358,6 @@ final GoRouter router = GoRouter(
 
         return ReviewScreen(
           orderId: orderId,
-          products: products,
         );
       },
     ),
