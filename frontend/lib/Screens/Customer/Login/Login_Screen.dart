@@ -40,28 +40,26 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // --- Decode payload từ JWT ---
       final Map<String, dynamic> payload = JwtDecoder.decode(token);
-      // ClaimTypes.Role của .NET thường được map vào key này:
       final role = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
-          // nếu server của bạn map thành "role" thì dùng payload['role']
           ?? payload['role']
           ?? 'customer';
 
-      // --- Lưu token + role vào prefs nếu cần tái dùng ---
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('token', token);
       await prefs.setString('role', role);
+      await prefs.setString('email', emailController.text.trim()); // ✅ Lưu email
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Đăng nhập thành công!')),
       );
 
-      // --- Điều hướng theo role ---
+      // --- Điều hướng ---
       if (role == 'customer') {
         context.go('/homepage');
       } else if (role == 'admin') {
         context.go('/manager-dashboard');
       } else {
-        context.go('/homepage'); // fallback
+        context.go('/homepage');
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -72,32 +70,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Thêm màn hình quên mật khẩu
-  Future<void> sendOTP() async {
-    try {
-      final resp = await http.post(
-        Uri.parse('https://api.yoursite.com/auth/forgot-password'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': emailController.text.trim()}),
-      );
-
-      if (resp.statusCode != 200) {
-        throw Exception('Gửi OTP thất bại: ${resp.body}');
-      }
-
-      final data = jsonDecode(resp.body) as Map<String, dynamic>;
-      final message = data['message'] as String;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: $e')),
-      );
-    }
-
-  }
 
   Widget _buildMobileLayout() {
     final h = MediaQuery.of(context).size.height;

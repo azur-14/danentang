@@ -5,7 +5,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using UserManagementService.Data;
 using UserManagementService.Models;
-
+using MongoDB.Bson;
+using System.Linq;
 namespace UserManagementService.Controllers
 {
     [ApiController]
@@ -18,6 +19,43 @@ namespace UserManagementService.Controllers
         {
             _context = context;
         }
+
+        [HttpGet("complained")]
+        public async Task<IActionResult> GetUsersWhoComplained()
+        {
+            // 1) Lấy tất cả senderId (string)
+            var allSenderIds = await _context.ComplaintMessages
+                .Find(c => c.IsFromCustomer)
+                .Project(c => c.SenderId)
+                .ToListAsync();
+
+            // 2) Distinct + loại bỏ null/empty
+            var distinctSenderIds = allSenderIds
+                .Where(id => !string.IsNullOrWhiteSpace(id))
+                .Distinct()
+                .ToList();
+
+            // 3) Nếu không có thì trả mảng rỗng
+            if (!distinctSenderIds.Any())
+                return Ok(new object[0]);
+
+            // 4) Query users với $in
+            var users = await _context.Users
+                .Find(u => distinctSenderIds.Contains(u.Id!))
+                .ToListAsync();
+
+            // 5) Map về DTO trả client
+            var result = users.Select(u => new
+            {
+                id = u.Id,
+                fullName = u.FullName,
+                avatarUrl = u.AvatarUrl,
+                email = u.Email
+            });
+
+            return Ok(result);
+        }
+
 
         // --- 1. GET all users, optional excludeRole (e.g. admin)  ---
         // GET /api/user?excludeRole=admin
@@ -146,8 +184,22 @@ namespace UserManagementService.Controllers
             var result = await _context.Users.ReplaceOneAsync(u => u.Id == id, user);
             return result.MatchedCount == 1 ? NoContent() : NotFound();
         }
-    }
+        // --- 7. GET user by email ---
+        // GET /api/user/by-email?email=abc@example.com
+        [HttpGet("by-email")]
+        public async Task<IActionResult> GetByEmail([FromQuery] string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+                return BadRequest("Email is required.");
 
+            var user = await _context.Users.Find(u => u.Email == email).FirstOrDefaultAsync();
+            if (user == null)
+                return NotFound();
+
+            return Ok(user);
+        }
+     
+    }
     public class StatusDto
     {
         public string Status { get; set; } = null!;

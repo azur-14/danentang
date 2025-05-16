@@ -1,17 +1,16 @@
-import 'package:danentang/models/User.dart';
 import 'package:flutter/material.dart';
+
 class ProfileDatePickerDialog {
-  static Future<String?> show(BuildContext context, User? userModel) async {
+  static Future<DateTime?> show(BuildContext context, DateTime? initialDate) async {
+    final now = DateTime.now();
+
     DateTime? selectedDate = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: initialDate ?? now,
       firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
+      lastDate: now,
     );
 
-    if (selectedDate != null) {
-      return '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}';
-    }
-    return null;
+    return selectedDate;
   }
 }

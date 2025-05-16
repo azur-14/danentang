@@ -2,41 +2,76 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:intl/intl.dart';
+
+import 'package:danentang/Service/user_service.dart';
+import 'package:danentang/models/Address.dart';
+import 'package:danentang/models/User.dart';
 import 'edit_dialog.dart';
 import 'gender_dialog.dart';
 import 'date_picker_dialog.dart';
 
 class ProfileMobileLayout extends StatefulWidget {
-  final Map<String, dynamic> userData;
-
-  const ProfileMobileLayout({super.key, required this.userData});
+  const ProfileMobileLayout({super.key});
 
   @override
   _ProfileMobileLayoutState createState() => _ProfileMobileLayoutState();
 }
 
 class _ProfileMobileLayoutState extends State<ProfileMobileLayout> {
-  late Map<String, dynamic> _userData;
+  User? _user;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    // Create a mutable copy of userData to allow updates
-    _userData = Map<String, dynamic>.from(widget.userData);
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final email = prefs.getString('email');
+      if (email == null) throw Exception('Không tìm thấy email trong SharedPreferences');
+
+      final user = await UserService().fetchUserByEmail(email);
+      setState(() {
+        _user = user;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('❌ Lỗi khi load user: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi tải thông tin người dùng: $e')),
+      );
+    }
+  }
+
+  Future<void> _submitChanges() async {
+    if (_user == null) return;
+    try {
+      final updatedUser = _user!.copyWith();
+      await UserService().updateUserFull(updatedUser);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cập nhật thành công')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi: $e')),
+      );
+    }
   }
 
   Future<void> _pickImage() async {
     try {
-      final ImagePicker picker = ImagePicker();
-      final XFile? image = kIsWeb
-          ? await picker.pickImage(source: ImageSource.gallery)
-          : await picker.pickImage(source: ImageSource.gallery);
+      final picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
 
       if (image != null) {
         setState(() {
-          _userData['avatarUrl'] = image.path;
+          _user = _user!.copyWith(avatarUrl: image.path);
         });
-
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Ảnh đại diện đã được cập nhật')),
         );
@@ -48,8 +83,164 @@ class _ProfileMobileLayoutState extends State<ProfileMobileLayout> {
     }
   }
 
+  Future<void> _editAddressDialog(Address addr, int index) async {
+    final receiver = await EditDialog.show(context, addr.receiverName, 'receiverName', 'Người nhận') ?? addr.receiverName;
+    final phone    = await EditDialog.show(context, addr.phone, 'phone', 'SĐT') ?? addr.phone;
+    final line     = await EditDialog.show(context, addr.addressLine, 'addressLine', 'Số nhà, tên đường') ?? addr.addressLine;
+    final commune  = await EditDialog.show(context, addr.commune ?? '', 'commune', 'Phường/Xã') ?? addr.commune;
+    final district = await EditDialog.show(context, addr.district ?? '', 'district', 'Quận/Huyện') ?? addr.district;
+    final city     = await EditDialog.show(context, addr.city ?? '', 'city', 'Tỉnh/Thành phố') ?? addr.city;
+
+    final updated = addr.copyWith(
+      receiverName: receiver,
+      phone: phone,
+      addressLine: line,
+      commune: commune,
+      district: district,
+      city: city,
+    );
+
+    final updatedAddresses = [..._user!.addresses];
+    updatedAddresses[index] = updated;
+
+    setState(() {
+      _user = _user!.copyWith(addresses: updatedAddresses);
+    });
+  }
+
+  void _deleteAddress(int index) {
+    final addresses = [..._user!.addresses]..removeAt(index);
+    setState(() => _user = _user!.copyWith(addresses: addresses));
+  }
+
+  void _setDefaultAddress(int index) {
+    final updated = _user!.addresses.map((a) => a.copyWith(isDefault: false)).toList();
+    updated[index] = updated[index].copyWith(isDefault: true);
+    setState(() => _user = _user!.copyWith(addresses: updated));
+  }
+
+  Future<void> _addNewAddress() async {
+    final receiver = await EditDialog.show(context, '', 'receiverName', 'Người nhận');
+    if (receiver == null) return;
+    final phone    = await EditDialog.show(context, '', 'phone', 'SĐT');
+    final line     = await EditDialog.show(context, '', 'addressLine', 'Số nhà, tên đường');
+    final commune  = await EditDialog.show(context, '', 'commune', 'Phường/Xã');
+    final district = await EditDialog.show(context, '', 'district', 'Quận/Huyện');
+    final city     = await EditDialog.show(context, '', 'city', 'Tỉnh/Thành phố');
+
+    final newAddr = Address(
+      receiverName: receiver ?? '',
+      phone: phone ?? '',
+      addressLine: line ?? '',
+      commune: commune,
+      district: district,
+      city: city,
+      isDefault: _user!.addresses.isEmpty,
+    );
+
+    setState(() {
+      _user = _user!.copyWith(addresses: [..._user!.addresses, newAddr]);
+    });
+  }
+
+  Future<void> _showGenderDialog() async {
+    final selectedGender = await GenderDialog.show(
+      context,
+      currentGender: _user?.gender,
+    );
+    if (selectedGender != null) {
+      setState(() => _user = _user!.copyWith(gender: selectedGender));
+    }
+  }
+
+  Future<void> _showDatePickerDialog() async {
+    final selectedDate = await ProfileDatePickerDialog.show(context, _user?.dateOfBirth);
+    if (selectedDate != null) {
+      setState(() => _user = _user!.copyWith(dateOfBirth: selectedDate));
+    }
+  }
+
+  Future<void> _showEditDialog(String field, String title) async {
+    final currentValue = field == 'phoneNumber' ? _user?.phoneNumber ?? '' : '';
+    final newValue = await EditDialog.show(context, currentValue, field, title);
+
+    if (newValue != null) {
+      setState(() {
+        if (field == 'phoneNumber') {
+          _user = _user!.copyWith(phoneNumber: newValue);
+        }
+      });
+    }
+  }
+
+  Widget _buildAddressList() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Địa chỉ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            IconButton(icon: const Icon(Icons.add), onPressed: _addNewAddress),
+          ],
+        ),
+        ..._user!.addresses.asMap().entries.map((entry) {
+          final index = entry.key;
+          final a = entry.value;
+          return Card(
+            child: ListTile(
+              title: Text(a.receiverName),
+              subtitle: Text('${a.addressLine}, ${a.commune}, ${a.district}, ${a.city}'),
+              trailing: PopupMenuButton<String>(
+                onSelected: (value) {
+                  if (value == 'edit') _editAddressDialog(a, index);
+                  if (value == 'delete') _deleteAddress(index);
+                  if (value == 'setDefault') _setDefaultAddress(index);
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(value: 'edit', child: Text('Sửa')),
+                  const PopupMenuItem(value: 'delete', child: Text('Xoá')),
+                  if (!a.isDefault) const PopupMenuItem(value: 'setDefault', child: Text('Chọn làm mặc định')),
+                ],
+              ),
+              leading: a.isDefault ? const Icon(Icons.star, color: Colors.amber) : const Icon(Icons.location_on),
+            ),
+          );
+        }).toList(),
+      ],
+    );
+  }
+
+  Widget _buildInfoRow(BuildContext context, String label, String value, VoidCallback onTap) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: InkWell(
+        onTap: onTap,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: const TextStyle(fontSize: 16)),
+            Row(
+              children: [
+                Text(value, style: const TextStyle(fontSize: 16, color: Colors.grey)),
+                const SizedBox(width: 8),
+                const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (_isLoading || _user == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final dateFormatter = DateFormat('dd/MM/yyyy');
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -59,10 +250,10 @@ class _ProfileMobileLayoutState extends State<ProfileMobileLayout> {
             children: [
               CircleAvatar(
                 radius: 40,
-                child: _userData['avatarUrl'] == null
+                child: _user!.avatarUrl == null
                     ? const Icon(Icons.person, size: 40)
                     : Image.network(
-                  _userData['avatarUrl'],
+                  _user!.avatarUrl!,
                   fit: BoxFit.cover,
                   loadingBuilder: (context, child, loadingProgress) {
                     if (loadingProgress == null) return child;
@@ -77,11 +268,7 @@ class _ProfileMobileLayoutState extends State<ProfileMobileLayout> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    _userData['userName'],
-                    style: const TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
+                  Text(_user!.fullName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   ElevatedButton(
                     onPressed: _pickImage,
@@ -96,73 +283,29 @@ class _ProfileMobileLayoutState extends State<ProfileMobileLayout> {
             ],
           ),
           const SizedBox(height: 20),
-          const Text('Thông tin cá nhân',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text('Thông tin cá nhân', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 10),
-          _buildInfoRow(
-              context, 'Giới tính', _userData['gender'], () => _showGenderDialog()),
-          _buildInfoRow(context, 'Ngày sinh', _userData['dateOfBirth'],
-                  () => _showDatePickerDialog()),
-          _buildInfoRow(context, 'SĐT', _userData['phoneNumber'],
-                  () => _showEditDialog('phoneNumber', 'Số điện thoại')),
-          _buildInfoRow(context, 'Email', _userData['email'],
-                  () => _showEditDialog('email', 'Email')),
-          _buildInfoRow(context, 'Địa chỉ', _userData['address'],
-                  () => context.push('/address')),
+          _buildInfoRow(context, 'Giới tính', _user!.gender ?? '', _showGenderDialog),
+          _buildInfoRow(context, 'Ngày sinh', _user!.dateOfBirth != null ? dateFormatter.format(_user!.dateOfBirth!) : '', _showDatePickerDialog),
+          _buildInfoRow(context, 'SĐT', _user!.phoneNumber ?? '', () => _showEditDialog('phoneNumber', 'Số điện thoại')),
+          _buildInfoRow(context, 'Email', _user!.email, () {}),
+          const SizedBox(height: 24),
+          _buildAddressList(),
+          const SizedBox(height: 24),
+          Center(
+            child: ElevatedButton.icon(
+              onPressed: _submitChanges,
+              icon: const Icon(Icons.save),
+              label: const Text('Xác nhận sửa'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                textStyle: const TextStyle(fontSize: 16),
+              ),
+            ),
+          ),
         ],
       ),
     );
-  }
-
-  Widget _buildInfoRow(
-      BuildContext context, String label, String value, VoidCallback onTap) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: InkWell(
-        onTap: onTap,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: const TextStyle(fontSize: 16)),
-            Row(
-              children: [
-                Text(value,
-                    style: const TextStyle(fontSize: 16, color: Colors.grey)),
-                const SizedBox(width: 8),
-                const Icon(Icons.arrow_forward_ios,
-                    size: 16, color: Colors.grey),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _showGenderDialog() async {
-    final selectedGender = await GenderDialog.show(context, null);
-    if (selectedGender != null) {
-      setState(() {
-        _userData['gender'] = selectedGender;
-      });
-    }
-  }
-
-  Future<void> _showDatePickerDialog() async {
-    final selectedDate = await ProfileDatePickerDialog.show(context, null);
-    if (selectedDate != null) {
-      setState(() {
-        _userData['dateOfBirth'] = selectedDate;
-      });
-    }
-  }
-
-  Future<void> _showEditDialog(String field, String title) async {
-    final newValue = await EditDialog.show(context, null, field, title);
-    if (newValue != null) {
-      setState(() {
-        _userData[field] = newValue;
-      });
-    }
   }
 }

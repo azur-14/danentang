@@ -26,7 +26,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool _isLoggedIn = false;
-  String _userName = '';
   int selectedIndex = 0;
   bool showAllCategories = false;
   bool isLoading = true;
@@ -59,7 +58,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _isLoggedIn = prefs.getString('token') != null;
-      _userName   = prefs.getString('userName') ?? '';
     });
     await _loadAllData();
   }
@@ -148,7 +146,6 @@ class _HomeScreenState extends State<HomeScreen> {
 // trong Scaffold:
       appBar: MobileHeader(
         isLoggedIn: _isLoggedIn,
-        userName:  _userName,
       ),
       body: SingleChildScrollView(
         child: Column(

@@ -39,8 +39,8 @@ class ProfileManagementScreen extends StatelessWidget {
           if (kIsWeb) ProfileDrawer(),
           Expanded(
             child: kIsWeb
-                ? ProfileWebLayout(userData: effectiveUserData)
-                : ProfileMobileLayout(userData: effectiveUserData),
+                ? const ProfileWebLayout()
+                : const ProfileMobileLayout(),
           ),
         ],
       ),

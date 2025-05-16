@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:danentang/constants/colors.dart';
 import 'package:danentang/Service/user_service.dart';
-import 'package:danentang/models/user.dart';
+import 'package:danentang/models/User.dart';
 
 class WebHeader extends StatefulWidget implements PreferredSizeWidget {
   final bool isLoggedIn;
@@ -19,10 +19,11 @@ class WebHeader extends StatefulWidget implements PreferredSizeWidget {
 }
 
 class _WebHeaderState extends State<WebHeader> {
-  User?   _user;
-  bool    _loading = false;
+  User? _user;
+  bool _loading = false;
   String? _error;
   final UserService _userService = UserService();
+  String? _role;
 
   @override
   void initState() {
@@ -31,31 +32,30 @@ class _WebHeaderState extends State<WebHeader> {
   }
 
   Future<void> _loadUser() async {
-    setState(() {
-      _loading = true;
-      _error   = null;
-    });
-
     try {
       final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('userId');
-      if (userId != null) {
-        // giờ đúng:
-        final user = await _userService.fetchUserById(userId);
-        setState(() => _user = user as User?);
+      final email = prefs.getString('email');
+      final role = prefs.getString('role') ?? 'customer';
+
+      debugPrint('📦 Email from prefs: $email');
+
+      if (email != null) {
+        final user = await UserService().fetchUserByEmail(email);
+        setState(() {
+          _user = user; // ✅ đúng kiểu rồi, không cần ép kiểu nữa
+        });
       }
     } catch (e) {
-      setState(() => _error = 'Không tải được thông tin người dùng');
-    } finally {
-      if (mounted) setState(() => _loading = false);
+      debugPrint('❌ Lỗi khi lấy user: $e');
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
     final loggedIn = widget.isLoggedIn;
 
-    // Xác định text hiển thị (app name hoặc tên user)
+    // Hiển thị tên người dùng hoặc fallback
     String title;
     if (!loggedIn) {
       title = 'Hoalahe';
@@ -67,11 +67,15 @@ class _WebHeaderState extends State<WebHeader> {
       title = 'Guest';
     }
 
-    // Tạo image từ Base64 nếu có
+    // Hiển thị avatar nếu có
     ImageProvider? avatarImg;
-    if (_user?.avatarUrl != null) {
-      final raw = _user!.avatarUrl!.split(',').last;
-      avatarImg = MemoryImage(base64Decode(raw));
+    if (_user?.avatarUrl != null && _user!.avatarUrl!.startsWith('data:image')) {
+      try {
+        final base64Data = _user!.avatarUrl!.split(',').last;
+        avatarImg = MemoryImage(base64Decode(base64Data));
+      } catch (_) {
+        avatarImg = null;
+      }
     }
 
     return Container(
@@ -79,43 +83,39 @@ class _WebHeaderState extends State<WebHeader> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          // Phần trái: static links
           const Text(
             "Hoalahe | Kênh người bán | Tải Ứng dụng | Kết nối",
             style: TextStyle(color: Colors.white, fontSize: 14),
           ),
-
           const Spacer(),
-
-          // Ngôn ngữ
           const Text("Tiếng Việt", style: TextStyle(color: Colors.white, fontSize: 14)),
           const SizedBox(width: 24),
-
-          // Giỏ hàng luôn hiện
           IconButton(
             icon: const Icon(Icons.shopping_cart, color: Colors.white),
             onPressed: () => context.go('/checkout', extra: loggedIn),
           ),
           const SizedBox(width: 8),
-
-          // Nếu đã login: chat icon, ngược lại: nút Đăng nhập
           if (loggedIn) ...[
             IconButton(
               icon: const Icon(Icons.message, color: Colors.white),
-              onPressed: () => context.go('/chat'),
+              onPressed: () {
+                if (_role == 'admin') {
+                  // Admin chưa chọn user, show thông báo hoặc chuyển tới danh sách người dùng khiếu nại
+                  context.go('/support'); // bạn có thể dùng '/chat/:userId' nếu có user cụ thể
+                } else {
+                  // Customer, chat với admin mặc định
+                  context.go('/chat');
+                }
+              },
             ),
+
           ] else ...[
             TextButton(
               onPressed: () => context.go('/login-signup'),
-              child: const Text(
-                'Đăng nhập',
-                style: TextStyle(color: Colors.white),
-              ),
+              child: const Text('Đăng nhập', style: TextStyle(color: Colors.white)),
             ),
           ],
           const SizedBox(width: 16),
-
-          // Avatar + tên hoặc chỉ tên app nếu chưa login
           if (loggedIn)
             GestureDetector(
               onTap: () => context.go('/profile'),

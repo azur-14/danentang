@@ -1,5 +1,4 @@
 // lib/models/User.dart
-
 import 'Address.dart';
 
 class User {
@@ -13,7 +12,7 @@ class User {
   final DateTime? dateOfBirth;
   final String? phoneNumber;
   final String? avatarUrl;
-  final bool isEmailVerified;
+  final bool? isEmailVerified;
   final DateTime createdAt;
   final DateTime updatedAt;
   final List<Address> addresses;
@@ -29,36 +28,40 @@ class User {
     this.dateOfBirth,
     this.phoneNumber,
     this.avatarUrl,
-    required this.isEmailVerified,
+    this.isEmailVerified,
     required this.createdAt,
     required this.updatedAt,
     required this.addresses,
   });
 
   factory User.fromJson(Map<String, dynamic> j) {
-    // lấy id từ '_id' (UserController) hoặc 'id' (AuthController)
     final rawId = j['_id'] ?? j['id'];
     if (rawId == null) {
       throw FormatException('Missing id field in User JSON: $j');
     }
-    final id = rawId.toString();
 
     return User(
-      id: id,
+      id: rawId.toString(),
       email: j['email'] as String? ?? '',
       fullName: j['fullName'] as String? ?? '',
       role: j['role'] as String? ?? '',
       status: j['status'] as String? ?? '',
-      loyaltyPoints: j['loyaltyPoints'] as int? ?? 0,
+      loyaltyPoints: (j['loyaltyPoints'] is int)
+          ? j['loyaltyPoints'] as int
+          : int.tryParse(j['loyaltyPoints']?.toString() ?? '0') ?? 0,
       gender: j['gender'] as String?,
       dateOfBirth: j['dateOfBirth'] != null
           ? DateTime.tryParse(j['dateOfBirth'] as String)
           : null,
       phoneNumber: j['phoneNumber'] as String?,
       avatarUrl: j['avatarUrl'] as String?,
-      isEmailVerified: j['isEmailVerified'] as bool? ?? false,
-      createdAt: DateTime.parse(j['createdAt'] as String),
-      updatedAt: DateTime.parse(j['updatedAt'] as String),
+      isEmailVerified: j['isEmailVerified'] as bool?,
+      createdAt: j['createdAt'] != null
+          ? DateTime.tryParse(j['createdAt'] as String) ?? DateTime.now()
+          : DateTime.now(),
+      updatedAt: j['updatedAt'] != null
+          ? DateTime.tryParse(j['updatedAt'] as String) ?? DateTime.now()
+          : DateTime.now(),
       addresses: (j['addresses'] as List? ?? [])
           .map((e) => Address.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -66,7 +69,6 @@ class User {
   }
 
   Map<String, dynamic> toJson() => {
-    // khi update, backend sẽ ignore createdAt/updatedAt
     'email': email,
     'fullName': fullName,
     'role': role,
@@ -79,6 +81,7 @@ class User {
     'isEmailVerified': isEmailVerified,
     'addresses': addresses.map((a) => a.toJson()).toList(),
   };
+
   User copyWith({
     String? fullName,
     String? role,
@@ -107,4 +110,3 @@ class User {
     );
   }
 }
-

@@ -1,5 +1,3 @@
-// lib/services/user_service.dart
-
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -12,13 +10,17 @@ class UserService {
 
   /// UserController base URL
   final String _userBase;
+  final String _chatBase;
 
   UserService({
     // use 10.0.2.2 on Android emulator, localhost on web/desktop
     String authBase = kIsWeb ? 'http://localhost:5012/api/auth' : 'http://10.0.2.2:5012/api/auth',
     String userBase = kIsWeb ? 'http://localhost:5012/api/user' : 'http://10.0.2.2:5012/api/user',
+    String chatBase =  kIsWeb ? 'http://localhost:5012/api/complaint' : 'http://10.0.2.2:5012/api/complaints',
+
   })  : _authBase = authBase,
-        _userBase = userBase;
+        _userBase = userBase,
+        _chatBase = chatBase;
 
 
   // ─── AuthController ─────────────────────────────────────────────────────────
@@ -264,6 +266,62 @@ class UserService {
       throw Exception('deleteAddress failed: ${res.statusCode}');
     }
   }
+  Future<User> fetchUserByEmail(String email) async {
+    final res = await http.get(Uri.parse('$_userBase/by-email?email=$email'));
+    if (res.statusCode == 200) {
+      return User.fromJson(jsonDecode(res.body));
+    }
+    throw Exception('fetchUserByEmail failed: ${res.statusCode}');
+  }
+  Future<List<Map<String, dynamic>>> getMessages(String user1Id, String user2Id) async {
+    final url = Uri.parse('$_chatBase/chat?user1Id=$user1Id&user2Id=$user2Id');
+    final response = await http.get(url);
 
+    if (response.statusCode == 200) {
+      return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+    } else {
+      throw Exception('Lỗi khi tải tin nhắn');
+    }
+  }
+
+  Future<void> sendMessage({
+    required String userId,        // chính là receiverId
+    required String senderId,      // chính là người gửi (ObjectId)
+    required String content,
+    required bool isFromCustomer,
+    String? imageUrl,
+  }) async {
+    final body = {
+      'senderId': senderId,
+      'receiverId': userId,
+      'content': content,
+      'isFromCustomer': isFromCustomer,
+      if (imageUrl != null) 'imageUrl': imageUrl,
+    };
+
+    debugPrint('[DEBUG] Gửi tin nhắn body: ${jsonEncode(body)}');
+
+    final response = await http.post(
+      Uri.parse('$_chatBase/send'),  // <== thay vì /$userId/messages
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      debugPrint('[ERROR] Server response: ${response.body}');
+      throw Exception('Gửi tin nhắn thất bại');
+    }
+
+  }
+
+  Future<List<User>> getComplainingUsers() async {
+    final response = await http.get(Uri.parse('$_userBase/complained'));
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((json) => User.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load complaining users');
+    }
+  }
 }
 
