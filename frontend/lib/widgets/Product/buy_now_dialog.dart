@@ -212,8 +212,6 @@ class _BuyNowDialogState extends State<BuyNowDialog> {
                                   'quantity': localQuantity,
                                 },
                               ],
-                              total: widget.discountedPrice * localQuantity,
-                              user: UserData.toUser(),
                             ),
                           ),
                         );
@@ -227,7 +225,7 @@ class _BuyNowDialogState extends State<BuyNowDialog> {
                         'Mua ngay',
                         style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                       ),
-                    ),
+                    )
                   ),
                   const SizedBox(height: 16), // Thêm khoảng trống cuối để tránh nội dung bị che
                 ],

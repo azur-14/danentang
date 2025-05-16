@@ -22,7 +22,7 @@ class WebDashboard extends StatefulWidget {
   State<WebDashboard> createState() => _WebDashboardState();
 }
 
-class _WebDashboardState extends State<WebDashboard> with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
+class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _opacityAnimation;
 
@@ -43,13 +43,8 @@ class _WebDashboardState extends State<WebDashboard> with AutomaticKeepAliveClie
     super.dispose();
   }
 
-  // Override to keep the state alive
-  @override
-  bool get wantKeepAlive => true;
-
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
     return Scaffold(
       drawer: _buildDrawer(context),
       appBar: AppBar(
@@ -95,7 +90,7 @@ class _WebDashboardState extends State<WebDashboard> with AutomaticKeepAliveClie
           _drawerItem(context, 'Quản lý Mã giảm giá', Icons.card_giftcard, CouponManagement()),
           _drawerItem(context, 'Quản lý Danh mục', Icons.category, CategoriesManagement()),
           _drawerItem(context, 'Quản lý Người dùng', Icons.people, UserListScreen()),
-          _drawerItem(context, 'Quản lý Đơn hàng', Icons.receipt, Order_List()),
+          _drawerItem(context, 'Quản lý Đơn hàng', Icons.receipt, OrderListScreen()),
           _drawerItem(context, 'Hỗ trợ người dùng', Icons.support, CustomerSupportScreen()),
           const Divider(),
           ListTile(
@@ -265,7 +260,7 @@ class _WebDashboardState extends State<WebDashboard> with AutomaticKeepAliveClie
       {"title": "Quản lý Mã giảm giá", "screen": CouponManagement()},
       {"title": "Quản lý Danh mục", "screen": CategoriesManagement()},
       {"title": "Quản lý Người dùng", "screen": UserListScreen()},
-      {"title": "Quản lý Đơn hàng", "screen": Order_List()},
+      {"title": "Quản lý Đơn hàng", "screen": OrderListScreen()},
       {"title": "Hỗ trợ người dùng", "screen": CustomerSupportScreen()},
     ];
 

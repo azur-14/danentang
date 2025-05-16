@@ -16,6 +16,8 @@ import 'package:danentang/widgets/Header/web_header.dart';
 import 'package:danentang/widgets/Search/web_search_bar.dart';
 import 'package:danentang/constants/colors.dart';
 
+import '../Payment/payment_screen.dart';
+
 class CartScreenCheckOut extends StatefulWidget {
   const CartScreenCheckOut({Key? key}) : super(key: key);
 
@@ -142,15 +144,35 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
   double get _shipping => 30000; // phí ship mặc định
   double get _vat => 0;
 
-  Future<void> _onCheckout(Cart cart) async {
-    // Chuyển sang trang xác nhận đơn hàng, truyền các thông tin đã chọn
-    context.go('/payment-method', extra: {
-      'cart': cart,
-      'appliedCoupon': _appliedCoupon,
-      'couponDiscountAmount': _couponDiscountAmount,
-      'loyaltyPointsToUse': _loyaltyPointsToUse,
-    });
+  void _onCheckout(Cart cart) async {
+    final List<Map<String, dynamic>> products = cart.items.map((item) {
+      final product = _productsById[item.productId];
+      final variant = product?.variants.firstWhere(
+            (v) => v.id == item.productVariantId,
+        orElse: () => product!.variants.first,
+      );
+      return {
+        'product': product!,
+        'quantity': item.quantity,
+        'variant': variant,
+      };
+    }).toList();
+
+    // Gọi sang màn hình thanh toán và truyền loyalty points đang dùng
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PaymentScreen(
+          products: products,
+          voucher: _appliedCoupon,
+          loyaltyPointsToUse: _loyaltyPointsToUse, // <- TRUYỀN VÀO ĐÂY
+          // Có thể truyền thêm address/user nếu cần
+        ),
+      ),
+    );
   }
+
+
 
   @override
   Widget build(BuildContext context) {

@@ -68,7 +68,7 @@ class _MobileDashboardState extends State<MobileDashboard> with SingleTickerProv
             _drawerItem('Quản lý Mã giảm giá', CouponManagement()),
             _drawerItem('Quản lý Danh mục', CategoriesManagement()),
             _drawerItem('Quản lý Người dùng', UserListScreen()),
-            _drawerItem('Quản lý Đơn hàng', Order_List()),
+            _drawerItem('Quản lý Đơn hàng', OrderListScreen()),
             _drawerItem('Hỗ trợ người dùng', CustomerSupportScreen()),
           ],
         ),
@@ -211,7 +211,7 @@ class _MobileDashboardState extends State<MobileDashboard> with SingleTickerProv
       {"title": "Quản lý Mã giảm giá", "screen": CouponManagement()},
       {"title": "Quản lý Danh mục", "screen": CategoriesManagement()},
       {"title": "Quản lý Người dùng", "screen": UserListScreen()},
-      {"title": "Quản lý Đơn hàng", "screen": Order_List()},
+      {"title": "Quản lý Đơn hàng", "screen": OrderListScreen()},
       {"title": "Hỗ trợ người dùng", "screen": CustomerSupportScreen()},
     ];
 
