@@ -23,7 +23,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
   late Future<Product> _productFuture;
   late Future<ProductRating> _ratingFuture;
   late Future<List<Review>> _reviewsFuture;
-  late Future<List<Product>> _recommendedFuture;
   late TabController _tabController;
   bool _isLoggedIn = false;
   @override
@@ -57,7 +56,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
         _productFuture,
         _ratingFuture,
         _reviewsFuture,
-        _recommendedFuture,
       ]),
       builder: (context, snap) {
         if (snap.connectionState != ConnectionState.done) {
@@ -75,7 +73,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
         final product = results[0] as Product;
         final productRating = results[1] as ProductRating;
         final reviews = results[2] as List<Review>;
-        final recommendedProducts = results[3] as List<Product>;
 
         return Scaffold(
           backgroundColor: Colors.grey[100],
@@ -119,9 +116,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                           reviews: reviews,
                         ),
                         const SizedBox(height: 32),
-                        RecommendedProducts(
-                          recommendedProducts: recommendedProducts,
-                        ),
                       ],
                     ),
                   ),
@@ -147,10 +141,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
                           reviews: reviews,
                         ),
                         const SizedBox(height: 32),
-                        RecommendedProducts(
-                          recommendedProducts: recommendedProducts,
-                        ),
-                        const SizedBox(height: 80),
                       ],
                     ),
                   ),
