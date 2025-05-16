@@ -42,8 +42,6 @@ class _CartItemWidgetState extends State<CartItemWidget> {
     try {
       // 1. Lấy product chính
       final product = await ProductService().getProductById(widget.item.productId);
-      // Giá mặc định là giá product
-      double fetchedPrice = product.price;
       // Ảnh mặc định: lấy ảnh đầu trong list, hoặc placeholder
       String fetchedImage = product.images.isNotEmpty
           ? product.images.first.url
@@ -56,14 +54,12 @@ class _CartItemWidgetState extends State<CartItemWidget> {
           widget.item.productId,
           widget.item.productVariantId!,
         );
-        fetchedPrice = product.price + variant.additionalPrice;
         fetchedVariantName = variant.variantName;
       }
 
       setState(() {
         productName = product.name;
         variantName = fetchedVariantName;
-        price = fetchedPrice;
         imageUrl = fetchedImage;
         _loading = false;
       });

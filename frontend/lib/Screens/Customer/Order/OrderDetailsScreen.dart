@@ -242,10 +242,18 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                 final product = products.firstWhere(
                       (p) => p.variants.any((v) => v.id == item.productVariantId),
                   orElse: () => Product(
-                    id: '', name: '', price: 0, discountPercentage: 0,
-                    categoryId: '', createdAt: DateTime.now(), updatedAt: DateTime.now(),
-                    images: [], variants: [],
+                    id: '',
+                    name: '',
+                    brand: null,
+                    description: null,
+                    discountPercentage: 0,
+                    categoryId: '',
+                    createdAt: DateTime.now(),
+                    updatedAt: DateTime.now(),
+                    images: [],
+                    variants: [],
                   ),
+
                 );
 
                 final base64Image = product.images.isNotEmpty ? product.images.first.url : null;

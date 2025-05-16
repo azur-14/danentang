@@ -1,12 +1,12 @@
-// lib/Screens/Manager/Product/product_detail_screen.dart
-
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:danentang/models/product.dart';
 import 'package:danentang/models/tag.dart';
 import 'package:danentang/Service/product_service.dart';
-import 'package:danentang/widgets/Footer/mobile_navigation_bar.dart';
+import '../../../widgets/Footer/mobile_navigation_bar.dart';
+import 'add_product.dart';
+import 'delete_product.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
@@ -22,6 +22,8 @@ class ProductDetailScreen extends StatefulWidget {
 class _ProductDetailScreenState extends State<ProductDetailScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+
+  // Tất cả data load một lần
   late Future<Product> _futureProduct;
   late Future<List<ProductImage>> _futureImages;
   late Future<List<ProductVariant>> _futureVariants;
@@ -31,6 +33,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _loadAll();
+  }
+
+  void _loadAll() {
     _futureProduct = ProductService.getById(widget.productId);
     _futureImages = ProductService.fetchImages(widget.productId);
     _futureVariants = ProductService.fetchVariants(widget.productId);
@@ -41,6 +47,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  // Khi thêm/sửa/xóa quay lại thì reload data
+  Future<void> _onEditedOrDeleted(bool? result) async {
+    if (result == true) {
+      setState(_loadAll);
+    }
   }
 
   @override
@@ -61,9 +74,36 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
           );
         }
         final product = snap.data!;
+
         return Scaffold(
           appBar: AppBar(
             title: Text(product.name),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.edit, color: Colors.white),
+                onPressed: () async {
+                  final edited = await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AddProductScreen(product: product),
+                    ),
+                  );
+                  await _onEditedOrDeleted(edited);
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete, color: Colors.white),
+                onPressed: () async {
+                  final deleted = await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DeleteProductScreen(product: product),
+                    ),
+                  );
+                  if (deleted == true) Navigator.pop(context, true);
+                },
+              ),
+            ],
             bottom: TabBar(
               controller: _tabController,
               tabs: const [
@@ -131,14 +171,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                   top: 4,
                   right: 4,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: Colors.black45,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       'Order ${img.sortOrder}',
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      style:
+                      const TextStyle(color: Colors.white, fontSize: 12),
                     ),
                   ),
                 ),
@@ -171,7 +213,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
               leading: const Icon(Icons.settings_input_component),
               title: Text(v.variantName),
               subtitle: Text(
-                'Additional \$${v.additionalPrice.toStringAsFixed(2)} • Stock: ${v.inventory}',
+                'Additional ₫${v.additionalPrice.toStringAsFixed(0)} • Stock: ${v.inventory}',
               ),
             );
           },
@@ -200,7 +242,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
               return Chip(
                 label: Text(t.name),
                 backgroundColor: Colors.purple.shade50,
-                avatar: const Icon(Icons.label, size: 18, color: Colors.purple),
+                avatar: const Icon(Icons.label,
+                    size: 18, color: Colors.purple),
               );
             }).toList(),
           ),
@@ -222,7 +265,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         width: width,
         height: height,
         fit: fit,
-        errorBuilder: (context, error, stackTrace) => _fallbackImage(width, height),
+        errorBuilder: (context, error, stackTrace) =>
+            _fallbackImage(width, height),
       );
     } catch (_) {
       return _fallbackImage(width, height);
@@ -235,7 +279,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
       height: height,
       color: Colors.grey.shade300,
       alignment: Alignment.center,
-      child: const Icon(Icons.broken_image, size: 40, color: Colors.grey),
+      child:
+      const Icon(Icons.broken_image, size: 40, color: Colors.grey),
     );
   }
 }

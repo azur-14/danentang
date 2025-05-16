@@ -13,7 +13,6 @@ import '../models/Review.dart';
 class ProductService {
 
   static const String _baseUrl         = 'http://localhost:5011/api';
-  static const String _productItemsPath = '$_baseUrl/product-items';
   static const String _productsPath    = '$_baseUrl/products';
   static const String _categoriesPath  = '$_baseUrl/categories';
   static const String _tagsPath        = '$_baseUrl/Tag';
@@ -209,34 +208,6 @@ class ProductService {
     return [];
   }
 
-  static Future<void> createProductItemsForVariant({
-    required String productId,
-    required String variantId,
-    required int quantity,
-  }) async {
-    final now = DateTime.now();
-    for (int i = 0; i < quantity; i++) {
-      final item = {
-        'productId': productId,
-        'variantId': variantId,
-        'serialNumber': null,
-        'status': 'available',
-        'createdAt': now.toIso8601String(),
-        'updatedAt': now.toIso8601String(),
-      };
-
-      final resp = await http.post(
-        Uri.parse(_productItemsPath),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(item),
-      );
-
-      if (resp.statusCode != 200) {
-        throw Exception('Failed to create product item for variant $variantId');
-      }
-    }
-  }
-
   /// GET /api/Tag
   static Future<List<Tag>> fetchAllTags() async {
     final uri = Uri.parse(_tagsPath);
@@ -277,6 +248,62 @@ class ProductService {
       debugPrint('❌ fetchProductsByTag exception: $e\n$st');
     }
     return [];
+  }
+  /// GET /api/product-tags/by-product/{productId}
+  static Future<List<Tag>> fetchTagsOfProduct(String productId) async {
+    final uri = Uri.parse('$_productTagsPath/by-product/$productId');
+    debugPrint('→ GET $uri');
+    final resp = await http.get(uri);
+    debugPrint('← ${resp.statusCode} ${resp.body}');
+    if (resp.statusCode == 200) {
+      final data = json.decode(resp.body) as List<dynamic>;
+      return data.map((e) => Tag.fromJson(e as Map<String, dynamic>)).toList();
+    }
+    throw Exception('fetchTagsOfProduct failed: ${resp.statusCode}');
+  }
+
+  /// POST /api/product-tags
+  static Future<void> assignTagToProduct(String productId, String tagId) async {
+    // client phải tự sinh Id cho ProductTag nếu controller không generate
+    final body = jsonEncode({
+      'id': ObjectId().toHexString(),
+      'productId': productId,
+      'tagId': tagId,
+    });
+    final resp = await http.post(
+      Uri.parse('$_productTagsPath'),
+      headers: {'Content-Type':'application/json'},
+      body: body,
+    );
+    if (resp.statusCode != 200 && resp.statusCode != 201) {
+      throw Exception('assignTagToProduct failed: ${resp.statusCode}');
+    }
+  }
+
+  /// DELETE /api/product-tags?productId=...&tagId=...
+  static Future<void> removeTagFromProduct(String productId, String tagId) async {
+    final uri = Uri.parse(
+        '$_productTagsPath?productId=$productId&tagId=$tagId'
+    );
+    final resp = await http.delete(uri);
+    if (resp.statusCode != 200 && resp.statusCode != 204) {
+      throw Exception('removeTagFromProduct failed: ${resp.statusCode}');
+    }
+  }
+
+  /// PUT /api/product-tags/by-product/{productId}
+  /// Bulk-update: xóa hết và chèn lại những tagIds cho product
+  static Future<void> upsertTagsForProduct(
+      String productId, List<String> tagIds) async {
+    final uri = Uri.parse('$_productTagsPath/by-product/$productId');
+    final resp = await http.put(
+      uri,
+      headers: {'Content-Type':'application/json'},
+      body: jsonEncode({'tagIds': tagIds}),
+    );
+    if (resp.statusCode != 204 && resp.statusCode != 200) {
+      throw Exception('upsertTagsForProduct failed: ${resp.statusCode}');
+    }
   }
 
   /// GET /api/products/category/{categoryId}
@@ -348,29 +375,6 @@ class ProductService {
     }
     return [];
   }
-
-  /// GET /api/products/{id}/recommended
-  static Future<List<Product>> getRecommended(String productId) async {
-    final uri = Uri.parse('$_productsPath/$productId/recommended');
-    debugPrint('→ GET $uri');
-    try {
-      final resp = await http.get(uri);
-      debugPrint('← ${resp.statusCode} ${resp.body}');
-      if (resp.statusCode == 200) {
-        final data = json.decode(resp.body) as List<dynamic>;
-        return data
-            .map((e) => Product.fromJson(e as Map<String, dynamic>))
-            .toList();
-      } else {
-        debugPrint(
-            '‼️ getRecommended API error ${resp.statusCode}');
-      }
-    } catch (e, st) {
-      debugPrint('❌ getRecommended exception: $e\n$st');
-    }
-    return [];
-  }
-
 
   /// GET /api/products/{id}
   Future<Product> getProductById(String id) async {
@@ -454,16 +458,6 @@ class ProductService {
       throw Exception('deleteImage failed: ${resp.statusCode}');
     }
   }
-  /// GET /api/product-tags/by-product/{productId}
-  static Future<List<Tag>> fetchTagsOfProduct(String productId) async {
-    final uri = Uri.parse('$_productTagsPath/by-product/$productId');
-    final resp = await http.get(uri);
-    if (resp.statusCode == 200) {
-      final data = json.decode(resp.body) as List<dynamic>;
-      return data.map((e) => Tag.fromJson(e as Map<String, dynamic>)).toList();
-    }
-    throw Exception('Failed to load tags for product $productId (${resp.statusCode})');
-  }
   // —— Variant CRUD —— //
 
   static Future<ProductVariant> addVariant(String productId, ProductVariant v) async {
@@ -475,15 +469,6 @@ class ProductService {
     );
     if (resp.statusCode == 200) {
       final variant = ProductVariant.fromJson(json.decode(resp.body));
-
-      // ✅ Auto tạo ProductItem nếu inventory > 0
-      if (variant.inventory > 0) {
-        await createProductItemsForVariant(
-          productId: productId,
-          variantId: variant.id!,
-          quantity: variant.inventory,
-        );
-      }
 
       return variant;
     }
@@ -507,17 +492,6 @@ class ProductService {
 
     if (resp.statusCode != 204) {
       throw Exception('updateVariant failed: ${resp.statusCode}');
-    }
-
-    // Nếu inventory tăng → tạo thêm ProductItem
-    final int newInventory = v.inventory;
-    final int diff = newInventory - oldInventory;
-    if (diff > 0) {
-      await createProductItemsForVariant(
-        productId: productId,
-        variantId: v.id!,
-        quantity: diff,
-      );
     }
   }
 

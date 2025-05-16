@@ -13,13 +13,24 @@ class ProductInfo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double discountedPrice = product.price * (1 - product.discountPercentage / 100);
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth > 800;
+
+    // 1. Tìm variant có giá thấp nhất
+    final cheapestVariant = product.variants.isNotEmpty
+        ? product.variants.reduce((a, b) =>
+    a.additionalPrice < b.additionalPrice ? a : b)
+        : null;
+    final basePrice = cheapestVariant?.additionalPrice ?? 0.0;
+
+    // 2. Áp discount trên giá mặc định
+    final discountedBasePrice =
+        basePrice * (1 - product.discountPercentage / 100);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Product name
         Text(
           product.name,
           style: TextStyle(
@@ -28,6 +39,8 @@ class ProductInfo extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
+
+        // Rating
         Row(
           children: [
             RatingBarIndicator(
@@ -41,16 +54,18 @@ class ProductInfo extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Text(
-              "(${productRating.reviewCount} Đánh giá)",
+              "(${productRating.reviewCount} đánh giá)",
               style: const TextStyle(fontSize: 14),
             ),
           ],
         ),
         const SizedBox(height: 8),
+
+        // Price row
         Row(
           children: [
             Text(
-              "₫${discountedPrice.toStringAsFixed(0)}",
+              "₫${discountedBasePrice.toStringAsFixed(0)}",
               style: TextStyle(
                 fontSize: isDesktop ? 24 : 20,
                 fontWeight: FontWeight.bold,
@@ -60,7 +75,7 @@ class ProductInfo extends StatelessWidget {
             const SizedBox(width: 8),
             if (product.discountPercentage > 0)
               Text(
-                "₫${product.price.toStringAsFixed(0)}",
+                "₫${basePrice.toStringAsFixed(0)}",
                 style: TextStyle(
                   fontSize: isDesktop ? 18 : 16,
                   color: Colors.grey,
@@ -78,6 +93,8 @@ class ProductInfo extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 8),
+
+        // Variants list
         const Text(
           "Biến thể:",
           style: TextStyle(
@@ -85,30 +102,32 @@ class ProductInfo extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        ...product.variants.map(
-              (variant) {
-            double variantPrice = product.price + variant.additionalPrice;
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: Row(
-                children: [
-                  Text(
-                    "${variant.variantName}: ",
-                    style: const TextStyle(fontSize: 14),
+        const SizedBox(height: 4),
+        ...product.variants.map((variant) {
+          final variantPrice =
+              variant.additionalPrice * (1 - product.discountPercentage / 100);
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                Text(
+                  "${variant.variantName}: ",
+                  style: const TextStyle(fontSize: 14),
+                ),
+                Text(
+                  "₫${variantPrice.toStringAsFixed(0)} (Kho: ${variant.inventory})",
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontSize: 14,
                   ),
-                  Text(
-                    "₫${variantPrice.toStringAsFixed(0)} (Kho: ${variant.inventory})",
-                    style: const TextStyle(
-                      color: Colors.grey,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
         const SizedBox(height: 16),
+
+        // Description
         const Text(
           "Mô tả:",
           style: TextStyle(
@@ -125,6 +144,8 @@ class ProductInfo extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
+
+        // Action buttons
         Row(
           children: [
             Expanded(
@@ -134,7 +155,7 @@ class ProductInfo extends StatelessWidget {
                     context: context,
                     builder: (context) => BuyNowDialog(
                       product: product,
-                      discountedPrice: discountedPrice,
+                      discountedPrice: discountedBasePrice,
                     ),
                   );
                 },
@@ -178,12 +199,11 @@ class ProductInfo extends StatelessWidget {
                   size: 24,
                 ),
                 onPressed: () {
-                  // Hiển thị AddToCartDialog khi nhấn vào giỏ hàng
                   showDialog(
                     context: context,
                     builder: (context) => AddToCartDialog(
                       product: product,
-                      discountedPrice: discountedPrice,
+                      discountedPrice: discountedBasePrice,
                     ),
                   );
                 },

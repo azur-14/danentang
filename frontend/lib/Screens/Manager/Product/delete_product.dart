@@ -1,58 +1,40 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
-import 'package:danentang/Service/product_service.dart';
-// lib/Screens/Manager/Product/delete_product.dart
-
-import 'package:flutter/material.dart';
 import 'package:danentang/models/product.dart';
 import 'package:danentang/Service/product_service.dart';
-import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
-class Delete_Product extends StatefulWidget {
+class DeleteProductScreen extends StatefulWidget {
   final Product product;
-  const Delete_Product({Key? key, required this.product}) : super(key: key);
+  const DeleteProductScreen({Key? key, required this.product})
+      : super(key: key);
 
   @override
-  State<Delete_Product> createState() => _Delete_ProductState();
+  State<DeleteProductScreen> createState() => _DeleteProductScreenState();
 }
 
-class _Delete_ProductState extends State<Delete_Product>
+class _DeleteProductScreenState extends State<DeleteProductScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _fadeAnimation, _scaleAnimation;
-  bool _deleted = false;
+  bool _isDeleting = false;
+  bool _deleteSuccess = false;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 400),
     );
-    _fadeAnimation = Tween(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeIn,
     );
     _scaleAnimation = CurvedAnimation(
       parent: _controller,
       curve: Curves.easeOutBack,
     );
-    _controller.forward();
-
-    _performDelete();
-  }
-
-  Future<void> _performDelete() async {
-    // 1) Call the delete API
-    await ProductService.deleteProduct(widget.product.id);
-
-    // 2) Show the success animation
-    setState(() => _deleted = true);
-
-    // 3) Wait a moment so user sees it
-    await Future.delayed(const Duration(seconds: 1));
-
-    // 4) Pop back to the management screen, passing "true" to indicate deletion
-    if (mounted) Navigator.pop(context, true);
   }
 
   @override
@@ -61,14 +43,61 @@ class _Delete_ProductState extends State<Delete_Product>
     super.dispose();
   }
 
+  Future<void> _confirmAndDelete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Xác nhận xóa'),
+        content: Text('Bạn có chắc muốn xóa sản phẩm "${widget.product.name}" không?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Xóa'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    setState(() {
+      _isDeleting = true;
+      _errorMessage = null;
+    });
+    try {
+      await ProductService.deleteProduct(widget.product.id);
+      setState(() {
+        _deleteSuccess = true;
+      });
+      _controller.forward();
+      await Future.delayed(const Duration(seconds: 1));
+      if (mounted) Navigator.pop(context, true);
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isDeleting = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text('Xóa sản phẩm'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context, false),
+        ),
+      ),
       body: Center(
-        child: _deleted
+        child: _isDeleting
+            ? _deleteSuccess
             ? FadeTransition(
           opacity: _fadeAnimation,
           child: ScaleTransition(
@@ -78,30 +107,65 @@ class _Delete_ProductState extends State<Delete_Product>
               children: const [
                 CircleAvatar(
                   radius: 60,
-                  backgroundColor: Colors.purple,
+                  backgroundColor: Colors.green,
                   child: Icon(Icons.check, size: 60, color: Colors.white),
                 ),
                 SizedBox(height: 20),
                 Text(
-                  "Xóa Sản phẩm\nThành công!",
-                  textAlign: TextAlign.center,
+                  'Xóa Thành Công!',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: Colors.purple,
+                    color: Colors.green,
                   ),
-                ),
-                SizedBox(height: 12),
-                Text(
-                  "Trở về danh sách để tiếp tục quản lý",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
                 ),
               ],
             ),
           ),
         )
-            : const CircularProgressIndicator(),
+            : const CircularProgressIndicator()
+            : Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Bạn có chắc muốn xóa?',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '"${widget.product.name}"',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16),
+              ),
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Lỗi: $_errorMessage',
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ],
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Hủy'),
+                  ),
+                  const SizedBox(width: 16),
+                  ElevatedButton(
+                    onPressed: _confirmAndDelete,
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red),
+                    child: const Text('Xóa'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
       bottomNavigationBar: isMobile
           ? MobileNavigationBar(

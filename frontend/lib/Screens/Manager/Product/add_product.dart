@@ -1,5 +1,3 @@
-// lib/Screens/Manager/Product/add_product.dart
-
 import 'dart:convert';
 import 'dart:io';
 
@@ -8,37 +6,39 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:danentang/models/product.dart';
 import 'package:danentang/models/Category.dart';
+import 'package:danentang/models/tag.dart';
 import 'package:danentang/Service/product_service.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
-class Add_Product extends StatefulWidget {
+class AddProductScreen extends StatefulWidget {
   final Product? product;
-  const Add_Product({Key? key, this.product}) : super(key: key);
+  const AddProductScreen({Key? key, this.product}) : super(key: key);
 
   @override
-  State<Add_Product> createState() => _Add_ProductState();
+  State<AddProductScreen> createState() => _AddProductScreenState();
 }
 
-class _Add_ProductState extends State<Add_Product> {
+class _AddProductScreenState extends State<AddProductScreen> {
   final _formKey = GlobalKey<FormState>();
   final _picker = ImagePicker();
 
   late TextEditingController _nameCtl;
   late TextEditingController _brandCtl;
   late TextEditingController _descCtl;
-  late TextEditingController _priceCtl;
   late TextEditingController _discountCtl;
 
   List<Category> _categories = [];
   String? _selectedCategoryId;
 
+  List<Tag> _allTags = [];
+  List<String> _selectedTagIds = [];
+
   final List<String?> _imageBase64 = [];
-  final List<TextEditingController> _variantNameCtrls  = [];
+  final List<TextEditingController> _variantNameCtrls = [];
   final List<TextEditingController> _variantPriceCtrls = [];
-  final List<TextEditingController> _variantInvCtrls   = [];
+  final List<TextEditingController> _variantInvCtrls = [];
 
   bool _loading = false;
-
   final _baseDecoration = InputDecoration(
     filled: true,
     fillColor: Colors.grey.shade100,
@@ -48,22 +48,21 @@ class _Add_ProductState extends State<Add_Product> {
   @override
   void initState() {
     super.initState();
+    _nameCtl = TextEditingController(text: widget.product?.name ?? '');
+    _brandCtl = TextEditingController(text: widget.product?.brand ?? '');
+    _descCtl = TextEditingController(text: widget.product?.description ?? '');
+    _discountCtl = TextEditingController(text: widget.product?.discountPercentage.toString() ?? '0');
 
-    _nameCtl     = TextEditingController(text: widget.product?.name ?? '');
-    _brandCtl    = TextEditingController(text: widget.product?.brand ?? '');
-    _descCtl     = TextEditingController(text: widget.product?.description ?? '');
-    _priceCtl    = TextEditingController(text: widget.product?.price.toString() ?? '');
-    _discountCtl = TextEditingController(text: widget.product?.discountPercentage.toString() ?? '');
     _selectedCategoryId = widget.product?.categoryId;
 
-    if (widget.product != null) {
-      for (var img in widget.product!.images) {
-        _imageBase64.add(img.url);
-      }
+    // Images
+    if (widget.product != null && widget.product!.images.isNotEmpty) {
+      for (var img in widget.product!.images) _imageBase64.add(img.url);
     }
     if (_imageBase64.isEmpty) _addImageField();
 
-    if (widget.product != null) {
+    // Variants
+    if (widget.product != null && widget.product!.variants.isNotEmpty) {
       for (var v in widget.product!.variants) {
         _variantNameCtrls.add(TextEditingController(text: v.variantName));
         _variantPriceCtrls.add(TextEditingController(text: v.additionalPrice.toString()));
@@ -72,16 +71,27 @@ class _Add_ProductState extends State<Add_Product> {
     }
     if (_variantNameCtrls.isEmpty) _addVariantField();
 
+    // Load categories and tags
     ProductService.fetchAllCategories().then((cats) {
       setState(() {
         _categories = cats;
         _selectedCategoryId ??= cats.isNotEmpty ? cats.first.id : null;
       });
     });
+    ProductService.fetchAllTags().then((tags) async {
+      // fetch existing product tags if editing
+      List<String> current = [];
+      if (widget.product != null) {
+        current = (await ProductService.fetchTagsOfProduct(widget.product!.id)).map((t) => t.id).toList();
+      }
+      setState(() {
+        _allTags = tags;
+        _selectedTagIds = current;
+      });
+    });
   }
 
   void _addImageField() => _imageBase64.add(null);
-
   void _addVariantField() {
     _variantNameCtrls.add(TextEditingController());
     _variantPriceCtrls.add(TextEditingController(text: '0'));
@@ -93,11 +103,10 @@ class _Add_ProductState extends State<Add_Product> {
     _nameCtl.dispose();
     _brandCtl.dispose();
     _descCtl.dispose();
-    _priceCtl.dispose();
     _discountCtl.dispose();
-    for (var c in _variantNameCtrls)  c.dispose();
+    for (var c in _variantNameCtrls) c.dispose();
     for (var c in _variantPriceCtrls) c.dispose();
-    for (var c in _variantInvCtrls)   c.dispose();
+    for (var c in _variantInvCtrls) c.dispose();
     super.dispose();
   }
 
@@ -115,21 +124,20 @@ class _Add_ProductState extends State<Add_Product> {
     final images = List<ProductImage>.generate(
       _imageBase64.length,
           (i) => ProductImage(
-            id: (widget.product?.images.length ?? 0) > i && widget.product!.images[i].id.isNotEmpty
-                ? widget.product!.images[i].id
-                : ObjectId().toHexString(),
-            url: _imageBase64[i] ?? '',
+        id: (widget.product?.images.length ?? 0) > i && widget.product!.images[i].id.isNotEmpty
+            ? widget.product!.images[i].id
+            : ObjectId().toHexString(),
+        url: _imageBase64[i] ?? '',
         sortOrder: i,
       ),
     );
-
     final variants = List<ProductVariant>.generate(
       _variantNameCtrls.length,
           (i) => ProductVariant(
-            id: (widget.product?.variants.length ?? 0) > i &&
-                widget.product!.variants[i].id.isNotEmpty
-                ? widget.product!.variants[i].id
-                : ObjectId().toHexString(),createdAt: (widget.product?.variants.length ?? 0) > i
+        id: (widget.product?.variants.length ?? 0) > i && widget.product!.variants[i].id.isNotEmpty
+            ? widget.product!.variants[i].id
+            : ObjectId().toHexString(),
+        createdAt: (widget.product?.variants.length ?? 0) > i
             ? widget.product!.variants[i].createdAt
             : DateTime.now(),
         variantName: _variantNameCtrls[i].text.trim(),
@@ -140,12 +148,11 @@ class _Add_ProductState extends State<Add_Product> {
     );
 
     final p = Product(
-      id: widget.product?.id ?? '',
+      id: widget.product?.id ?? ObjectId().toHexString(),
       name: _nameCtl.text.trim(),
       brand: _brandCtl.text.trim(),
       description: _descCtl.text.trim(),
-      price: double.parse(_priceCtl.text.trim()),
-      discountPercentage: int.parse(_discountCtl.text.trim()),
+      discountPercentage: int.tryParse(_discountCtl.text.trim()) ?? 0,
       categoryId: _selectedCategoryId ?? '',
       createdAt: widget.product?.createdAt ?? DateTime.now(),
       updatedAt: DateTime.now(),
@@ -159,10 +166,11 @@ class _Add_ProductState extends State<Add_Product> {
       } else {
         await ProductService.updateProduct(p);
       }
+      // bulk upsert tags
+      await ProductService.upsertTagsForProduct(p.id, _selectedTagIds);
       Navigator.pop(context, true);
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: \$e')));
     } finally {
       setState(() => _loading = false);
     }
@@ -183,7 +191,7 @@ class _Add_ProductState extends State<Add_Product> {
         )
             : null,
       ),
-      body: _categories.isEmpty
+      body: (_categories.isEmpty || _allTags.isEmpty)
           ? const Center(child: CircularProgressIndicator())
           : Padding(
         padding: const EdgeInsets.all(16),
@@ -191,6 +199,7 @@ class _Add_ProductState extends State<Add_Product> {
           key: _formKey,
           child: ListView(
             children: [
+              // Name, Brand, Description
               TextFormField(
                 controller: _nameCtl,
                 decoration: _baseDecoration.copyWith(labelText: 'Name'),
@@ -208,13 +217,7 @@ class _Add_ProductState extends State<Add_Product> {
                 maxLines: 3,
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: _priceCtl,
-                decoration: _baseDecoration.copyWith(labelText: 'Price'),
-                keyboardType: TextInputType.number,
-                validator: (v) => v == null || double.tryParse(v) == null ? 'Invalid' : null,
-              ),
-              const SizedBox(height: 12),
+              // Discount percentage
               TextFormField(
                 controller: _discountCtl,
                 decoration: _baseDecoration.copyWith(labelText: 'Discount %'),
@@ -222,6 +225,7 @@ class _Add_ProductState extends State<Add_Product> {
                 validator: (v) => v == null || int.tryParse(v) == null ? 'Invalid' : null,
               ),
               const SizedBox(height: 12),
+              // Category
               DropdownButtonFormField<String>(
                 value: _selectedCategoryId,
                 decoration: _baseDecoration.copyWith(labelText: 'Category'),
@@ -230,13 +234,41 @@ class _Add_ProductState extends State<Add_Product> {
                     .toList(),
                 onChanged: (v) => setState(() => _selectedCategoryId = v),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
+              // Tags
+              ExpansionTile(
+                title: const Text('Tags'),
+                children: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: _allTags.map((tag) {
+                      final selected = _selectedTagIds.contains(tag.id);
+                      return FilterChip(
+                        label: Text(tag.name),
+                        selected: selected,
+                        onSelected: (sel) {
+                          setState(() {
+                            if (sel)
+                              _selectedTagIds.add(tag.id);
+                            else
+                              _selectedTagIds.remove(tag.id);
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              // Images
               ExpansionTile(
                 title: const Text('Images'),
                 children: [
                   for (var i = 0; i < _imageBase64.length; i++)
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       child: Row(
                         children: [
                           Container(
@@ -246,9 +278,12 @@ class _Add_ProductState extends State<Add_Product> {
                               color: Colors.grey.shade200,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: _imageBase64[i] != null && _imageBase64[i]!.isNotEmpty
-                                ? _safeBase64Image(_imageBase64[i]!, width: 64, height: 64)
-                                : const Icon(Icons.image, size: 32, color: Colors.grey),
+                            child: _imageBase64[i] != null &&
+                                _imageBase64[i]!.isNotEmpty
+                                ? _safeBase64Image(_imageBase64[i]!,
+                                width: 64, height: 64)
+                                : const Icon(Icons.image,
+                                size: 32, color: Colors.grey),
                           ),
                           const SizedBox(width: 12),
                           ElevatedButton.icon(
@@ -258,7 +293,8 @@ class _Add_ProductState extends State<Add_Product> {
                           ),
                           const Spacer(),
                           IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
+                            icon: const Icon(Icons.delete,
+                                color: Colors.red),
                             onPressed: () => setState(() {
                               _imageBase64.removeAt(i);
                             }),
@@ -273,17 +309,21 @@ class _Add_ProductState extends State<Add_Product> {
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+              // Variants
               ExpansionTile(
                 title: const Text('Variants'),
                 children: [
                   for (var i = 0; i < _variantNameCtrls.length; i++)
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       child: Column(
                         children: [
                           TextFormField(
                             controller: _variantNameCtrls[i],
-                            decoration: const InputDecoration(labelText: 'Name'),
+                            decoration:
+                            const InputDecoration(labelText: 'Name'),
                           ),
                           const SizedBox(height: 4),
                           Row(
@@ -291,7 +331,8 @@ class _Add_ProductState extends State<Add_Product> {
                               Expanded(
                                 child: TextFormField(
                                   controller: _variantPriceCtrls[i],
-                                  decoration: const InputDecoration(labelText: 'Add. Price'),
+                                  decoration: const InputDecoration(
+                                      labelText: 'Add. Price'),
                                   keyboardType: TextInputType.number,
                                 ),
                               ),
@@ -299,12 +340,14 @@ class _Add_ProductState extends State<Add_Product> {
                               Expanded(
                                 child: TextFormField(
                                   controller: _variantInvCtrls[i],
-                                  decoration: const InputDecoration(labelText: 'Stock'),
+                                  decoration:
+                                  const InputDecoration(labelText: 'Stock'),
                                   keyboardType: TextInputType.number,
                                 ),
                               ),
                               IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
+                                icon: const Icon(Icons.delete,
+                                    color: Colors.red),
                                 onPressed: () => setState(() {
                                   _variantNameCtrls.removeAt(i);
                                   _variantPriceCtrls.removeAt(i);
@@ -331,7 +374,8 @@ class _Add_ProductState extends State<Add_Product> {
                       ? const SizedBox(
                     width: 24,
                     height: 24,
-                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2),
                   )
                       : Text(isEdit ? 'Save Changes' : 'Create Product'),
                 ),
@@ -351,7 +395,8 @@ class _Add_ProductState extends State<Add_Product> {
     );
   }
 
-  Widget _safeBase64Image(String base64String, {double? width, double? height}) {
+  Widget _safeBase64Image(String base64String,
+      {double? width, double? height}) {
     try {
       final bytes = base64Decode(base64String);
       return Image.memory(
@@ -369,7 +414,7 @@ class _Add_ProductState extends State<Add_Product> {
           );
         },
       );
-    } catch (e) {
+    } catch (_) {
       return Container(
         width: width,
         height: height,
@@ -380,3 +425,4 @@ class _Add_ProductState extends State<Add_Product> {
     }
   }
 }
+

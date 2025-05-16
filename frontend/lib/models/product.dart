@@ -5,7 +5,6 @@ class Product {
   final String name;
   final String? brand;
   final String? description;
-  final double price;
   final int discountPercentage;
   final String categoryId;
   final DateTime createdAt;
@@ -18,7 +17,6 @@ class Product {
     required this.name,
     this.brand,
     this.description,
-    required this.price,
     required this.discountPercentage,
     required this.categoryId,
     required this.createdAt,
@@ -31,7 +29,6 @@ class Product {
     'name': name,
     'brand': brand,
     'description': description,
-    'price': price,
     'discountPercentage': discountPercentage,
     'categoryId': categoryId,
     'createdAt': createdAt.toIso8601String(),
@@ -44,7 +41,6 @@ class Product {
     name: json['name'] as String,
     brand: json['brand'] as String?,
     description: json['description'] as String?,
-    price: (json['price'] as num).toDouble(),
     discountPercentage: json['discountPercentage'] as int,
     categoryId: json['categoryId'] as String,
     createdAt: DateTime.parse(json['createdAt'] as String),
@@ -62,7 +58,6 @@ class Product {
     String? name,
     String? brand,
     String? description,
-    double? price,
     int? discountPercentage,
     String? categoryId,
     DateTime? createdAt,
@@ -75,7 +70,6 @@ class Product {
       name: name ?? this.name,
       brand: brand ?? this.brand,
       description: description ?? this.description,
-      price: price ?? this.price,
       discountPercentage: discountPercentage ?? this.discountPercentage,
       categoryId: categoryId ?? this.categoryId,
       createdAt: createdAt ?? this.createdAt,

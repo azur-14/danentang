@@ -33,8 +33,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
     _productFuture = ProductService.getById(widget.productId);
     _ratingFuture = ProductService.getRating(widget.productId);
     _reviewsFuture = ProductService.getReviews(widget.productId);
-    _recommendedFuture = ProductService.getRecommended(widget.productId);
-  }
+    }
 
   @override
   void dispose() {
