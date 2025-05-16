@@ -301,7 +301,6 @@ class ProductService {
   }
 
   // —— Các method cho Detail Screen —— //
-
   /// GET /api/products/{id}
   static Future<Product> getById(String id) async {
     final uri = Uri.parse('$_productsPath/$id');

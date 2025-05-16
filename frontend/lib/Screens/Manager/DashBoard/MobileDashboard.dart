@@ -3,7 +3,6 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
 import 'package:danentang/Screens/Manager/User/user_list.dart';
 
-import 'package:danentang/Screens/Manager/Project/projects.dart';
 import 'package:danentang/Screens/Manager/Product/product_management.dart';
 import 'package:danentang/Screens/Manager/Coupon/coupon_management.dart';
 import 'package:danentang/Screens/Manager/Category/categories_management.dart';
@@ -63,7 +62,6 @@ class _MobileDashboardState extends State<MobileDashboard> with SingleTickerProv
               decoration: BoxDecoration(color: Colors.deepPurple),
               child: Text('Menu', style: TextStyle(color: Colors.white, fontSize: 24)),
             ),
-            _drawerItem('Quàn lý Dự án', Projects()),
             _drawerItem('Quản lý Sản phẩm', ProductManagementScreen()),
             _drawerItem('Quản lý Mã giảm giá', CouponManagement()),
             _drawerItem('Quản lý Danh mục', CategoriesManagement()),
@@ -206,7 +204,6 @@ class _MobileDashboardState extends State<MobileDashboard> with SingleTickerProv
 
   Widget _buildManagementSections(BuildContext context) {
     List<Map<String, dynamic>> managements = [
-      {"title": "Quản lý Dự án", "screen": Projects()},
       {"title": "Quản lý Sản phẩm", "screen": ProductManagementScreen()},
       {"title": "Quản lý Mã giảm giá", "screen": CouponManagement()},
       {"title": "Quản lý Danh mục", "screen": CategoriesManagement()},

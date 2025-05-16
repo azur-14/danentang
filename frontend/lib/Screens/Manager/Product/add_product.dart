@@ -1,5 +1,3 @@
-// lib/Screens/Manager/Product/add_product.dart
-
 import 'dart:convert';
 import 'dart:io';
 
@@ -33,9 +31,9 @@ class _Add_ProductState extends State<Add_Product> {
   String? _selectedCategoryId;
 
   final List<String?> _imageBase64 = [];
-  final List<TextEditingController> _variantNameCtrls  = [];
+  final List<TextEditingController> _variantNameCtrls = [];
   final List<TextEditingController> _variantPriceCtrls = [];
-  final List<TextEditingController> _variantInvCtrls   = [];
+  final List<TextEditingController> _variantInvCtrls = [];
 
   bool _loading = false;
 
@@ -43,16 +41,17 @@ class _Add_ProductState extends State<Add_Product> {
     filled: true,
     fillColor: Colors.grey.shade100,
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+    errorStyle: TextStyle(color: Colors.red),
   );
 
   @override
   void initState() {
     super.initState();
 
-    _nameCtl     = TextEditingController(text: widget.product?.name ?? '');
-    _brandCtl    = TextEditingController(text: widget.product?.brand ?? '');
-    _descCtl     = TextEditingController(text: widget.product?.description ?? '');
-    _priceCtl    = TextEditingController(text: widget.product?.price.toString() ?? '');
+    _nameCtl = TextEditingController(text: widget.product?.name ?? '');
+    _brandCtl = TextEditingController(text: widget.product?.brand ?? '');
+    _descCtl = TextEditingController(text: widget.product?.description ?? '');
+    _priceCtl = TextEditingController(text: widget.product?.price.toString() ?? '');
     _discountCtl = TextEditingController(text: widget.product?.discountPercentage.toString() ?? '');
     _selectedCategoryId = widget.product?.categoryId;
 
@@ -84,8 +83,8 @@ class _Add_ProductState extends State<Add_Product> {
 
   void _addVariantField() {
     _variantNameCtrls.add(TextEditingController());
-    _variantPriceCtrls.add(TextEditingController(text: '0'));
-    _variantInvCtrls.add(TextEditingController(text: '0'));
+    _variantPriceCtrls.add(TextEditingController(text: ''));
+    _variantInvCtrls.add(TextEditingController(text: ''));
   }
 
   @override
@@ -95,9 +94,9 @@ class _Add_ProductState extends State<Add_Product> {
     _descCtl.dispose();
     _priceCtl.dispose();
     _discountCtl.dispose();
-    for (var c in _variantNameCtrls)  c.dispose();
+    for (var c in _variantNameCtrls) c.dispose();
     for (var c in _variantPriceCtrls) c.dispose();
-    for (var c in _variantInvCtrls)   c.dispose();
+    for (var c in _variantInvCtrls) c.dispose();
     super.dispose();
   }
 
@@ -110,15 +109,30 @@ class _Add_ProductState extends State<Add_Product> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (_imageBase64.every((img) => img == null || img.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('At least one image is required', style: TextStyle(color: Colors.red))),
+      );
+      return;
+    }
+
+    if (_selectedCategoryId == null || _selectedCategoryId!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please select a category', style: TextStyle(color: Colors.red))),
+      );
+      return;
+    }
+
     setState(() => _loading = true);
 
     final images = List<ProductImage>.generate(
       _imageBase64.length,
           (i) => ProductImage(
-            id: (widget.product?.images.length ?? 0) > i && widget.product!.images[i].id.isNotEmpty
-                ? widget.product!.images[i].id
-                : ObjectId().toHexString(),
-            url: _imageBase64[i] ?? '',
+        id: (widget.product?.images.length ?? 0) > i && widget.product!.images[i].id.isNotEmpty
+            ? widget.product!.images[i].id
+            : ObjectId().toHexString(),
+        url: _imageBase64[i] ?? '',
         sortOrder: i,
       ),
     );
@@ -126,15 +140,15 @@ class _Add_ProductState extends State<Add_Product> {
     final variants = List<ProductVariant>.generate(
       _variantNameCtrls.length,
           (i) => ProductVariant(
-            id: (widget.product?.variants.length ?? 0) > i &&
-                widget.product!.variants[i].id.isNotEmpty
-                ? widget.product!.variants[i].id
-                : ObjectId().toHexString(),createdAt: (widget.product?.variants.length ?? 0) > i
+        id: (widget.product?.variants.length ?? 0) > i && widget.product!.variants[i].id.isNotEmpty
+            ? widget.product!.variants[i].id
+            : ObjectId().toHexString(),
+        createdAt: (widget.product?.variants.length ?? 0) > i
             ? widget.product!.variants[i].createdAt
             : DateTime.now(),
         variantName: _variantNameCtrls[i].text.trim(),
-        additionalPrice: double.tryParse(_variantPriceCtrls[i].text) ?? 0,
-        inventory: int.tryParse(_variantInvCtrls[i].text) ?? 0,
+        additionalPrice: double.tryParse(_variantPriceCtrls[i].text) ?? 1,
+        inventory: int.tryParse(_variantInvCtrls[i].text) ?? 1,
         updatedAt: DateTime.now(),
       ),
     );
@@ -146,7 +160,7 @@ class _Add_ProductState extends State<Add_Product> {
       description: _descCtl.text.trim(),
       price: double.parse(_priceCtl.text.trim()),
       discountPercentage: int.parse(_discountCtl.text.trim()),
-      categoryId: _selectedCategoryId ?? '',
+      categoryId: _selectedCategoryId!,
       createdAt: widget.product?.createdAt ?? DateTime.now(),
       updatedAt: DateTime.now(),
       images: images,
@@ -161,8 +175,9 @@ class _Add_ProductState extends State<Add_Product> {
       }
       Navigator.pop(context, true);
     } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Error: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e', style: TextStyle(color: Colors.red))),
+      );
     } finally {
       setState(() => _loading = false);
     }
@@ -194,17 +209,23 @@ class _Add_ProductState extends State<Add_Product> {
               TextFormField(
                 controller: _nameCtl,
                 decoration: _baseDecoration.copyWith(labelText: 'Name'),
-                validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                validator: (v) => v == null || v.trim().isEmpty ? 'Name is required' : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _brandCtl,
                 decoration: _baseDecoration.copyWith(labelText: 'Brand'),
+                validator: (v) => v == null || v.trim().isEmpty ? 'Brand is required' : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _descCtl,
                 decoration: _baseDecoration.copyWith(labelText: 'Description'),
+                maxLines: 3,
+                validator: (v) => v == null || v.trim().isEmpty ? 'Description is required' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
                 maxLines: 3,
               ),
               const SizedBox(height: 12),
@@ -212,14 +233,26 @@ class _Add_ProductState extends State<Add_Product> {
                 controller: _priceCtl,
                 decoration: _baseDecoration.copyWith(labelText: 'Price'),
                 keyboardType: TextInputType.number,
-                validator: (v) => v == null || double.tryParse(v) == null ? 'Invalid' : null,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Price is required';
+                  final price = double.tryParse(v);
+                  if (price == null) return 'Invalid price';
+                  if (price <= 0) return 'Price must be greater than 0';
+                  return null;
+                },
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _discountCtl,
                 decoration: _baseDecoration.copyWith(labelText: 'Discount %'),
                 keyboardType: TextInputType.number,
-                validator: (v) => v == null || int.tryParse(v) == null ? 'Invalid' : null,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Discount is required';
+                  final discount = int.tryParse(v);
+                  if (discount == null) return 'Invalid discount';
+                  if (discount <= 0) return 'Discount must be greater than 0';
+                  return null;
+                },
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
@@ -229,6 +262,7 @@ class _Add_ProductState extends State<Add_Product> {
                     .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
                     .toList(),
                 onChanged: (v) => setState(() => _selectedCategoryId = v),
+                validator: (v) => v == null || v.isEmpty ? 'Category is required' : null,
               ),
               const SizedBox(height: 24),
               ExpansionTile(
@@ -283,7 +317,8 @@ class _Add_ProductState extends State<Add_Product> {
                         children: [
                           TextFormField(
                             controller: _variantNameCtrls[i],
-                            decoration: const InputDecoration(labelText: 'Name'),
+                            decoration: _baseDecoration.copyWith(labelText: 'Name'),
+                            validator: (v) => v == null || v.trim().isEmpty ? 'Variant name is required' : null,
                           ),
                           const SizedBox(height: 4),
                           Row(
@@ -291,16 +326,30 @@ class _Add_ProductState extends State<Add_Product> {
                               Expanded(
                                 child: TextFormField(
                                   controller: _variantPriceCtrls[i],
-                                  decoration: const InputDecoration(labelText: 'Add. Price'),
+                                  decoration: _baseDecoration.copyWith(labelText: 'Add. Price'),
                                   keyboardType: TextInputType.number,
+                                  validator: (v) {
+                                    if (v == null || v.trim().isEmpty) return 'Additional price is required';
+                                    final price = double.tryParse(v);
+                                    if (price == null) return 'Invalid price';
+                                    if (price <= 0) return 'Price must be greater than 0';
+                                    return null;
+                                  },
                                 ),
                               ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: TextFormField(
                                   controller: _variantInvCtrls[i],
-                                  decoration: const InputDecoration(labelText: 'Stock'),
+                                  decoration: _baseDecoration.copyWith(labelText: 'Stock'),
                                   keyboardType: TextInputType.number,
+                                  validator: (v) {
+                                    if (v == null || v.trim().isEmpty) return 'Stock is required';
+                                    final stock = int.tryParse(v);
+                                    if (stock == null) return 'Invalid stock';
+                                    if (stock <= 0) return 'Stock must be greater than 0';
+                                    return null;
+                                  },
                                 ),
                               ),
                               IconButton(
