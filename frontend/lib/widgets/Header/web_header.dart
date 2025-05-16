@@ -42,7 +42,8 @@ class _WebHeaderState extends State<WebHeader> {
       if (email != null) {
         final user = await UserService().fetchUserByEmail(email);
         setState(() {
-          _user = user; // ✅ đúng kiểu rồi, không cần ép kiểu nữa
+          _user = user;
+          _role = role;
         });
       }
     } catch (e) {
@@ -50,12 +51,10 @@ class _WebHeaderState extends State<WebHeader> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final loggedIn = widget.isLoggedIn;
 
-    // Hiển thị tên người dùng hoặc fallback
     String title;
     if (!loggedIn) {
       title = 'Hoalahe';
@@ -67,7 +66,6 @@ class _WebHeaderState extends State<WebHeader> {
       title = 'Guest';
     }
 
-    // Hiển thị avatar nếu có
     ImageProvider? avatarImg;
     if (_user?.avatarUrl != null && _user!.avatarUrl!.startsWith('data:image')) {
       try {
@@ -79,44 +77,80 @@ class _WebHeaderState extends State<WebHeader> {
     }
 
     return Container(
-      color: AppColors.primaryPurple,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.white,
+            Colors.white,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Text(
-            "Hoalahe | Kênh người bán | Tải Ứng dụng | Kết nối",
-            style: TextStyle(color: Colors.white, fontSize: 14),
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: "Hoalahe",
+                  style: TextStyle(
+                    color: Color(0xFF171F32),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                TextSpan(
+                  text: " | Kênh người bán | Tải Ứng dụng | Kết nối",
+                  style: TextStyle(
+                    color: Color(0xFF171F32),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
           const Spacer(),
-          const Text("Tiếng Việt", style: TextStyle(color: Colors.white, fontSize: 14)),
-          const SizedBox(width: 24),
-          IconButton(
-            icon: const Icon(Icons.shopping_cart, color: Colors.white),
-            onPressed: () => context.go('/checkout', extra: loggedIn),
+          Text(
+            "Tiếng Việt",
+            style: TextStyle(
+              color: Color(0xFF171F32),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
           ),
+          const SizedBox(width: 16),
           const SizedBox(width: 8),
           if (loggedIn) ...[
-            IconButton(
-              icon: const Icon(Icons.message, color: Colors.white),
-              onPressed: () {
-                if (_role == 'admin') {
-                  // Admin chưa chọn user, show thông báo hoặc chuyển tới danh sách người dùng khiếu nại
-                  context.go('/support'); // bạn có thể dùng '/chat/:userId' nếu có user cụ thể
-                } else {
-                  // Customer, chat với admin mặc định
-                  context.go('/chat');
-                }
-              },
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: Color(0xFF4D72E4).withOpacity(0.5),
+                  width: 1.0,
+                ),
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: IconButton(
+                icon: const Icon(
+                  Icons.message,
+                  color: Color(0xFF4D72E4),
+                  size: 24,
+                ),
+                onPressed: () {
+                  if (_role == 'admin') {
+                    context.go('/support');
+                  } else {
+                    context.go('/chat');
+                  }
+                },
+                tooltip: 'Tin nhắn',
+                hoverColor: Color(0xFF4D72E4).withOpacity(0.2),
+              ),
             ),
-
-          ] else ...[
-            TextButton(
-              onPressed: () => context.go('/login-signup'),
-              child: const Text('Đăng nhập', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-          const SizedBox(width: 16),
-          if (loggedIn)
+            const SizedBox(width: 8),
             GestureDetector(
               onTap: () => context.go('/profile'),
               child: Row(
@@ -124,17 +158,64 @@ class _WebHeaderState extends State<WebHeader> {
                   CircleAvatar(
                     radius: 16,
                     backgroundImage: avatarImg,
+                    backgroundColor: Color(0xFFF3F0FF),
                     child: avatarImg == null && !_loading
-                        ? const Icon(Icons.person, color: Colors.white)
+                        ? const Icon(
+                      Icons.person,
+                      color: Color(0xFF4D72E4),
+                      size: 20,
+                    )
                         : null,
                   ),
                   const SizedBox(width: 8),
-                  Text(title, style: const TextStyle(color: Colors.white, fontSize: 14)),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Color(0xFF1A0056),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ],
               ),
-            )
-          else
-            Text(title, style: const TextStyle(color: Colors.white, fontSize: 14)),
+            ),
+          ] else ...[
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF6989E8), // Match WebHeader gradient
+                    Color(0xFF4D72E4),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                border: Border.all(
+                  color: Colors.white, // Match the green bottom border
+                  width: 1.0,
+                ),
+                borderRadius: BorderRadius.circular(20.0),
+              ),
+              child: TextButton(
+                onPressed: () => context.go('/login-signup'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Color(0xFF1A0056),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                child: const Text(
+                  'Đăng nhập',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

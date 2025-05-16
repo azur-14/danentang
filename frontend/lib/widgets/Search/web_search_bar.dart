@@ -10,48 +10,108 @@ class WebSearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFFF6FAFF), // Light blue
+            Color(0xFFF5F9FF), // Softer white-blue for modern gradient
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
       child: Row(
         children: [
           Text(
             "HoaLaHe",
             style: TextStyle(
-              color: AppColors.primaryPurple,
-              fontSize: 32,
+              color: Color(0xFF190053), // Updated to match blue tone
+              fontSize: 36, // Slightly larger for modern look
               fontWeight: FontWeight.bold,
+              shadows: [
+                Shadow(
+                  color: Colors.black.withOpacity(0.1),
+                  offset: Offset(1, 1),
+                  blurRadius: 2,
+                ),
+              ],
             ),
           ),
-          SizedBox(width: 32),
+          const SizedBox(width: 32),
           Expanded(
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: "Search",
-                hintStyle: TextStyle(color: Colors.grey),
-                prefixIcon: Container(
-                  margin: EdgeInsets.only(left: 8, right: 8),
-                  child: CircleAvatar(
-                    radius: 20,
-                    child: Icon(
-                      Icons.search,
-                      color: AppColors.primaryPurple,
-                      size: 20,
+            child: Material(
+              elevation: 2, // Subtle elevation for modern depth
+              borderRadius: BorderRadius.circular(40),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: "Tìm kiếm sản phẩm...",
+                  hintStyle: TextStyle(color: Colors.grey.shade600),
+                  prefixIcon: Padding(
+                    padding: const EdgeInsets.only(left: 16, right: 8),
+                    child: Transform.scale(
+                      scale: 1.0,
+                      child: Icon(
+                        Icons.search_rounded, // Modern Material Design 3 icon
+                        color: Color(0xFFCFCFCF),
+                        size: 24,
+                      ),
                     ),
                   ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(40),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(40),
+                    borderSide: BorderSide(
+                      color: Color(0xFFCFCFCF).withOpacity(0.2),
+                      width: 1.0,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(40),
+                    borderSide: BorderSide(
+                      color: Color(0xFFCFCFCF),
+                      width: 1.5,
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.95), // Subtle white for modern look
+                  contentPadding: EdgeInsets.symmetric(vertical: 16),
                 ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(30),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: AppColors.lightGrey,
               ),
             ),
           ),
-          IconButton(
-            icon: Icon(Icons.shopping_cart, size: 32),
-            onPressed: () {
-              context.go('/checkout', extra: isLoggedIn);
-            },
+          const SizedBox(width: 16),
+          Material(
+            elevation: 2, // Subtle elevation for modern depth
+            shape: CircleBorder(),
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white, // Light blue background
+                border: Border.all(
+                  color: Color(0xFFF6FAFF),
+                  width: 1.0,
+                ),
+              ),
+              child: IconButton(
+                icon: Icon(
+                  Icons.shopping_cart_rounded, // Modern Material Design 3 icon
+                  size: 32,
+                  color: Color(0xFF1976D2),
+                ),
+                onPressed: () {
+                  context.go('/checkout', extra: isLoggedIn);
+                },
+                tooltip: 'Giỏ hàng',
+                hoverColor: Color(0xFF1976D2).withOpacity(0.2),
+                padding: EdgeInsets.zero,
+              ),
+            ),
           ),
         ],
       ),

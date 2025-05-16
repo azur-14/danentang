@@ -62,7 +62,6 @@ class _HomeScreenState extends State<HomeScreen> {
     await _loadAllData();
   }
 
-
   Future<void> _loadAllData() async {
     setState(() => isLoading = true);
     try {
@@ -129,21 +128,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMobileLayout(BuildContext context, double w) {
-    // 1. Dùng state login thật sự
     final bool isLoggedIn = _isLoggedIn;
-
-    // 2. Tính danh sách sản phẩm khuyến mãi
     final promoProducts = allProducts
         .where((p) => p.discountPercentage != null && p.discountPercentage! > 0)
         .toList();
 
-    // 3. Category icons
     const iconSize = 80.0, iconSpacing = 8.0, iconPadding = 16.0;
     final maxCats = _calculateItemsPerRow(w, iconSize, iconSpacing, iconPadding);
     final visibleCats = showAllCategories ? categories : categories.take(maxCats).toList();
 
     return Scaffold(
-// trong Scaffold:
       appBar: MobileHeader(
         isLoggedIn: _isLoggedIn,
       ),
@@ -152,27 +146,25 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const MobileSearchBar(),
-
-            // Categories
+            const SizedBox(height: 20),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: iconPadding, vertical: 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Categories', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const Text('Loại sản phẩm', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   GestureDetector(
                     onTap: () => setState(() => showAllCategories = !showAllCategories),
                     child: Text(
-                      showAllCategories ? 'Show less' : 'See all',
+                      showAllCategories ? 'Thu lại' : 'Xem tất cả',
                       style: const TextStyle(color: Colors.blue),
                     ),
                   ),
                 ],
               ),
             ),
-            // Banner
             BannerSection(isWeb: false, screenWidth: w),
-
+            const SizedBox(height: 20),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: iconPadding),
@@ -186,9 +178,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 }).toList(),
               ),
             ),
-
-
-            // *** Phần Khuyến mãi ***
+            const SizedBox(height: 20),
             if (promoProducts.isNotEmpty)
               ProductSection(
                 title: 'Khuyến mãi',
@@ -197,8 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 screenWidth: w,
                 onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
               ),
-
-            // By Category
+            const SizedBox(height: 20),
             for (final cat in categories)
               if (allProducts.any((p) => p.categoryId == cat.id))
                 ProductSection(
@@ -208,8 +197,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   screenWidth: w,
                   onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
                 ),
-
-            // By Tag
+            const SizedBox(height: 20),
             for (final tag in tags)
               if ((productsByTag[tag.id] ?? []).isNotEmpty)
                 ProductSection(
@@ -239,44 +227,60 @@ class _HomeScreenState extends State<HomeScreen> {
 
     const iconSize = 80.0, iconSpacing = 16.0, iconPadding = 32.0;
     final maxCats = _calculateItemsPerRow(w, iconSize, iconSpacing, iconPadding);
-    final visibleCats = categories.take(maxCats).toList();
+    final visibleCats = showAllCategories ? categories : categories.take(maxCats).toList();
 
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
-        // Truyền avatarBase64 vào đây
         child: WebHeader(
-          isLoggedIn:   _isLoggedIn,
+          isLoggedIn: _isLoggedIn,
         ),
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Header hoặc nút Login
-
-            // Search
             WebSearchBar(isLoggedIn: isLoggedIn),
-
-            // Banner
+            const SizedBox(height: 8), // Reduced from 16 to 8
             BannerSection(isWeb: true, screenWidth: w),
-
-            // Promo icons (nếu vẫn muốn)
+            const SizedBox(height: 16), // Reduced from 32 to 16
             _buildPromoIcons(),
-// Category icons
+            const SizedBox(height: 16), // Reduced from 32 to 16
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: iconPadding, vertical: 16),
-              child: Row(
-                children: visibleCats.map((cat) {
-                  final icon = _iconMap[cat.name] ?? Icons.category;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: iconSpacing),
-                    child: CategoryIcon(icon: icon, label: cat.name),
-                  );
-                }).toList(),
+              padding: const EdgeInsets.symmetric(horizontal: iconPadding, vertical: 8), // Reduced vertical padding from 16 to 8
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Loại sản phẩm',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      GestureDetector(
+                        onTap: () => setState(() => showAllCategories = !showAllCategories),
+                        child: Text(
+                          showAllCategories ? 'Thu lại' : 'Xem tất cả',
+                          style: const TextStyle(color: Colors.blue, fontSize: 14),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8), // Reduced from 16 to 8
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start, // Changed from center to start for left alignment
+                    children: visibleCats.map((cat) {
+                      final icon = _iconMap[cat.name] ?? Icons.category;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: iconSpacing),
+                        child: CategoryIcon(icon: icon, label: cat.name),
+                      );
+                    }).toList(),
+                  ),
+                ],
               ),
             ),
-
-            // *** Phần Khuyến mãi ***
+            const SizedBox(height: 16), // Reduced from 32 to 16
             if (promoProducts.isNotEmpty)
               ProductSection(
                 title: 'Khuyến mãi',
@@ -285,8 +289,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 screenWidth: w,
                 onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
               ),
-
-
+            const SizedBox(height: 16), // Reduced from 32 to 16
             for (final tag in tags)
               if ((productsByTag[tag.id] ?? []).isNotEmpty)
                 ProductSection(
@@ -296,8 +299,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   screenWidth: w,
                   onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
                 ),
-
-            // By Category
+            const SizedBox(height: 16), // Reduced from 32 to 16
             for (final cat in categories)
               if (allProducts.any((p) => p.categoryId == cat.id))
                 ProductSection(
@@ -307,7 +309,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   screenWidth: w,
                   onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
                 ),
-            // Footer
+            const SizedBox(height: 16), // Reduced from 32 to 16
             Footer(),
           ],
         ),
@@ -315,19 +317,18 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-
   Widget _buildPromoIcons() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8), // Reduced vertical padding from 16 to 8
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _buildPromoItem(Icons.local_shipping, 'Giao Hỏa Tốc'),
-          const SizedBox(width: 40),
+          const SizedBox(width: 24), // Reduced from 32 to 24
           _buildPromoItem(Icons.discount, 'Mã Giảm Giá'),
-          const SizedBox(width: 40),
+          const SizedBox(width: 24), // Reduced from 32 to 24
           _buildPromoItem(Icons.category, 'Danh Mục Hàng'),
-          const SizedBox(width: 40),
+          const SizedBox(width: 24), // Reduced from 32 to 24
           _buildPromoItem(Icons.chat, 'Trò Chuyện'),
         ],
       ),
@@ -336,10 +337,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildPromoItem(IconData icon, String label) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 32, color: Colors.orange),
-        const SizedBox(height: 4),
-        Text(label, style: const TextStyle(fontSize: 12)),
+        Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Icon(icon, size: 24, color: Color(0xFF0251CD)),
+        ),
+        const SizedBox(height: 4), // Reduced from 8 to 4
+        Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF1A0056))),
       ],
     );
   }
