@@ -1,7 +1,10 @@
+// lib/screens/product_detail_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:danentang/models/product.dart';
 import 'package:danentang/models/ProductRating.dart';
+import 'package:danentang/Service/order_service.dart';
 import 'package:danentang/Service/product_service.dart';
 import 'package:danentang/widgets/Header/web_header.dart';
 import 'package:danentang/widgets/Product/product_image_carousel.dart';
@@ -10,32 +13,55 @@ import 'package:danentang/widgets/Product/product_tabs.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final String productId;
-  const ProductDetailScreen({Key? key, required this.productId}) : super(key: key);
+  const ProductDetailScreen({Key? key, required this.productId})
+      : super(key: key);
 
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
 }
 
-class _ProductDetailScreenState extends State<ProductDetailScreen> with SingleTickerProviderStateMixin {
+class _ProductDetailScreenState extends State<ProductDetailScreen>
+    with SingleTickerProviderStateMixin {
   late Future<Product> _productFuture;
   late Future<ProductRating> _ratingFuture;
   late TabController _tabController;
   bool _isLoggedIn = false;
 
+  final OrderService _orderService = OrderService.instance;
+
   @override
   void initState() {
     super.initState();
+
+    // 1. Khởi tạo TabController cho ProductTabs
     _tabController = TabController(length: 2, vsync: this);
+
+    // 2. Load product và rating
     _productFuture = ProductService.getById(widget.productId);
-    _ratingFuture  = ProductService.getRating(widget.productId);
-    _checkLogin();
+    _ratingFuture = ProductService.getRating(widget.productId);
+
+    // 3. Kiểm tra login để hiển thị header phù hợp
+    _checkLoginState();
+
+    // 4. Đảm bảo đã có cartId anonymous trong prefs
+    _ensureAnonymousCart();
   }
 
-  Future<void> _checkLogin() async {
+  Future<void> _checkLoginState() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _isLoggedIn = prefs.getString('token') != null;
     });
+  }
+
+  /// Nếu chưa có cartId trong prefs, tạo 1 cart anonymous và lưu vào prefs
+  Future<void> _ensureAnonymousCart() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getString('cartId') == null) {
+      // Tạo cart rỗng với userId = ""
+      final cart = await _orderService.createCart('');
+      await prefs.setString('cartId', cart.id);
+    }
   }
 
   @override
@@ -53,13 +79,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> with SingleTi
       future: Future.wait([_productFuture, _ratingFuture]),
       builder: (ctx, snap) {
         if (snap.connectionState != ConnectionState.done) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
         if (snap.hasError || snap.data == null) {
-          return const Scaffold(body: Center(child: Text('Không tải được dữ liệu sản phẩm.')));
+          return const Scaffold(
+            body: Center(child: Text('Không tải được dữ liệu sản phẩm.')),
+          );
         }
 
-        final product       = snap.data![0] as Product;
+        final product = snap.data![0] as Product;
         final productRating = snap.data![1] as ProductRating;
 
         return Scaffold(
@@ -76,7 +106,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> with SingleTi
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Web header chỉ hiển thị ở desktop
                     if (screenWidth > 800) WebHeader(isLoggedIn: _isLoggedIn),
+
+                    // Layout ảnh + info desktop
                     if (screenWidth > 800)
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,7 +118,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> with SingleTi
                             width: 400,
                             child: Padding(
                               padding: const EdgeInsets.all(16),
-                              child: ProductImageCarousel(product: product),
+                              child:
+                              ProductImageCarousel(product: product),
                             ),
                           ),
                           Expanded(
@@ -100,6 +134,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> with SingleTi
                         ],
                       )
                     else ...[
+                      // Mobile: hình trước, info sau
                       ProductImageCarousel(product: product),
                       Padding(
                         padding: const EdgeInsets.all(16),
@@ -109,11 +144,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> with SingleTi
                         ),
                       ),
                     ],
+
                     const SizedBox(height: 32),
+
+                    // Tabs: chi tiết vs đánh giá
                     ProductTabs(
                       tabController: _tabController,
                       product: product,
                     ),
+
                     const SizedBox(height: 32),
                   ],
                 ),
@@ -125,3 +164,4 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> with SingleTi
     );
   }
 }
+

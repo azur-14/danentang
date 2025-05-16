@@ -7,22 +7,33 @@ class OrderSummaryWidget extends StatelessWidget {
   final double shipping;
   final double discount;
   final double total;
-  final bool applyPoints;
   final TextEditingController discountController;
-  final Function(bool) onApplyPointsChanged;
+  final VoidCallback onApplyCoupon;
+  final bool applyingCoupon;
+  final String? errorCoupon;
+  final int loyaltyPointsAvailable;
+  final int loyaltyPointsToUse;
+  final TextEditingController loyaltyController;
+  final ValueChanged<String> onLoyaltyChanged;
   final VoidCallback onCheckout;
 
   const OrderSummaryWidget({
+    Key? key,
     required this.subtotal,
     required this.vat,
     required this.shipping,
     required this.discount,
     required this.total,
-    required this.applyPoints,
     required this.discountController,
-    required this.onApplyPointsChanged,
+    required this.onApplyCoupon,
+    required this.applyingCoupon,
+    required this.errorCoupon,
+    required this.loyaltyPointsAvailable,
+    required this.loyaltyPointsToUse,
+    required this.loyaltyController,
+    required this.onLoyaltyChanged,
     required this.onCheckout,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -37,23 +48,15 @@ class OrderSummaryWidget extends StatelessWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
+          // Mã giảm giá
           Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: discountController,
                   decoration: InputDecoration(
-                    hintText: "Enter code",
-                    hintStyle: TextStyle(color: AppColors.hexToColor(AppColors.grey)),
+                    hintText: "Nhập mã giảm giá",
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(25),
-                      borderSide: BorderSide(color: AppColors.hexToColor(AppColors.grey300)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(25),
-                      borderSide: BorderSide(color: AppColors.hexToColor(AppColors.grey300)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(25),
                       borderSide: BorderSide(color: AppColors.hexToColor(AppColors.grey300)),
                     ),
@@ -63,9 +66,7 @@ class OrderSummaryWidget extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               ElevatedButton(
-                onPressed: () {
-                  onApplyPointsChanged(true);
-                },
+                onPressed: applyingCoupon ? null : onApplyCoupon,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.hexToColor(AppColors.purple),
                   foregroundColor: Colors.white,
@@ -73,41 +74,61 @@ class OrderSummaryWidget extends StatelessWidget {
                     borderRadius: BorderRadius.circular(25),
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  minimumSize: const Size(100, 50),
                 ),
-                child: const Text(
-                  "Áp dụng",
-                  style: TextStyle(fontSize: 16),
-                ),
+                child: applyingCoupon
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text("Áp dụng"),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          if (errorCoupon != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                errorCoupon!,
+                style: const TextStyle(color: Colors.red, fontSize: 13),
+              ),
+            ),
+          const SizedBox(height: 12),
+          // Điểm tích lũy
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text("Đổi điểm tích lũy"),
-              Row(
-                children: [
-                  const Text("Tổng quy đổi: 0 ₫"),
-                  const SizedBox(width: 8),
-                  Switch(
-                    value: applyPoints,
-                    onChanged: onApplyPointsChanged,
-                    activeColor: AppColors.hexToColor(AppColors.purple),
-                  ),
-                ],
-              ),
+              const Text("Điểm tích lũy"),
+              Text("Bạn có $loyaltyPointsAvailable điểm"),
             ],
           ),
-          _buildSummaryRow("Giá", "₫${subtotal.toInt()}.000"),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: loyaltyController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    hintText: "Nhập điểm muốn dùng",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      borderSide: BorderSide(color: AppColors.hexToColor(AppColors.grey300)),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                  onChanged: onLoyaltyChanged,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text("= ₫${loyaltyPointsToUse * 1000}"),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Tóm tắt giá trị
+          _buildSummaryRow("Giá", "₫${subtotal.toInt()}"),
           _buildSummaryRow("VAT", "₫${vat.toInt()}"),
-          _buildSummaryRow("Vận chuyển", "₫${shipping.toInt()}.000"),
-          _buildSummaryRow("Giảm giá", "-₫${discount.toInt()}.000"),
+          _buildSummaryRow("Vận chuyển", "₫${shipping.toInt()}"),
+          _buildSummaryRow("Giảm giá", "-₫${discount.toInt()}"),
           const Divider(),
           _buildSummaryRow(
             "Tổng giá",
-            "₫${total.toInt()}.000",
+            "₫${total.toInt()}",
             isTotal: true,
           ),
           const SizedBox(height: 16),

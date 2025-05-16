@@ -1,9 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿// OrderManagementService/Controllers/CartsController.cs
+
+using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using OrderManagementService.Data;
 using OrderManagementService.Models;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace OrderManagementService.Controllers
@@ -13,17 +16,22 @@ namespace OrderManagementService.Controllers
     public class CartsController : ControllerBase
     {
         private readonly IMongoCollection<Cart> _carts;
+        public CartsController(MongoDbContext context) => _carts = context.Carts;
 
-        public CartsController(MongoDbContext context)
-        {
-            _carts = context.Carts;
-        }
-
-        // GET api/carts/{userId}
-        [HttpGet("{userId}")]
+        // GET api/carts/user/{userId}
+        [HttpGet("user/{userId}", Name = "GetCartByUser")]
         public async Task<ActionResult<Cart>> GetByUser(string userId)
         {
             var cart = await _carts.Find(c => c.UserId == userId).FirstOrDefaultAsync();
+            if (cart == null) return NotFound();
+            return cart;
+        }
+
+        // GET api/carts/{cartId}
+        [HttpGet("{cartId:length(24)}", Name = "GetCartById")]
+        public async Task<ActionResult<Cart>> GetByCartId(string cartId)
+        {
+            var cart = await _carts.Find(c => c.Id == cartId).FirstOrDefaultAsync();
             if (cart == null) return NotFound();
             return cart;
         }
@@ -32,15 +40,31 @@ namespace OrderManagementService.Controllers
         [HttpPost]
         public async Task<ActionResult<Cart>> Create([FromBody] Cart cart)
         {
-            // Remove validation error for Id so we can generate it here
             ModelState.Remove(nameof(cart.Id));
-
             cart.Id = ObjectId.GenerateNewId().ToString();
             cart.CreatedAt = cart.UpdatedAt = DateTime.UtcNow;
 
             await _carts.InsertOneAsync(cart);
-            return CreatedAtAction(nameof(GetByUser), new { userId = cart.UserId }, cart);
+
+            if (!string.IsNullOrEmpty(cart.UserId))
+            {
+                // Tạo route /api/carts/user/{userId}
+                return CreatedAtRoute(
+                    "GetCartByUser",
+                    new { userId = cart.UserId },
+                    cart);
+            }
+            else
+            {
+                // Tạo route /api/carts/{cartId}
+                return CreatedAtRoute(
+                    "GetCartById",
+                    new { cartId = cart.Id },
+                    cart);
+            }
         }
+
+        // PATCH api/carts/{cartId}
         [HttpPatch("{cartId:length(24)}")]
         public async Task<IActionResult> UpdateCart(string cartId, [FromBody] List<CartItem> items)
         {

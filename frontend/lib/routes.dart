@@ -117,8 +117,6 @@ final GoRouter router = GoRouter(
             final isLoggedIn = token != null;
             final userId = isLoggedIn ? prefs.getString('userId') : null;
             return CartScreenCheckOut(
-              isLoggedIn: isLoggedIn,
-              userId: userId,
             );
           },
         );

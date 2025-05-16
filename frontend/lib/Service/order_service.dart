@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:danentang/models/Cart.dart';
@@ -17,12 +18,56 @@ class OrderService {
   static final OrderService instance = OrderService._();
 
   static const String _baseUrl = 'http://localhost:5005/api';
+  static const String _cartUrl = 'http://localhost:5005/api/carts';
   final http.Client _http = http.Client();
   final Uuid _uuid = Uuid();
 
   // ───────────────────────────────────────────────
   // CART
   // ───────────────────────────────────────────────
+  Future<String?> _getCartId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('cartId');
+  }
+
+  /// Lưu cartId (sau khi create hoặc lần đầu add)
+  Future<void> _saveCartId(String cartId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('cartId', cartId);
+  }
+
+  Future<void> addToCart(CartItem item) async {
+    String? cartId = await _getCartId();
+
+    if (cartId == null) {
+      final res = await http.post(
+        Uri.parse(_cartUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'items': [], 'userId': null}),
+      );
+      if (res.statusCode == 201) {
+        final body = jsonDecode(res.body);
+        // ép về String
+        final String newCartId = body['id'] as String;
+        cartId = newCartId;
+        await _saveCartId(newCartId);
+      } else {
+        throw Exception('Không tạo được giỏ');
+      }
+    }
+
+    // tới đây cartId đã non-null
+    final String nonNullCartId = cartId!;
+    final res2 = await http.patch(
+      Uri.parse('$_cartUrl/$nonNullCartId/items'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(item.toJson()),
+    );
+    if (res2.statusCode != 204) {
+      throw Exception('Không thêm được sản phẩm vào giỏ');
+    }
+  }
+
 
   Future<Cart> fetchCart(String userId) async {
     final uri = Uri.parse('$_baseUrl/carts/$userId');
@@ -46,25 +91,23 @@ class OrderService {
 
     final payload = {
       'id': generatedId,
-      'userId': userId,
+      'userId': userId,      // giờ luôn là String, không null
       'items': <dynamic>[],
       'createdAt': now,
       'updatedAt': now,
     };
 
-    debugPrint('→ POST $uri  body=$payload');
     final resp = await _http.post(
       uri,
       headers: {'Content-Type': 'application/json'},
       body: json.encode(payload),
     );
-    debugPrint('← ${resp.statusCode} ${resp.body}');
-
     if (resp.statusCode == 201) {
       return Cart.fromJson(json.decode(resp.body));
     }
     throw Exception('createCart failed (${resp.statusCode})');
   }
+
 
   Future<void> upsertCartItemSmart(Cart cart, CartItem newItem) async {
     final existing = cart.items.firstWhere(
@@ -249,33 +292,35 @@ class OrderService {
     }
     throw Exception('createOrder failed (${resp.statusCode})');
   }
+  // trong order_service.dart
   Future<Map<String, dynamic>> fetchProductInfo(String productId, String? variantId) async {
-    final productUri = Uri.parse('http://localhost:5005/api/products/$productId');
+    final productUri = Uri.parse('http://localhost:5011/api/products/$productId');
     final resp = await http.get(productUri);
-    if (resp.statusCode != 200) throw Exception('Lỗi lấy sản phẩm $productId');
-
-    final data = json.decode(resp.body);
-    String name = data['name'];
-    double price = (data['price'] as num).toDouble();
-
-    String variantName = '';
-    if (variantId != null && data['variants'] is List) {
-      final variant = (data['variants'] as List).firstWhere(
-            (v) => v['_id'] == variantId,
-        orElse: () => null,
-      );
-      if (variant != null) {
-        variantName = variant['name'] ?? '';
-        price = (variant['price'] as num?)?.toDouble() ?? price;
-      }
+    if (resp.statusCode != 200) {
+      throw Exception('Lỗi lấy sản phẩm $productId');
     }
 
+    final data = json.decode(resp.body) as Map<String, dynamic>;
+    final variants = (data['variants'] as List<dynamic>)
+        .map((v) => v as Map<String, dynamic>)
+        .toList();
+
+    // Nếu không truyền variantId, chọn variant đầu tiên
+    final variant = variants.firstWhere(
+          (v) => v['id'] == variantId,
+      orElse: () => variants.first,
+    );
+
+    // Lấy giá từ additionalPrice của variant
+    final price = (variant['additionalPrice'] as num).toDouble();
+
     return {
-      'productName': name,
-      'variantName': variantName,
+      'productName': data['name'] as String,
+      'variantName': variant['variantName'] as String? ?? '',
       'price': price,
     };
   }
+
   Future<Order> createOrderFromCart({
     required Cart cart,
     required ShippingAddress shippingAddress,

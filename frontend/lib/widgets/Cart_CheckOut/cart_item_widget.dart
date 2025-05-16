@@ -1,16 +1,18 @@
-// lib/widgets/Cart_CheckOut/cart_item_widget.dart
-
 import 'package:flutter/material.dart';
 import 'package:danentang/models/CartItem.dart';
+import 'package:danentang/models/product.dart'; // Thêm để dùng ProductVariant
 import 'package:danentang/constants/colors.dart';
-import 'package:danentang/Service/product_service.dart';
 
-class CartItemWidget extends StatefulWidget {
+class CartItemWidget extends StatelessWidget {
   final CartItem item;
   final bool isEditing;
   final VoidCallback onDelete;
   final Function(int) onQuantityChanged;
   final bool isMobile;
+
+  // Thêm 2 prop mới:
+  final List<ProductVariant> variants;
+  final Function(String?)? onVariantChanged;
 
   const CartItemWidget({
     Key? key,
@@ -19,145 +21,99 @@ class CartItemWidget extends StatefulWidget {
     required this.onDelete,
     required this.onQuantityChanged,
     required this.isMobile,
+    required this.variants,
+    this.onVariantChanged,
   }) : super(key: key);
 
   @override
-  _CartItemWidgetState createState() => _CartItemWidgetState();
-}
-
-class _CartItemWidgetState extends State<CartItemWidget> {
-  String productName = '';
-  String variantName = '';
-  double price = 0;
-  String imageUrl = '';
-  bool _loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchProductDetails();
-  }
-
-  Future<void> _fetchProductDetails() async {
-    try {
-      // 1. Lấy product chính
-      final product = await ProductService().getProductById(widget.item.productId);
-      // Ảnh mặc định: lấy ảnh đầu trong list, hoặc placeholder
-      String fetchedImage = product.images.isNotEmpty
-          ? product.images.first.url
-          : 'https://via.placeholder.com/150';
-      String fetchedVariantName = '';
-
-      // 2. Nếu có variant, lấy thêm và tính giá
-      if (widget.item.productVariantId != null) {
-        final variant = await ProductService().getVariantById(
-          widget.item.productId,
-          widget.item.productVariantId!,
-        );
-        fetchedVariantName = variant.variantName;
-      }
-
-      setState(() {
-        productName = product.name;
-        variantName = fetchedVariantName;
-        imageUrl = fetchedImage;
-        _loading = false;
-      });
-    } catch (e) {
-      // btn lỗi fallback
-      setState(() {
-        productName = 'Unknown product';
-        price = 0;
-        imageUrl = 'https://via.placeholder.com/150';
-        _loading = false;
-      });
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 16),
-        child: Center(child: CircularProgressIndicator()),
-      );
-    }
+    // Lấy variant hiện tại
+    final currentVariant = variants.firstWhere(
+          (v) => v.id == item.productVariantId,
+      orElse: () => variants.isNotEmpty ? variants.first : ProductVariant(
+        id: '', variantName: 'Không có', additionalPrice: 0, inventory: 0,
+        createdAt: DateTime.now(), updatedAt: DateTime.now(),
+      ),
+    );
+    final imageUrl = ''; // Lấy ảnh theo product nếu cần
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Card(
         color: Colors.white,
-        elevation: widget.isMobile ? 0 : 2,
+        elevation: isMobile ? 0 : 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
         child: Padding(
-          padding: EdgeInsets.all(widget.isMobile ? 0 : 12),
+          padding: EdgeInsets.all(isMobile ? 0 : 12),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Ảnh sản phẩm/variant
+              // (Bổ sung lấy imageUrl nếu muốn)
               Container(
-                width: widget.isMobile ? 60 : 80,
-                height: widget.isMobile ? 60 : 80,
+                width: isMobile ? 60 : 80,
+                height: isMobile ? 60 : 80,
                 decoration: BoxDecoration(
                   color: Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(8),
-                  image: DecorationImage(
-                    image: NetworkImage(imageUrl),
-                    fit: BoxFit.cover,
-                  ),
                 ),
+                child: Icon(Icons.image),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Tên và nút delete
+                    // Tên & delete
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
                           child: Text(
-                            productName,
+                            currentVariant.variantName, // Chỉnh theo tên sản phẩm hoặc variant
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.bold),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (widget.isEditing)
+                        if (isEditing)
                           IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: widget.onDelete,
+                            onPressed: onDelete,
                           ),
                       ],
                     ),
-
-                    // Hiển thị variant nếu có
-                    if (variantName.isNotEmpty) ...[
-                      const SizedBox(height: 4),
+                    // Nếu có nhiều variant thì dropdown chọn
+                    if (variants.length > 1)
+                      DropdownButton<String>(
+                        value: item.productVariantId,
+                        items: variants.map((v) => DropdownMenuItem(
+                          value: v.id,
+                          child: Text('${v.variantName} (+₫${v.additionalPrice.toStringAsFixed(0)})'),
+                        )).toList(),
+                        onChanged: onVariantChanged,
+                        isExpanded: true,
+                        underline: Container(height: 1, color: Colors.grey.shade300),
+                      )
+                    else
                       Text(
-                        variantName,
+                        currentVariant.variantName,
                         style: TextStyle(color: AppColors.hexToColor(AppColors.grey)),
                       ),
-                    ],
-
-                    // Giá và số lượng
                     const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         // Giá
                         Text(
-                          "₫${price.toStringAsFixed(0)}",
+                          "₫${currentVariant.additionalPrice.toStringAsFixed(0)}",
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: Colors.red,
                           ),
                         ),
-
                         // Controls thay đổi số lượng
                         Row(
                           children: [
@@ -167,13 +123,13 @@ class _CartItemWidgetState extends State<CartItemWidget> {
                                 color: AppColors.hexToColor(AppColors.purple),
                               ),
                               onPressed: () {
-                                if (widget.item.quantity > 1) {
-                                  widget.onQuantityChanged(widget.item.quantity - 1);
+                                if (item.quantity > 1) {
+                                  onQuantityChanged(item.quantity - 1);
                                 }
                               },
                             ),
                             Text(
-                              widget.item.quantity.toString().padLeft(2, '0'),
+                              item.quantity.toString().padLeft(2, '0'),
                               style: const TextStyle(fontSize: 16),
                             ),
                             IconButton(
@@ -182,7 +138,7 @@ class _CartItemWidgetState extends State<CartItemWidget> {
                                 color: AppColors.hexToColor(AppColors.purple),
                               ),
                               onPressed: () {
-                                widget.onQuantityChanged(widget.item.quantity + 1);
+                                onQuantityChanged(item.quantity + 1);
                               },
                             ),
                           ],
@@ -199,3 +155,4 @@ class _CartItemWidgetState extends State<CartItemWidget> {
     );
   }
 }
+
