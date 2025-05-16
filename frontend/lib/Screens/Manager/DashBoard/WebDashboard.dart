@@ -90,7 +90,7 @@ class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMix
           _drawerItem(context, 'Quản lý Mã giảm giá', Icons.card_giftcard, CouponManagement()),
           _drawerItem(context, 'Quản lý Danh mục', Icons.category, CategoriesManagement()),
           _drawerItem(context, 'Quản lý Người dùng', Icons.people, UserListScreen()),
-          _drawerItem(context, 'Quản lý Đơn hàng', Icons.receipt, OrderListScreen()),
+          _drawerItem(context, 'Quản lý Đơn hàng', Icons.receipt, Order_List()),
           _drawerItem(context, 'Hỗ trợ người dùng', Icons.support, CustomerSupportScreen()),
           const Divider(),
           ListTile(
@@ -260,7 +260,7 @@ class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMix
       {"title": "Quản lý Mã giảm giá", "screen": CouponManagement()},
       {"title": "Quản lý Danh mục", "screen": CategoriesManagement()},
       {"title": "Quản lý Người dùng", "screen": UserListScreen()},
-      {"title": "Quản lý Đơn hàng", "screen": OrderListScreen()},
+      {"title": "Quản lý Đơn hàng", "screen": Order_List()},
       {"title": "Hỗ trợ người dùng", "screen": CustomerSupportScreen()},
     ];
 

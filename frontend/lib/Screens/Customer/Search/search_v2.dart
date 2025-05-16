@@ -20,17 +20,25 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ElasticSearchService _elasticService = ElasticSearchService();
-
-  List<String> _lastSearches = [
-    'Iphone 12 pro max',
-    'Camera fujifilm',
-    'Tripod Mini',
-    'Bluetooth speaker',
-    'Drawing pad',
-  ];
-
+  List<Map<String, dynamic>> _searchResults = [];
   List<String> _autocompleteSuggestions = [];
-  List<String> _searchResults = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSearchHistory();
+  }
+
+  void _loadSearchHistory() {
+    setState(() {
+      // Sync history from ElasticSearchService
+      _elasticService.getSearchHistory().forEach((query) {
+        if (!_elasticService.getSearchHistory().contains(query)) {
+          // No need to add manually, as getSearchHistory already returns the list
+        }
+      });
+    });
+  }
 
   void _onSearchChanged(String query) async {
     if (query.isNotEmpty) {
@@ -56,16 +64,9 @@ class _SearchScreenState extends State<SearchScreen> {
     try {
       final results = await _elasticService.searchProducts(query);
       setState(() {
-        _searchResults = results.map((e) => e['name'].toString()).toList();
+        _searchResults = results;
         _autocompleteSuggestions.clear();
       });
-
-      if (!_lastSearches.contains(query)) {
-        _lastSearches.insert(0, query);
-        if (_lastSearches.length > 5) {
-          _lastSearches.removeLast();
-        }
-      }
     } catch (e) {
       print('Search error: $e');
     }
@@ -73,20 +74,20 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _clearSearchHistory() {
     setState(() {
-      _lastSearches.clear();
+      _elasticService.clearSearchHistory();
     });
   }
 
-  void _removeSearchItem(int index) {
+  void _removeSearchItem(String query) {
     setState(() {
-      _lastSearches.removeAt(index);
+      _elasticService.removeFromSearchHistory(query);
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(), // Ẩn bàn phím khi chạm ngoài
+      onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
@@ -109,7 +110,7 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
               IconButton(
                 icon: const Icon(Icons.shopping_cart_outlined),
-                onPressed: () {}, // Mở giỏ hàng nếu cần
+                onPressed: () {}, // Add cart logic if needed
               ),
             ],
           ),
@@ -119,7 +120,7 @@ class _SearchScreenState extends State<SearchScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (_searchController.text.isEmpty && _lastSearches.isNotEmpty) ...[
+              if (_searchController.text.isEmpty && _elasticService.getSearchHistory().isNotEmpty) ...[
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -133,18 +134,19 @@ class _SearchScreenState extends State<SearchScreen> {
                 ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _lastSearches.length,
+                  itemCount: _elasticService.getSearchHistory().length,
                   itemBuilder: (context, index) {
+                    final query = _elasticService.getSearchHistory()[index];
                     return ListTile(
                       leading: const Icon(Icons.history, color: Colors.grey),
-                      title: Text(_lastSearches[index]),
+                      title: Text(query),
                       trailing: IconButton(
                         icon: const Icon(Icons.close),
-                        onPressed: () => _removeSearchItem(index),
+                        onPressed: () => _removeSearchItem(query),
                       ),
                       onTap: () {
-                        _searchController.text = _lastSearches[index];
-                        _submitSearch(_lastSearches[index]);
+                        _searchController.text = query;
+                        _submitSearch(query);
                       },
                     );
                   },
@@ -176,7 +178,11 @@ class _SearchScreenState extends State<SearchScreen> {
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: _searchResults.length,
                   itemBuilder: (context, index) {
-                    return ListTile(title: Text(_searchResults[index]));
+                    final product = _searchResults[index];
+                    return ListTile(
+                      title: Text(product['name'] ?? 'No name'),
+                      subtitle: Text('Price: ${product['price']?.toString() ?? 'N/A'}'),
+                    );
                   },
                 ),
               ],

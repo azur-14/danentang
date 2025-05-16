@@ -3,6 +3,8 @@ using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddHttpClient();
+
 // Thêm dịch vụ controller
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -33,7 +35,6 @@ if (app.Environment.IsDevelopment())
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
     });
 }
-
 app.UseCors("AllowAll");
 
 app.UseAuthorization();
