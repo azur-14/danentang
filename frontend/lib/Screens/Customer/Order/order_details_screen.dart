@@ -194,7 +194,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                   orElse: () => Product(
                     id: '',
                     name: '',
-                    price: 0,
                     discountPercentage: 0,
                     categoryId: '',
                     createdAt: DateTime.now(),

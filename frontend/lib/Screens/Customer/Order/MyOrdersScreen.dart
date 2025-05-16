@@ -37,7 +37,6 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
       name: item.productName,
       brand: '',
       description: '',
-      price: item.price,
       discountPercentage: 0,
       categoryId: '',
       createdAt: DateTime.now(),
@@ -185,7 +184,6 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
         final order = orders[index];
         return OrderCard(
           order: order,
-          products: products, // Truyền danh sách products đã tính toán
         );
       },
     );
