@@ -22,7 +22,7 @@ class WebDashboard extends StatefulWidget {
   State<WebDashboard> createState() => _WebDashboardState();
 }
 
-class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMixin {
+class _WebDashboardState extends State<WebDashboard> with AutomaticKeepAliveClientMixin, TickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _opacityAnimation;
 
@@ -43,8 +43,13 @@ class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMix
     super.dispose();
   }
 
+  // Override to keep the state alive
+  @override
+  bool get wantKeepAlive => true;
+
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     return Scaffold(
       drawer: _buildDrawer(context),
       appBar: AppBar(
