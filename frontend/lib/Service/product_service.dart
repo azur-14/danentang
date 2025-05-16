@@ -327,8 +327,6 @@ class ProductService {
     return [];
   }
 
-  // —— Các method cho Detail Screen —— //
-
   /// GET /api/products/{id}
   static Future<Product> getById(String id) async {
     final uri = Uri.parse('$_productsPath/$id');
@@ -343,7 +341,7 @@ class ProductService {
 
   /// GET /api/products/{id}/rating
   static Future<ProductRating> getRating(String productId) async {
-    final uri = Uri.parse('$_productsPath/$productId/rating');
+    final uri  = Uri.parse('$_productsPath/$productId/rating');
     final resp = await http.get(uri);
     if (resp.statusCode == 200) {
       return ProductRating.fromJson(
@@ -353,37 +351,17 @@ class ProductService {
     return const ProductRating(averageRating: 0, reviewCount: 0);
   }
 
-
   /// GET /api/products/{id}/reviews
   static Future<List<Review>> getReviews(String productId) async {
-    final uri = Uri.parse('$_productsPath/$productId/reviews');
-    debugPrint('→ GET $uri');
-    try {
-      final resp = await http.get(uri);
-      debugPrint('← ${resp.statusCode} ${resp.body}');
-      if (resp.statusCode == 200) {
-        final data = json.decode(resp.body) as List<dynamic>;
-        return data
-            .map((e) => Review.fromJson(e as Map<String, dynamic>))
-            .toList();
-      } else {
-        debugPrint('‼️ getReviews API error ${resp.statusCode}');
-      }
-    } catch (e, st) {
-      debugPrint('❌ getReviews exception: $e\n$st');
-    }
-    return [];
-  }
-
-  /// GET /api/products/{id}/reviews
-  static Future<List<Review>> fetchReviews(String productId) async {
-    final uri = Uri.parse('$_productsPath/$productId/reviews');
+    final uri  = Uri.parse('$_productsPath/$productId/reviews');
     final resp = await http.get(uri);
     if (resp.statusCode == 200) {
       final data = json.decode(resp.body) as List<dynamic>;
-      return data.map((e) => Review.fromJson(e)).toList();
+      return data
+          .map((e) => Review.fromJson(e as Map<String, dynamic>))
+          .toList();
     }
-    throw Exception('fetchReviews failed: ${resp.statusCode}');
+    throw Exception('getReviews failed (${resp.statusCode})');
   }
 
   /// POST /api/products/{id}/reviews
@@ -394,19 +372,19 @@ class ProductService {
     int? rating,
     required String comment,
   }) async {
-    final uri = Uri.parse('$_productsPath/$productId/reviews');
+    final uri  = Uri.parse('$_productsPath/$productId/reviews');
     final body = {
       'comment': comment,
-      'rating': rating,
+      if (rating != null)    'rating': rating,
       if (guestName != null) 'guestName': guestName,
     };
     final resp = await http.post(
       uri,
-      headers: {'Content-Type':'application/json'},
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode(body),
     );
-    if (resp.statusCode != 201) {
-      throw Exception('submitReview failed: ${resp.statusCode}');
+    if (resp.statusCode != 201 && resp.statusCode != 200) {
+      throw Exception('submitReview failed (${resp.statusCode})');
     }
   }
   /// GET /api/products/{id}

@@ -83,13 +83,6 @@ class ProductInfo extends StatelessWidget {
                 ),
               ),
             const Spacer(),
-            const Text(
-              "Đã bán: 200K",
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 14,
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 8),
@@ -127,14 +120,6 @@ class ProductInfo extends StatelessWidget {
         }).toList(),
         const SizedBox(height: 16),
 
-        // Description
-        const Text(
-          "Mô tả:",
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
         const SizedBox(height: 4),
         Text(
           product.description ?? "Không có mô tả.",

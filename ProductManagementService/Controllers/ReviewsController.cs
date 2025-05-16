@@ -8,6 +8,7 @@ using ProductManagementService.Models;
 namespace ProductManagementService.Controllers
 {
     [ApiController]
+    // Gốc route cho reviews
     [Route("api/products/{productId:length(24)}/reviews")]
     public class ReviewsController : ControllerBase
     {
@@ -20,19 +21,17 @@ namespace ProductManagementService.Controllers
             _products = ctx.Products;
         }
 
-        // GET /api/products/{productId}/reviews
+        // GET  /api/products/{productId}/reviews
         [HttpGet]
         public async Task<IActionResult> GetReviews(string productId)
         {
-            // Kiểm tra product tồn tại
-            var exists = await _products.Find(p => p.Id == productId).AnyAsync();
-            if (!exists) return NotFound("Product not found.");
+            if (!await _products.Find(p => p.Id == productId).AnyAsync())
+                return NotFound("Product not found.");
 
             var reviews = await _reviews
                 .Find(r => r.ProductId == productId)
                 .SortByDescending(r => r.CreatedAt)
                 .ToListAsync();
-
             return Ok(reviews);
         }
 
@@ -42,13 +41,11 @@ namespace ProductManagementService.Controllers
             string productId,
             [FromBody] ReviewCreateModel model)
         {
-            // Validate product
-            var exists = await _products.Find(p => p.Id == productId).AnyAsync();
-            if (!exists) return NotFound("Product not found.");
+            if (!await _products.Find(p => p.Id == productId).AnyAsync())
+                return NotFound("Product not found.");
 
-            // Nếu chưa login (no user claim), bạn có thể để UserId = null và bắt guestName
             var userId = User.Identity?.IsAuthenticated == true
-                ? User.FindFirst("sub")?.Value // hoặc claim nameIdentifier
+                ? User.FindFirst("sub")?.Value
                 : null;
 
             if (userId == null && string.IsNullOrWhiteSpace(model.GuestName))
@@ -68,19 +65,19 @@ namespace ProductManagementService.Controllers
             await _reviews.InsertOneAsync(review);
             return CreatedAtAction(
                 nameof(GetReviews),
-                new { productId = productId },
+                new { productId },
                 review
             );
         }
 
-        [HttpGet]
+        // GET  /api/products/{productId}/reviews/rating    ← note the "rating" segment
+        [HttpGet("rating")]
         public async Task<IActionResult> GetRating(string productId)
         {
-            // Lọc các review có rating != null cho product này
+            // chỉ lấy những review có Rating != null
             var filter = Builders<Review>.Filter.Eq(r => r.ProductId, productId)
                          & Builders<Review>.Filter.Ne(r => r.Rating, null);
 
-            // Dùng aggregation để tính trung bình và đếm
             var agg = await _reviews.Aggregate()
                 .Match(filter)
                 .Group(r => r.ProductId, g => new {
@@ -89,21 +86,23 @@ namespace ProductManagementService.Controllers
                 })
                 .FirstOrDefaultAsync();
 
-            // Nếu chưa có review nào, trả về 0/0
             if (agg == null)
+            {
                 return Ok(new
                 {
                     averageRating = 0.0,
                     reviewCount = 0
                 });
+            }
 
             return Ok(new
             {
-                averageRating = agg.Avg,
+                averageRating = Math.Round(agg.Avg, 2),
                 reviewCount = agg.Count
             });
         }
     }
+
     public class ReviewCreateModel
     {
         public string Comment { get; set; } = null!;
