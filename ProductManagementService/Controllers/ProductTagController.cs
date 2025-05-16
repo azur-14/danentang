@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
+using MongoDB.Bson;
 using ProductManagementService.Data;
 using ProductManagementService.Models;
 // alias để không nhầm với MongoDB.Driver.Tag
@@ -75,6 +76,24 @@ namespace ProductManagementService.Controllers
                 ? NotFound()
                 : Ok(new { message = "Tag removed." });
         }
+        [HttpPut("by-product/{productId:length(24)}")]
+        public async Task<IActionResult> UpsertTags(string productId, [FromBody] TagAssignmentModel model)
+        {
+            await _productTags.DeleteManyAsync(pt => pt.ProductId == productId);
+
+            var docs = model.TagIds.Select(tagId => new ProductTag
+            {
+                Id = ObjectId.GenerateNewId().ToString(),  // ObjectId giờ được nhận diện
+                ProductId = productId,
+                TagId = tagId
+            });
+            if (docs.Any())
+                await _productTags.InsertManyAsync(docs);
+
+            return NoContent();
+        }
+
+        public class TagAssignmentModel { public List<string> TagIds { get; set; } = new(); }
     }
 }
 

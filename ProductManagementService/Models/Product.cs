@@ -5,13 +5,12 @@ using System.Collections.Generic;
 
 namespace ProductManagementService.Models
 {
-    // Ignore extra elements in Product documents
     [BsonIgnoreExtraElements]
     public class Product
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; }
+        public string Id { get; set; } = null!;
 
         [BsonElement("name")]
         public string Name { get; set; } = null!;
@@ -22,8 +21,7 @@ namespace ProductManagementService.Models
         [BsonElement("description")]
         public string? Description { get; set; }
 
-        [BsonElement("price")]
-        public decimal Price { get; set; }
+        // ⭐ Đã bỏ hoàn toàn trường Price ở Product
 
         [BsonElement("discountPercentage")]
         public int DiscountPercentage { get; set; }
@@ -38,7 +36,6 @@ namespace ProductManagementService.Models
         [BsonElement("updatedAt")]
         public DateTime UpdatedAt { get; set; }
 
-        // images mapped from array of sub‑documents that have a field "id"
         [BsonElement("images")]
         public List<ProductImage> Images { get; set; } = new();
 
@@ -51,7 +48,7 @@ namespace ProductManagementService.Models
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; }
+        public string Id { get; set; } = null!;
 
         [BsonElement("url")]
         public string Url { get; set; } = null!;
@@ -65,11 +62,12 @@ namespace ProductManagementService.Models
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; }
+        public string Id { get; set; } = null!;
 
         [BsonElement("variantName")]
         public string VariantName { get; set; } = null!;
 
+        // ⭐ Giữ nguyên AdditionalPrice để tránh lỗi
         [BsonElement("additionalPrice")]
         public decimal AdditionalPrice { get; set; }
 

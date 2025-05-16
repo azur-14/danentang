@@ -23,58 +23,6 @@ namespace ProductManagementService.Controllers
         // -----------------------
         // PRODUCT CRUD
         // -----------------------
-        [HttpPut("{id:length(24)}")]
-        public async Task<IActionResult> UpdateProduct(string id, [FromBody] Product updated)
-        {
-            updated.Id = id;
-            updated.UpdatedAt = DateTime.UtcNow;
-
-            // Kiểm tra variant nào bị thiếu id
-            if (updated.Variants.Any(v => string.IsNullOrEmpty(v.Id)))
-                return BadRequest("All variants must have valid id.");
-
-            var existing = await _products.Find(p => p.Id == id).FirstOrDefaultAsync();
-            if (existing == null)
-                return NotFound("Product not found.");
-
-            // Khởi tạo product item collection
-            var _productItems = HttpContext
-                .RequestServices
-                .GetService(typeof(MongoDbContext)) is MongoDbContext ctx
-                ? ctx.ProductItems
-                : throw new Exception("Cannot resolve ProductItems collection");
-
-            // Tạo thêm product items nếu tăng số lượng
-            foreach (var updatedVariant in updated.Variants)
-            {
-                var oldVariant = existing.Variants.FirstOrDefault(v => v.Id == updatedVariant.Id);
-                if (oldVariant != null && updatedVariant.Inventory > oldVariant.Inventory)
-                {
-                    int addedCount = updatedVariant.Inventory - oldVariant.Inventory;
-                    var now = DateTime.UtcNow;
-
-                    var items = Enumerable.Range(0, addedCount)
-                        .Select(_ => new ProductItem
-                        {
-                            Id = ObjectId.GenerateNewId().ToString(),
-                            ProductId = id,
-                            VariantId = updatedVariant.Id,
-                            Status = "available",
-                            CreatedAt = now,
-                            UpdatedAt = now
-                        }).ToList();
-
-                    if (items.Count > 0)
-                        await _productItems.InsertManyAsync(items);
-                }
-            }
-
-            var result = await _products.ReplaceOneAsync(p => p.Id == id, updated);
-            if (result.MatchedCount == 0)
-                return NotFound("Product not found during update.");
-
-            return NoContent();
-        }
 
         [HttpPost]
         public async Task<IActionResult> CreateProduct([FromBody] Product product)
@@ -82,30 +30,57 @@ namespace ProductManagementService.Controllers
             if (product == null)
                 return BadRequest("Product data is required.");
 
-            product.Id = ObjectId.GenerateNewId().ToString();
+            product.Id        = ObjectId.GenerateNewId().ToString();
             product.CreatedAt = DateTime.UtcNow;
             product.UpdatedAt = DateTime.UtcNow;
 
-            if (product.Price <= 0 || product.DiscountPercentage < 0)
-                return BadRequest("Invalid price or discount.");
+            // Validate & assign IDs/timestamps for variants
+            foreach (var v in product.Variants)
+            {
+                v.Id            = ObjectId.GenerateNewId().ToString();
+                v.CreatedAt     = DateTime.UtcNow;
+                v.UpdatedAt     = DateTime.UtcNow;
+                if (v.AdditionalPrice < 0)
+                    return BadRequest("Each variant must have non-negative additionalPrice.");
+                if (v.Inventory < 0)
+                    return BadRequest("Each variant must have non-negative inventory.");
+            }
 
             await _products.InsertOneAsync(product);
             return Ok(product);
+        }
+
+        [HttpPut("{id:length(24)}")]
+        public async Task<IActionResult> UpdateProduct(string id, [FromBody] Product updated)
+        {
+            if (updated == null)
+                return BadRequest("Product data is required.");
+
+            updated.Id        = id;
+            updated.UpdatedAt = DateTime.UtcNow;
+
+            if (updated.Variants.Any(v => string.IsNullOrEmpty(v.Id)))
+                return BadRequest("All variants must have valid id.");
+
+            foreach (var v in updated.Variants)
+            {
+                if (v.AdditionalPrice < 0)
+                    return BadRequest("Each variant must have non-negative additionalPrice.");
+                if (v.Inventory < 0)
+                    return BadRequest("Each variant must have non-negative inventory.");
+            }
+
+            var result = await _products.ReplaceOneAsync(p => p.Id == id, updated);
+            if (result.MatchedCount == 0)
+                return NotFound("Product not found.");
+
+            return NoContent();
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var products = await _products.Find(_ => true).ToListAsync();
-            return Ok(products);
-        }
-
-        [HttpGet("category/{categoryId:length(24)}")]
-        public async Task<IActionResult> GetByCategory(string categoryId)
-        {
-            var products = await _products.Find(p => p.CategoryId == categoryId).ToListAsync();
-            if (!products.Any())
-                return NotFound($"No products found for category {categoryId}.");
             return Ok(products);
         }
 
@@ -126,6 +101,7 @@ namespace ProductManagementService.Controllers
                 return NotFound("Product not found.");
             return NoContent();
         }
+
 
         // -----------------------
         // IMAGE CRUD
@@ -166,7 +142,7 @@ namespace ProductManagementService.Controllers
 
             var filter = Builders<Product>.Filter.And(
                 Builders<Product>.Filter.Eq(p => p.Id, productId),
-                Builders<Product>.Filter.Eq("images.id", imageId)
+                Builders<Product>.Filter.Eq("images._id", imageId)
             );
 
             var update = Builders<Product>.Update
@@ -193,6 +169,7 @@ namespace ProductManagementService.Controllers
             return NoContent();
         }
 
+
         // -----------------------
         // VARIANT CRUD
         // -----------------------
@@ -213,8 +190,14 @@ namespace ProductManagementService.Controllers
         [HttpPost("{productId:length(24)}/variants")]
         public async Task<IActionResult> AddVariant(string productId, [FromBody] ProductVariant variant)
         {
-            variant.Id = ObjectId.GenerateNewId().ToString();
-            variant.CreatedAt = variant.UpdatedAt = DateTime.UtcNow;
+            variant.Id        = ObjectId.GenerateNewId().ToString();
+            variant.CreatedAt = DateTime.UtcNow;
+            variant.UpdatedAt = DateTime.UtcNow;
+
+            if (variant.AdditionalPrice < 0)
+                return BadRequest("Variant must have non-negative additionalPrice.");
+            if (variant.Inventory < 0)
+                return BadRequest("Variant must have non-negative inventory.");
 
             var update = Builders<Product>.Update
                 .Push(p => p.Variants, variant)
@@ -229,12 +212,17 @@ namespace ProductManagementService.Controllers
         [HttpPut("{productId:length(24)}/variants/{variantId:length(24)}")]
         public async Task<IActionResult> UpdateVariant(string productId, string variantId, [FromBody] ProductVariant updated)
         {
-            updated.Id = variantId;
+            updated.Id        = variantId;
             updated.UpdatedAt = DateTime.UtcNow;
+
+            if (updated.AdditionalPrice < 0)
+                return BadRequest("Variant must have non-negative additionalPrice.");
+            if (updated.Inventory < 0)
+                return BadRequest("Variant must have non-negative inventory.");
 
             var filter = Builders<Product>.Filter.And(
                 Builders<Product>.Filter.Eq(p => p.Id, productId),
-                Builders<Product>.Filter.Eq("variants.id", variantId)
+                Builders<Product>.Filter.Eq("variants._id", variantId)
             );
 
             var update = Builders<Product>.Update

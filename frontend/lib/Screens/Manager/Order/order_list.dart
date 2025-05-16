@@ -1,99 +1,38 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import '../../../models/Order.dart';
-import '../../../Service/order_service.dart';
+import 'package:flutter/foundation.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
-import 'order_detail_screen.dart';
 
-class OrderListScreen extends StatefulWidget {
-  const OrderListScreen({super.key});
+class Order_List extends StatelessWidget {
+  const Order_List({super.key});
 
   @override
-  State<OrderListScreen> createState() => _OrderListScreenState();
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: OrdersListScreen(),
+    );
+  }
 }
 
-class _OrderListScreenState extends State<OrderListScreen> {
-  int _currentIndex = 0;
-  bool _isLoggedIn = true;
-  int _currentPage = 1;
-  static const int _itemsPerPage = 20;
-
-  List<Order> orders = [];
-  Set<int> selectedIndexes = {};
-
-  String selectedFilter = 'all';
-  String? selectedStatus;
-  DateTime? startDate;
-  DateTime? endDate;
+class OrdersListScreen extends StatefulWidget {
+  const OrdersListScreen({super.key});
 
   @override
-  void initState() {
-    super.initState();
-    _fetchOrders();
-  }
+  _OrdersListScreenState createState() => _OrdersListScreenState();
+}
 
-  Future<void> _fetchOrders() async {
-    try {
-      final fetched = await OrderService.fetchAllOrders();
-      setState(() {
-        orders = _applyFilters(fetched);
-        _currentPage = 1;
-      });
-    } catch (e) {
-      debugPrint("❌ Error fetching orders: $e");
-    }
-  }
+class _OrdersListScreenState extends State<OrdersListScreen> {
+  int _currentIndex = 0;
+  bool _isLoggedIn = true;
+  List<Order> orders = [
+    Order("#CM9801", "Natali Craig", "Landing Page", "Meadow Lane Oakland", "Just now", "In Progress", Colors.purple.shade100, Colors.purple),
+    Order("#CM9802", "Kate Morrison", "CRM Admin pages", "Larry San Francisco", "A minute ago", "Complete", Colors.green.shade100, Colors.green),
+    Order("#CM9803", "Drew Cano", "Client Project", "Bagwell Avenue Ocala", "1 hour ago", "Pending", Colors.blue.shade100, Colors.blue),
+    Order("#CM9804", "Orlando Diggs", "Admin Dashboard", "Washburn Baton Rouge", "Yesterday", "Approved", Colors.yellow.shade100, Colors.yellow),
+    Order("#CM9805", "Andi Lane", "App Landing Page", "Nest Lane Olivette", "Feb 2, 2024", "Rejected", Colors.grey.shade300, Colors.grey),
+  ];
 
-  List<Order> _applyFilters(List<Order> all) {
-    final now = DateTime.now();
-    List<Order> filtered = all;
-
-    if (selectedFilter != 'all') {
-      if (selectedFilter == 'today') {
-        filtered = filtered.where((o) =>
-        o.createdAt.year == now.year &&
-            o.createdAt.month == now.month &&
-            o.createdAt.day == now.day
-        ).toList();
-      } else if (selectedFilter == 'week') {
-        final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-        filtered = filtered.where((o) => o.createdAt.isAfter(startOfWeek)).toList();
-      } else if (selectedFilter == 'month') {
-        filtered = filtered.where((o) =>
-        o.createdAt.year == now.year && o.createdAt.month == now.month
-        ).toList();
-      }
-    }
-
-    if (startDate != null && endDate != null) {
-      filtered = filtered.where((o) =>
-      o.createdAt.isAfter(startDate!.subtract(const Duration(days: 1))) &&
-          o.createdAt.isBefore(endDate!.add(const Duration(days: 1)))
-      ).toList();
-    }
-
-    if (selectedStatus != null && selectedStatus != 'all') {
-      filtered = filtered.where((o) => o.status == selectedStatus).toList();
-    }
-
-    return filtered;
-  }
-
-  List<Order> get _pagedOrders {
-    final start = (_currentPage - 1) * _itemsPerPage;
-    return orders.skip(start).take(_itemsPerPage).toList();
-  }
-
-  int get totalPages => (orders.length / _itemsPerPage).ceil();
-
-  void _changeFilter(String value) {
-    setState(() {
-      selectedFilter = value;
-      startDate = null;
-      endDate = null;
-    });
-    _fetchOrders();
-  }
+  Set<int> selectedIndexes = {};
 
   void _onItemTapped(int index) {
     setState(() {
@@ -101,22 +40,37 @@ class _OrderListScreenState extends State<OrderListScreen> {
     });
   }
 
-  void _onStatusChanged(String? value) {
+  void _deleteSelected() {
     setState(() {
-      selectedStatus = value;
+      orders = [for (int i = 0; i < orders.length; i++) if (!selectedIndexes.contains(i)) orders[i]];
+      selectedIndexes.clear();
     });
-    _fetchOrders();
   }
 
-  void _onDateRangePicked(DateTimeRange? range) {
-    if (range != null) {
-      setState(() {
-        startDate = range.start;
-        endDate = range.end;
-        selectedFilter = 'custom';
-      });
-      _fetchOrders();
+  void _editSelected() {
+    if (selectedIndexes.length == 1) {
+      final index = selectedIndexes.first;
+      final order = orders[index];
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Chỉnh sửa: ${order.id}")));
     }
+  }
+
+  void _selectAll() {
+    setState(() {
+      selectedIndexes = Set.from(List.generate(orders.length, (index) => index));
+    });
+  }
+
+  void _clearSelection() {
+    setState(() {
+      selectedIndexes.clear();
+    });
+  }
+
+  void _onLongPress(int index) {
+    setState(() {
+      selectedIndexes.add(index);
+    });
   }
 
   void _toggleSelect(int index) {
@@ -134,74 +88,59 @@ class _OrderListScreenState extends State<OrderListScreen> {
     final isMobile = MediaQuery.of(context).size.width < 600;
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Quản lý đơn hàng", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text("Danh sách Đơn hàng", style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
+        leading: (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS)
+            ? IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        )
+            : const SizedBox(),
         actions: [
-          DropdownButton<String>(
-            value: selectedStatus ?? 'all',
-            underline: Container(),
-            onChanged: _onStatusChanged,
-            items: const [
-              DropdownMenuItem(value: 'all', child: Text('Tất cả')),
-              DropdownMenuItem(value: 'pending', child: Text('Pending')),
-              DropdownMenuItem(value: 'in progress', child: Text('In Progress')),
-              DropdownMenuItem(value: 'delivered', child: Text('Delivered')),
-              DropdownMenuItem(value: 'cancelled', child: Text('Cancelled')),
-            ],
-          ),
-          IconButton(
-            icon: const Icon(Icons.calendar_month, color: Colors.black),
-            onPressed: () async {
-              final range = await showDateRangePicker(
-                context: context,
-                firstDate: DateTime(2023),
-                lastDate: DateTime.now(),
-              );
-              _onDateRangePicked(range);
-            },
-          ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.filter_list, color: Colors.black),
-            onSelected: _changeFilter,
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'all', child: Text("Tất cả")),
-              PopupMenuItem(value: 'today', child: Text("Hôm nay")),
-              PopupMenuItem(value: 'week', child: Text("Tuần này")),
-              PopupMenuItem(value: 'month', child: Text("Tháng này")),
+            icon: const Icon(Icons.more_horiz, color: Colors.black),
+            onSelected: (value) {
+              switch (value) {
+                case 'select_all':
+                  _selectAll();
+                  break;
+                case 'edit':
+                  _editSelected();
+                  break;
+                case 'delete':
+                  _deleteSelected();
+                  break;
+                case 'clear':
+                  _clearSelection();
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'select_all', child: Text("Chọn tất cả")),
+              const PopupMenuItem(value: 'edit', child: Text("Sửa tất cả (1 thẻ)")),
+              const PopupMenuItem(value: 'delete', child: Text("Xoá tất cả")),
+              const PopupMenuItem(value: 'clear', child: Text("Huỷ chọn")),
             ],
           ),
         ],
       ),
       backgroundColor: Colors.grey.shade100,
-      body: Column(
-        children: [
-          Expanded(
-            child: _pagedOrders.isEmpty
-                ? const Center(child: Text('Không có đơn hàng.'))
-                : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _pagedOrders.length,
-              itemBuilder: (context, index) {
-                final realIndex = (_currentPage - 1) * _itemsPerPage + index;
-                final order = _pagedOrders[index];
-                final selected = selectedIndexes.contains(realIndex);
-                return GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => OrderDetailScreen(order: order)),
-                  ),
-                  child: Opacity(
-                    opacity: selected ? 0.6 : 1.0,
-                    child: _OrderCard(order: order),
-                  ),
-                );
-              },
+      body: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: orders.length,
+        itemBuilder: (context, index) {
+          final selected = selectedIndexes.contains(index);
+          return GestureDetector(
+            onLongPress: () => _onLongPress(index),
+            onTap: () => _toggleSelect(index),
+            child: Opacity(
+              opacity: selected ? 0.6 : 1.0,
+              child: FadeInOrderCard(order: orders[index], index: index, selected: selected),
             ),
-          ),
-          _buildPaginationBar(),
-        ],
+          );
+        },
       ),
       bottomNavigationBar: isMobile
           ? MobileNavigationBar(
@@ -213,104 +152,106 @@ class _OrderListScreenState extends State<OrderListScreen> {
           : null,
     );
   }
-
-  Widget _buildPaginationBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      color: Colors.white,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          IconButton(
-            icon: const Icon(Icons.chevron_left),
-            onPressed: _currentPage > 1
-                ? () => setState(() => _currentPage--)
-                : null,
-          ),
-          Text("Trang $_currentPage / $totalPages"),
-          IconButton(
-            icon: const Icon(Icons.chevron_right),
-            onPressed: _currentPage < totalPages
-                ? () => setState(() => _currentPage++)
-                : null,
-          ),
-        ],
-      ),
-    );
-  }
 }
 
-class _OrderCard extends StatelessWidget {
+class FadeInOrderCard extends StatefulWidget {
   final Order order;
+  final int index;
+  final bool selected;
 
-  const _OrderCard({required this.order});
+  const FadeInOrderCard({super.key, required this.order, required this.index, this.selected = false});
 
-  Color getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return Colors.blue;
-      case 'in progress':
-        return Colors.orange;
-      case 'delivered':
-        return Colors.green;
-      case 'cancelled':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
+  @override
+  _FadeInOrderCardState createState() => _FadeInOrderCardState();
+}
+
+class _FadeInOrderCardState extends State<FadeInOrderCard> with TickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(duration: const Duration(milliseconds: 500), vsync: this);
+    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn)
+      ..addListener(() => setState(() {}));
+    Future.delayed(Duration(milliseconds: widget.index * 100), () {
+      if (mounted) _controller.forward();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final shipping = order.shippingAddress;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 15),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(order.orderNumber,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: getStatusColor(order.status).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(15),
+    return Opacity(
+      opacity: _fadeAnimation.value,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 15),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: widget.selected ? Colors.blue.shade50 : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(widget.order.id, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: widget.order.statusColor,
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Text(widget.order.status, style: TextStyle(color: widget.order.statusTextColor, fontWeight: FontWeight.bold)),
                 ),
-                child: Text(order.status,
-                    style: TextStyle(
-                        color: getStatusColor(order.status),
-                        fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          _infoRow("Người nhận", shipping.receiverName),
-          _infoRow("SĐT", shipping.phoneNumber),
-          _infoRow("Địa chỉ",
-              "${shipping.addressLine}, ${shipping.ward}, ${shipping.district}, ${shipping.city}"),
-          _infoRow("Ngày tạo", DateFormat('dd/MM/yyyy – HH:mm').format(order.createdAt)),
-          _infoRow("Tổng tiền", "${order.totalAmount.toStringAsFixed(0)} ₫"),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const CircleAvatar(
+                  backgroundImage: AssetImage('assets/Manager/Avatar/avatar.jpg'),
+                  radius: 12,
+                ),
+                const SizedBox(width: 8),
+                Text(widget.order.user, style: const TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            _buildInfoRow("Dự án", widget.order.project),
+            _buildInfoRow("Địa chỉ", widget.order.address),
+            _buildInfoRow("Ngày", widget.order.date),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Text("$title: ", style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(value),
         ],
       ),
     );
   }
 
-  Widget _infoRow(String label, String value) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 2),
-    child: Row(
-      children: [
-        Text("$label: ", style: const TextStyle(fontWeight: FontWeight.bold)),
-        Flexible(child: Text(value)),
-      ],
-    ),
-  );
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+}
+
+class Order {
+  final String id, user, project, address, date, status;
+  final Color statusColor, statusTextColor;
+
+  Order(this.id, this.user, this.project, this.address, this.date, this.status, this.statusColor, this.statusTextColor);
 }

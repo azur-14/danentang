@@ -19,7 +19,5 @@ namespace ProductManagementService.Data
         public IMongoCollection<Product> Products => _db.GetCollection<Product>("products");
         public IMongoCollection<Category> Categories => _db.GetCollection<Category>("categories");
         public IMongoCollection<Review> Reviews => _db.GetCollection<Review>("reviews");
-        public IMongoCollection<ProductItem> ProductItems => _db.GetCollection<ProductItem>("ProductItems");
-
     }
 }
