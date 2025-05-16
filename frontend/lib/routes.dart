@@ -12,6 +12,7 @@ import 'package:danentang/Screens/Customer/User/personal_info_screen.dart';
 import 'package:danentang/Screens/Customer/User/account_settings_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'Screens/Customer/Home/sentiment_screen.dart';
 import 'Screens/Customer/Login/ChangePassword.dart';
 import 'Screens/Customer/Login/Intro.dart';
 import 'Screens/Customer/Product/test_product_details.dart';
@@ -59,7 +60,7 @@ class ProductsScreen extends StatelessWidget {
 
 final GoRouter router = GoRouter(
   // Always land on the home page first
-  initialLocation: '/search',
+  initialLocation: '/sentiment',
   routes: [
 
     /// Splash / Intro
@@ -95,6 +96,11 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/search',
       builder: (context, state) => const Searching(),
+    ),
+
+    GoRoute(
+      path: '/sentiment',
+      builder: (context, state) => const ReviewScreen(),
     ),
 
     /// Product listing & details
