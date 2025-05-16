@@ -1,78 +1,66 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:danentang/models/product.dart';
 import 'package:danentang/models/ProductRating.dart';
-import 'package:danentang/models/Review.dart';
+import 'package:danentang/Service/product_service.dart';
 import 'package:danentang/widgets/Header/web_header.dart';
 import 'package:danentang/widgets/Product/product_image_carousel.dart';
 import 'package:danentang/widgets/Product/product_info.dart';
 import 'package:danentang/widgets/Product/product_tabs.dart';
-import 'package:danentang/widgets/Product/recommended_products.dart';
-import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../../../Service/product_service.dart';
 
-class ProductDetailsScreen extends StatefulWidget {
+class ProductDetailScreen extends StatefulWidget {
   final String productId;
-  const ProductDetailsScreen({super.key, required this.productId});
+  const ProductDetailScreen({Key? key, required this.productId}) : super(key: key);
 
   @override
-  _ProductDetailsScreenState createState() => _ProductDetailsScreenState();
+  State<ProductDetailScreen> createState() => _ProductDetailScreenState();
 }
 
-class _ProductDetailsScreenState extends State<ProductDetailsScreen> with SingleTickerProviderStateMixin {
+class _ProductDetailScreenState extends State<ProductDetailScreen> with SingleTickerProviderStateMixin {
   late Future<Product> _productFuture;
   late Future<ProductRating> _ratingFuture;
-  late Future<List<Review>> _reviewsFuture;
   late TabController _tabController;
   bool _isLoggedIn = false;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _productFuture = ProductService.getById(widget.productId);
-    _ratingFuture = ProductService.getRating(widget.productId);
-    _reviewsFuture = ProductService.getReviews(widget.productId);
-    }
+    _ratingFuture  = ProductService.getRating(widget.productId);
+    _checkLogin();
+  }
+
+  Future<void> _checkLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isLoggedIn = prefs.getString('token') != null;
+    });
+  }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
-    _init();
   }
-  Future<void> _init() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _isLoggedIn = prefs.getString('token') != null;
-     });
-  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     const maxContentWidth = 1200.0;
 
     return FutureBuilder<List<dynamic>>(
-      future: Future.wait([
-        _productFuture,
-        _ratingFuture,
-        _reviewsFuture,
-      ]),
-      builder: (context, snap) {
+      future: Future.wait([_productFuture, _ratingFuture]),
+      builder: (ctx, snap) {
         if (snap.connectionState != ConnectionState.done) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
         if (snap.hasError || snap.data == null) {
-          return const Scaffold(
-            body: Center(child: Text('Không tải được dữ liệu sản phẩm.')),
-          );
+          return const Scaffold(body: Center(child: Text('Không tải được dữ liệu sản phẩm.')));
         }
 
-        final results = snap.data!;
-        final product = results[0] as Product;
-        final productRating = results[1] as ProductRating;
-        final reviews = results[2] as List<Review>;
+        final product       = snap.data![0] as Product;
+        final productRating = snap.data![1] as ProductRating;
 
         return Scaffold(
           backgroundColor: Colors.grey[100],
@@ -80,72 +68,56 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> with Single
               ? AppBar(title: const Text("Chi tiết sản phẩm"))
               : null,
           body: SingleChildScrollView(
-            child: Column(
-              children: [
-                if (screenWidth > 800) WebHeader(isLoggedIn: _isLoggedIn),
-                screenWidth > 800
-                    ? Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: maxContentWidth),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: 400,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: screenWidth > 800 ? maxContentWidth : 600.0,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (screenWidth > 800) WebHeader(isLoggedIn: _isLoggedIn),
+                    if (screenWidth > 800)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 400,
+                            child: Padding(
                               padding: const EdgeInsets.all(16),
                               child: ProductImageCarousel(product: product),
                             ),
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: ProductInfo(
-                                  product: product,
-                                  productRating: productRating,
-                                ),
+                          ),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: ProductInfo(
+                                product: product,
+                                productRating: productRating,
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 32),
-                        ProductTabs(
-                          tabController: _tabController,
-                          product: product,
-                          reviews: reviews,
-                        ),
-                        const SizedBox(height: 32),
-                      ],
-                    ),
-                  ),
-                )
-                    : Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 600.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        ProductImageCarousel(product: product),
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: ProductInfo(
-                            product: product,
-                            productRating: productRating,
                           ),
-                          ),
-                        const SizedBox(height: 32),
-                        ProductTabs(
-                          tabController: _tabController,
+                        ],
+                      )
+                    else ...[
+                      ProductImageCarousel(product: product),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: ProductInfo(
                           product: product,
-                          reviews: reviews,
+                          productRating: productRating,
                         ),
-                        const SizedBox(height: 32),
-                      ],
+                      ),
+                    ],
+                    const SizedBox(height: 32),
+                    ProductTabs(
+                      tabController: _tabController,
+                      product: product,
                     ),
-                  ),
+                    const SizedBox(height: 32),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         );

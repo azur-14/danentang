@@ -344,16 +344,15 @@ class ProductService {
   /// GET /api/products/{id}/rating
   static Future<ProductRating> getRating(String productId) async {
     final uri = Uri.parse('$_productsPath/$productId/rating');
-    debugPrint('→ GET $uri');
     final resp = await http.get(uri);
-    debugPrint('← ${resp.statusCode} ${resp.body}');
     if (resp.statusCode == 200) {
       return ProductRating.fromJson(
-          json.decode(resp.body) as Map<String, dynamic>);
+          json.decode(resp.body) as Map<String, dynamic>
+      );
     }
-    // fallback nếu không có rating
     return const ProductRating(averageRating: 0, reviewCount: 0);
   }
+
 
   /// GET /api/products/{id}/reviews
   static Future<List<Review>> getReviews(String productId) async {
@@ -376,6 +375,40 @@ class ProductService {
     return [];
   }
 
+  /// GET /api/products/{id}/reviews
+  static Future<List<Review>> fetchReviews(String productId) async {
+    final uri = Uri.parse('$_productsPath/$productId/reviews');
+    final resp = await http.get(uri);
+    if (resp.statusCode == 200) {
+      final data = json.decode(resp.body) as List<dynamic>;
+      return data.map((e) => Review.fromJson(e)).toList();
+    }
+    throw Exception('fetchReviews failed: ${resp.statusCode}');
+  }
+
+  /// POST /api/products/{id}/reviews
+  /// guestName: tên khách nếu chưa login
+  static Future<void> submitReview({
+    required String productId,
+    String? guestName,
+    int? rating,
+    required String comment,
+  }) async {
+    final uri = Uri.parse('$_productsPath/$productId/reviews');
+    final body = {
+      'comment': comment,
+      'rating': rating,
+      if (guestName != null) 'guestName': guestName,
+    };
+    final resp = await http.post(
+      uri,
+      headers: {'Content-Type':'application/json'},
+      body: jsonEncode(body),
+    );
+    if (resp.statusCode != 201) {
+      throw Exception('submitReview failed: ${resp.statusCode}');
+    }
+  }
   /// GET /api/products/{id}
   Future<Product> getProductById(String id) async {
     final uri = Uri.parse('$_productsPath/$id');

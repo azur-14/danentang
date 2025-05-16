@@ -1,29 +1,45 @@
-// lib/models/Review.dart
+// lib/models/review.dart
 
 class Review {
-  final String username;
-  final double rating;
+  final String id;
+  final String productId;
+  final String? userId;
+  final String? guestName;
   final String comment;
+  final int? rating;
+  final DateTime createdAt;
 
   Review({
-    required this.username,
-    required this.rating,
+    required this.id,
+    required this.productId,
+    this.userId,
+    this.guestName,
     required this.comment,
+    this.rating,
+    required this.createdAt,
   });
 
-  /// Parse from JSON map returned by your API
   factory Review.fromJson(Map<String, dynamic> json) {
     return Review(
-      username: json['username'] as String? ?? '',
-      rating:   (json['rating']   as num?)?.toDouble() ?? 0.0,
-      comment:  json['comment']  as String? ?? '',
+      id: json['id'] as String,
+      productId: json['productId'] as String,
+      userId: json['userId'] as String?,
+      guestName: json['guestName'] as String?,
+      comment: json['comment'] as String,
+      rating: json['rating'] != null ? (json['rating'] as num).toInt() : null,
+      createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
 
-  /// Convert back to JSON (if you ever need to POST/PUT)
-  Map<String, dynamic> toJson() => {
-    'username': username,
-    'rating':   rating,
-    'comment':  comment,
-  };
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'productId': productId,
+      if (userId != null)    'userId': userId,
+      if (guestName != null) 'guestName': guestName,
+      'comment': comment,
+      if (rating != null)    'rating': rating,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
 }

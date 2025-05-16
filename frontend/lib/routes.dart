@@ -94,9 +94,9 @@ final GoRouter router = GoRouter(
     GoRoute(
       name: 'product',
       path: '/product/:id',
-      builder: (context, state) {
+      builder: (ctx, state) {
         final id = state.pathParameters['id']!;
-        return ProductDetailsScreen(productId: id);
+        return ProductDetailScreen(productId: id);
       },
     ),
 
