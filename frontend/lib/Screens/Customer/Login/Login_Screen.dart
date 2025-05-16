@@ -163,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         '/change_password',
                         extra: emailController.text.trim(),
                       ),
-                        child: const Text("Forgot Password?"),
+                      child: const Text("Forgot Password?"),
                     ),
                     const Spacer(),
                   ],
@@ -244,7 +244,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               fontWeight: FontWeight.bold,
                               color: Colors.black87),
                         ),
-                       const SizedBox(height: 20),
+                        const SizedBox(height: 20),
                         TextField(
                           controller: emailController,
                           keyboardType: TextInputType.emailAddress,
@@ -302,7 +302,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             '/change_password',
                             extra: emailController.text.trim(),
                           ),
-                            child: const Text("Forgot Password?"),
+                          child: const Text("Forgot Password?"),
                         ),
 
                       ],
@@ -323,4 +323,3 @@ class _LoginScreenState extends State<LoginScreen> {
     return w > 800 ? _buildWebLayout() : _buildMobileLayout();
   }
 }
-

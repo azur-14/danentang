@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.danentang.app-mergeDebugResources-42:/values-zh-rTW/values-zh-rTW.xml",
+            "outputFile": "com.example.danentang.app-mergeDebugResources-43:/values-zh-rTW/values-zh-rTW.xml",
             "map": [
                 {
                     "source": "C:\\Users\\noob\\.gradle\\caches\\transforms-3\\94f3377fe96c79ae9f0301c93b69102d\\transformed\\jetified-play-services-base-18.0.1\\res\\values-zh-rTW\\values.xml",

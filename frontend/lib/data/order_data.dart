@@ -2,9 +2,294 @@ import 'package:danentang/models/Order.dart';
 import 'package:danentang/models/OrderItem.dart';
 import 'package:danentang/models/OrderStatusHistory.dart';
 import 'package:danentang/models/ShippingAddress.dart';
+import 'package:danentang/models/product.dart';
 
+// Danh sách sản phẩm (products)
+final List<Product> products = [
+  Product(
+    id: 'SP001',
+    name: 'Laptop Dell Inspiron 15',
+    brand: 'Dell',
+    description: 'Mạnh mẽ và gọn nhẹ',
+    price: 25000000.0,
+    discountPercentage: 0,
+    categoryId: 'c1',
+    createdAt: DateTime(2025, 5, 1),
+    updatedAt: DateTime(2025, 5, 15),
+    images: [
+      ProductImage(
+        id: 'img001',
+        url: 'assets/images/laptop.jpg',
+        sortOrder: 1,
+      ),
+    ],
+    variants: [
+      ProductVariant(
+        id: 'VAR001',
+        variantName: 'i5 12th Gen',
+        additionalPrice: 0,
+        inventory: 10,
+        createdAt: DateTime(2025, 5, 1),
+        updatedAt: DateTime(2025, 5, 15),
+      ),
+    ],
+  ),
+  Product(
+    id: 'SP002',
+    name: 'Laptop HP Pavilion 14',
+    brand: 'HP',
+    description: 'Hiệu suất cao',
+    price: 28000000.0,
+    discountPercentage: 0,
+    categoryId: 'c1',
+    createdAt: DateTime(2025, 5, 1),
+    updatedAt: DateTime(2025, 5, 15),
+    images: [
+      ProductImage(
+        id: 'img002',
+        url: 'assets/images/laptop.jpg', // Base64 ảnh mẫu
+        sortOrder: 1,
+      ),
+    ],
+    variants: [
+      ProductVariant(
+        id: 'VAR002',
+        variantName: 'i7 11th Gen',
+        additionalPrice: 0,
+        inventory: 8,
+        createdAt: DateTime(2025, 5, 1),
+        updatedAt: DateTime(2025, 5, 15),
+      ),
+    ],
+  ),
+  Product(
+    id: 'SP003',
+    name: 'Laptop ASUS ZenBook 13',
+    brand: 'ASUS',
+    description: 'Thiết kế mỏng nhẹ',
+    price: 30000000.0,
+    discountPercentage: 0,
+    categoryId: 'c1',
+    createdAt: DateTime(2025, 5, 1),
+    updatedAt: DateTime(2025, 5, 15),
+    images: [
+      ProductImage(
+        id: 'img001',
+        url: "assets/images/laptop.jpg",
+        sortOrder: 1,
+      ),
+    ],
+    variants: [
+      ProductVariant(
+        id: 'VAR003',
+        variantName: 'i9 13th Gen',
+        additionalPrice: 0,
+        inventory: 5,
+        createdAt: DateTime(2025, 5, 1),
+        updatedAt: DateTime(2025, 5, 15),
+      ),
+    ],
+  ),
+  Product(
+    id: 'SP004',
+    name: 'Laptop Lenovo ThinkPad X1',
+    brand: 'Lenovo',
+    description: 'Dành cho doanh nghiệp',
+    price: 26000000.0,
+    discountPercentage: 0,
+    categoryId: 'c1',
+    createdAt: DateTime(2025, 5, 1),
+    updatedAt: DateTime(2025, 5, 15),
+    images: [
+      ProductImage(
+        id: 'img004',
+        url: "assets/images/laptop.jpg",
+        sortOrder: 1,
+      ),
+    ],
+    variants: [
+      ProductVariant(
+        id: 'VAR004',
+        variantName: 'i5 12th Gen',
+        additionalPrice: 0,
+        inventory: 7,
+        createdAt: DateTime(2025, 5, 1),
+        updatedAt: DateTime(2025, 5, 15),
+      ),
+    ],
+  ),
+  Product(
+    id: 'SP005',
+    name: 'Tai nghe Sony WH-1000XM5',
+    brand: 'Sony',
+    description: 'Chống ồn vượt trội',
+    price: 6000000.0,
+    discountPercentage: 0,
+    categoryId: 'c2',
+    createdAt: DateTime(2025, 5, 1),
+    updatedAt: DateTime(2025, 5, 15),
+    images: [
+      ProductImage(
+        id: 'img005',
+        url: "assets/images/laptop.jpg",
+        sortOrder: 1,
+      ),
+    ],
+    variants: [
+      ProductVariant(
+        id: 'VAR005',
+        variantName: 'Black',
+        additionalPrice: 0,
+        inventory: 15,
+        createdAt: DateTime(2025, 5, 1),
+        updatedAt: DateTime(2025, 5, 15),
+      ),
+    ],
+  ),
+  Product(
+    id: 'SP006',
+    name: 'Chuột Logitech MX Master 3',
+    brand: 'Logitech',
+    description: 'Chuột văn phòng cao cấp',
+    price: 5000000.0,
+    discountPercentage: 0,
+    categoryId: 'c3',
+    createdAt: DateTime(2025, 5, 1),
+    updatedAt: DateTime(2025, 5, 15),
+    images: [
+      ProductImage(
+        id: 'img006',
+        url: "assets/images/laptop.jpg",
+        sortOrder: 1,
+      ),
+    ],
+    variants: [
+      ProductVariant(
+        id: 'VAR006',
+        variantName: 'Black',
+        additionalPrice: 0,
+        inventory: 20,
+        createdAt: DateTime(2025, 5, 1),
+        updatedAt: DateTime(2025, 5, 15),
+      ),
+    ],
+  ),
+  Product(
+    id: 'SP007',
+    name: 'Bàn phím Keychron K8',
+    brand: 'Keychron',
+    description: 'Bàn phím cơ chất lượng',
+    price: 5000000.0,
+    discountPercentage: 0,
+    categoryId: 'c3',
+    createdAt: DateTime(2025, 5, 1),
+    updatedAt: DateTime(2025, 5, 15),
+    images: [
+      ProductImage(
+        id: 'img007',
+        url: "assets/images/laptop.jpg",
+        sortOrder: 1,
+      ),
+    ],
+    variants: [
+      ProductVariant(
+        id: 'VAR007',
+        variantName: 'RGB',
+        additionalPrice: 0,
+        inventory: 12,
+        createdAt: DateTime(2025, 5, 1),
+        updatedAt: DateTime(2025, 5, 15),
+      ),
+    ],
+  ),
+  Product(
+    id: 'SP008',
+    name: 'Tai nghe JBL Live 650BTNC',
+    brand: 'JBL',
+    description: 'Âm thanh sống động',
+    price: 5000000.0,
+    discountPercentage: 0,
+    categoryId: 'c2',
+    createdAt: DateTime(2025, 5, 1),
+    updatedAt: DateTime(2025, 5, 15),
+    images: [
+      ProductImage(
+        id: 'img008',
+        url: "assets/images/laptop.jpg",
+        sortOrder: 1,
+      ),
+    ],
+    variants: [
+      ProductVariant(
+        id: 'VAR008',
+        variantName: 'Black',
+        additionalPrice: 0,
+        inventory: 10,
+        createdAt: DateTime(2025, 5, 1),
+        updatedAt: DateTime(2025, 5, 15),
+      ),
+    ],
+  ),
+  Product(
+    id: 'SP009',
+    name: 'Laptop Acer Aspire 7',
+    brand: 'Acer',
+    description: 'Hiệu năng tốt cho game',
+    price: 24000000.0,
+    discountPercentage: 0,
+    categoryId: 'c1',
+    createdAt: DateTime(2025, 5, 1),
+    updatedAt: DateTime(2025, 5, 16),
+    images: [
+      ProductImage(
+        id: 'img009',
+        url: "assets/images/laptop.jpg",
+        sortOrder: 1,
+      ),
+    ],
+    variants: [
+      ProductVariant(
+        id: 'VAR009',
+        variantName: 'i7 12th Gen',
+        additionalPrice: 0,
+        inventory: 6,
+        createdAt: DateTime(2025, 5, 1),
+        updatedAt: DateTime(2025, 5, 16),
+      ),
+    ],
+  ),
+  Product(
+    id: 'SP010',
+    name: 'Loa Bluetooth JBL Charge 5',
+    brand: 'JBL',
+    description: 'Âm thanh mạnh mẽ',
+    price: 5000000.0,
+    discountPercentage: 0,
+    categoryId: 'c4',
+    createdAt: DateTime(2025, 5, 1),
+    updatedAt: DateTime(2025, 5, 16),
+    images: [
+      ProductImage(
+        id: 'img010',
+        url: "assets/images/laptop.jpg",
+        sortOrder: 1,
+      ),
+    ],
+    variants: [
+      ProductVariant(
+        id: 'VAR010',
+        variantName: 'Blue',
+        additionalPrice: 0,
+        inventory: 15,
+        createdAt: DateTime(2025, 5, 1),
+        updatedAt: DateTime(2025, 5, 16),
+      ),
+    ],
+  ),
+];
+
+// Danh sách đơn hàng (testOrders)
 List<Order> testOrders = [
-  // Đơn hàng 1: Đã giao
   Order(
     id: '1',
     userId: 'USER001',
@@ -49,8 +334,6 @@ List<Order> testOrders = [
       OrderStatusHistory(status: 'Đã giao', timestamp: DateTime(2025, 5, 15, 11, 55)),
     ],
   ),
-
-  // Đơn hàng 2: Đang giao
   Order(
     id: '2',
     userId: 'USER002',
@@ -94,8 +377,6 @@ List<Order> testOrders = [
       OrderStatusHistory(status: 'Đang giao', timestamp: DateTime(2025, 5, 15, 11, 30)),
     ],
   ),
-
-  // Đơn hàng 3: Đặt hàng
   Order(
     id: '3',
     userId: 'USER003',
@@ -137,8 +418,6 @@ List<Order> testOrders = [
       OrderStatusHistory(status: 'Đặt hàng', timestamp: DateTime(2025, 5, 15, 11, 58)),
     ],
   ),
-
-  // Đơn hàng 4: Đã hủy
   Order(
     id: '4',
     userId: 'USER004',
@@ -179,6 +458,47 @@ List<Order> testOrders = [
     statusHistory: [
       OrderStatusHistory(status: 'Đặt hàng', timestamp: DateTime(2025, 5, 14, 15, 00)),
       OrderStatusHistory(status: 'Đã hủy', timestamp: DateTime(2025, 5, 15, 11, 59)),
+    ],
+  ),
+  Order(
+    id: '5',
+    userId: 'USER005',
+    orderNumber: 'DH005',
+    shippingAddress: ShippingAddress(
+      receiverName: 'Nguyễn Thị Lan',
+      phoneNumber: '0922333444',
+      addressLine: '202 Hai Phong',
+      ward: 'Phường Tân Định',
+      district: 'Quận 1',
+      city: 'TP. Hồ Chí Minh',
+    ),
+    createdAt: DateTime(2025, 5, 16, 3, 0),
+    updatedAt: DateTime(2025, 5, 16, 3, 0),
+    status: 'Đặt hàng',
+    totalAmount: 29000000.0,
+    discountAmount: 0.0,
+    couponCode: null,
+    loyaltyPointsUsed: 0,
+    items: [
+      OrderItem(
+        productId: 'SP009',
+        productVariantId: 'VAR009',
+        productName: 'Laptop Acer Aspire 7',
+        variantName: 'i7 12th Gen',
+        quantity: 1,
+        price: 24000000.0,
+      ),
+      OrderItem(
+        productId: 'SP010',
+        productVariantId: 'VAR010',
+        productName: 'Loa Bluetooth JBL Charge 5',
+        variantName: 'Blue',
+        quantity: 1,
+        price: 5000000.0,
+      ),
+    ],
+    statusHistory: [
+      OrderStatusHistory(status: 'Đặt hàng', timestamp: DateTime(2025, 5, 16, 3, 0)),
     ],
   ),
 ];

@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.example.danentang.app-mergeDebugResources-42:/values-zu/values-zu.xml",
+            "outputFile": "com.example.danentang.app-mergeDebugResources-43:/values-zu/values-zu.xml",
             "map": [
                 {
                     "source": "C:\\Users\\noob\\.gradle\\caches\\transforms-3\\e15975fc6d3246892ae156cfe2161016\\transformed\\core-1.13.1\\res\\values-zu\\values-zu.xml",
