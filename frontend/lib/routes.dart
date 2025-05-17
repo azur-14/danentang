@@ -1,8 +1,9 @@
+// Flutter & package
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// Màn hình khách hàng
+// Screens - Customer
 import 'package:danentang/Screens/Customer/Home/home_screen.dart';
 import 'package:danentang/Screens/Customer/Home/product_list_screen.dart';
 import 'package:danentang/Screens/Customer/Home/sentiment_screen.dart';
@@ -24,84 +25,39 @@ import 'package:danentang/Screens/Customer/Payment/order_success_screen.dart';
 import 'package:danentang/Screens/Customer/Payment/payment_method_screen.dart';
 import 'package:danentang/Screens/Customer/Payment/add_card_screen.dart';
 
-// Màn hình quản lý
-import 'package:danentang/Screens/Manager/DashBoard/MobileDashboard.dart';
-import 'package:danentang/Screens/Manager/DashBoard/WebDashboard.dart';
+// Screens - Manager
 import 'package:danentang/Screens/Manager/Support/customer_support.dart';
-import 'package:danentang/Screens/Manager/Support/customer_service.dart';
-import 'package:danentang/Screens/Manager/User/user_list.dart';
-import 'package:danentang/Screens/Manager/Product/product_management.dart';
-import 'package:danentang/Screens/Manager/Product/add_product.dart';
-import 'package:danentang/Screens/Manager/Product/delete_product.dart';
-import 'package:danentang/Screens/Manager/Coupon/coupon_management.dart';
-import 'package:danentang/Screens/Manager/Category/categories_management.dart';
-import 'package:danentang/Screens/Manager/Order/order_list.dart';
-import 'package:danentang/Screens/Manager/Report/oders_report.dart';
-import 'package:danentang/Screens/Manager/Report/revenue_report.dart';
-import 'package:danentang/Screens/Manager/Report/user_report.dart';
+import 'package:danentang/Screens/Manager/DashBoard/MobileDashboard.dart';
 
-// Models
+// Models & Data
 import 'package:danentang/models/product.dart';
 import 'package:danentang/models/card_info.dart';
 import 'package:danentang/models/ship.dart';
 import 'package:danentang/models/voucher.dart';
 import 'package:danentang/models/Address.dart';
 import 'package:danentang/models/Order.dart';
-import 'package:danentang/models/User.dart';
+import 'package:danentang/data/order_data.dart';
 
-import 'Screens/Manager/Order/order_detail_screen.dart';
-import 'Screens/Manager/Product/product_detail_screen.dart';
+import 'Screens/Manager/Support/customer_service.dart';
 
-// Hàm kiểm tra vai trò admin
-Future<bool> _isAdmin() async {
-  final prefs = await SharedPreferences.getInstance();
-  final role = prefs.getString('role');
-  return role == 'admin';
-}
-
-// Hàm kiểm tra trạng thái đăng nhập
-Future<bool> _isLoggedIn() async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('token');
-  return token != null;
-}
 
 final GoRouter router = GoRouter(
-  initialLocation: '/intro',
-  redirect: (BuildContext context, GoRouterState state) async {
-    final isLoggedIn = await _isLoggedIn();
-    final isAdmin = await _isAdmin();
-    final path = state.uri.toString();
-
-    // Chuyển hướng người dùng chưa đăng nhập đến trang đăng nhập cho các tuyến bảo vệ
-    if (!isLoggedIn &&
-        (path.startsWith('/manager') ||
-            path.startsWith('/profile') ||
-            path.startsWith('/my-orders') ||
-            path.startsWith('/checkout'))) {
-      return '/login';
-    }
-
-    // Chuyển hướng người dùng không phải admin khỏi các tuyến quản lý
-    if (!isAdmin && path.startsWith('/manager')) {
-      return '/homepage';
-    }
-
-    // Chuyển hướng người dùng đã đăng nhập từ intro/login đến trang chủ
-    if (isLoggedIn && (path == '/intro' || path == '/login' || path == '/login-signup')) {
-      return '/homepage';
-    }
-
-    return null;
-  },
+  initialLocation: '/homepage',
   routes: [
-    // Màn hình khởi động
+
+    /// Splash / Intro
     GoRoute(
       path: '/intro',
       builder: (context, state) => const SplashScreen(),
     ),
 
-    // Tuyến xác thực
+    /// Home
+    GoRoute(
+      path: '/homepage',
+      builder: (context, state) => const HomeScreen(),
+    ),
+
+    /// Login / Sign-Up
     GoRoute(
       path: '/login',
       builder: (context, state) => const LoginScreen(),
@@ -115,32 +71,28 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const Signup(email: ""),
     ),
     GoRoute(
-      path: '/change-password',
+      path: '/change_password',
       builder: (context, state) {
         final email = state.extra as String? ?? '';
         return ForgotPasswordScreen(email: email);
       },
     ),
 
-    // Tuyến khách hàng
-    GoRoute(
-      path: '/homepage',
-      builder: (context, state) => const HomeScreen(),
-    ),
     GoRoute(
       path: '/search',
       builder: (context, state) => const Searching(),
     ),
+
     GoRoute(
       path: '/sentiment',
       builder: (context, state) => const SentimentScreen(),
     ),
 
-    // Tuyến sản phẩm
+    /// Product listing & details
     GoRoute(
       path: '/products',
       builder: (context, state) => const ProductListScreen(
-        title: 'Tất cả sản phẩm',
+        title: 'All Products',
         products: [],
         isWeb: false,
       ),
@@ -160,35 +112,44 @@ final GoRouter router = GoRouter(
     GoRoute(
       name: 'product',
       path: '/product/:id',
-      builder: (context, state) {
+      builder: (ctx, state) {
         final id = state.pathParameters['id']!;
         return ProductDetailScreen(productId: id);
       },
     ),
 
-    // Giỏ hàng & Thanh toán
+    /// Cart / Checkout
     GoRoute(
       path: '/checkout',
-      builder: (context, state) => FutureBuilder<SharedPreferences>(
-        future: SharedPreferences.getInstance(),
-        builder: (ctx, snap) {
-          if (!snap.hasData) {
-            return const Scaffold(body: Center(child: CircularProgressIndicator()));
-          }
-          return CartScreenCheckOut();
-        },
-      ),
+      builder: (context, state) {
+        return FutureBuilder<SharedPreferences>(
+          future: SharedPreferences.getInstance(),
+          builder: (ctx, snap) {
+            if (!snap.hasData) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+            final prefs = snap.data!;
+            final token = prefs.getString('token');
+            final isLoggedIn = token != null;
+            final userId = isLoggedIn ? prefs.getString('userId') : null;
+            return CartScreenCheckOut(
+            );
+          },
+        );
+      },
     ),
 
-    // Tuyến thanh toán
+    /// Payment Flow
     GoRoute(
       path: '/payment-method',
       builder: (context, state) {
-        final extra = state.extra as Map<String, dynamic>? ?? {};
+        final extra = state.extra as Map<String, dynamic>?;
         return PaymentMethodScreen(
-          initialPaymentMethod: extra['initialPaymentMethod'] ?? 'Thẻ tín dụng',
-          initialCard: extra['initialCard'] as CardInfo?,
-          cards: extra['cards'] as List<CardInfo>? ?? [],
+          initialPaymentMethod: extra?['initialPaymentMethod'] ?? 'Credit Card',
+          initialCard: extra?['initialCard'] as CardInfo?,
+          cards: extra?['cards'] as List<CardInfo>? ?? [],
         );
       },
     ),
@@ -204,43 +165,61 @@ final GoRouter router = GoRouter(
       },
     ),
 
-    // Tuyến đơn hàng
+    GoRoute(
+      path: '/chat',
+      builder: (context, state) => const CustomerServiceScreen(), // customer
+    ),
+
+    GoRoute(
+      path: '/chat/:userId',
+      builder: (context, state) {
+        final userId = state.pathParameters['userId'];
+        return CustomerServiceScreen(userId: userId); // admin
+      },
+    ),
+
+    /// Orders
     GoRoute(
       path: '/my-orders',
       builder: (context, state) => const MyOrdersScreen(),
     ),
+
     GoRoute(
       path: '/order-details/:orderId',
       builder: (context, state) {
-        final orderId = state.pathParameters['orderId']!;
+        final orderId = state.pathParameters['orderId'] ?? '';
         return OrderDetailsScreen(orderId: orderId);
       },
     ),
     GoRoute(
       path: '/review/:orderId',
       builder: (context, state) {
-        final orderId = state.pathParameters['orderId']!;
+        final orderId = state.pathParameters['orderId'] ?? '';
         return ReviewScreen(orderId: orderId);
       },
     ),
     GoRoute(
       path: '/reorder/:orderId',
       builder: (context, state) {
-        final orderId = state.pathParameters['orderId']!;
-        return const Placeholder(); // Thay bằng ReorderScreen khi triển khai
+        final orderId = state.pathParameters['orderId'] ?? '';
+        return const Placeholder(); // Replace with ReorderScreen when implemented
       },
     ),
     GoRoute(
       path: '/return/:orderId',
       builder: (context, state) {
-        final orderId = state.pathParameters['orderId']!;
-        return const Placeholder(); // Thay bằng ReturnScreen khi triển khai
+        final orderId = state.pathParameters['orderId'] ?? '';
+        return const Placeholder(); // Replace with ReturnScreen when implemented
       },
     ),
 
-    // Tuyến hồ sơ
+    /// User profile & settings
     GoRoute(
       path: '/profile',
+      builder: (context, state) => const ProfileManagementScreen(),
+    ),
+    GoRoute(
+      path: '/personal-info',
       builder: (context, state) => const ProfileManagementScreen(),
     ),
     GoRoute(
@@ -248,124 +227,18 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const AccountSettingsScreen(),
     ),
 
-    // Tuyến trò chuyện
+    /// Manager dashboard & support
     GoRoute(
-      path: '/chat',
-      builder: (context, state) => const CustomerServiceScreen(),
+      path: '/manager-dashboard',
+      builder: (context, state) => const MobileDashboard(),
     ),
     GoRoute(
-      path: '/chat/:userId',
-      builder: (context, state) {
-        final userId = state.pathParameters['userId'];
-        final extra = state.extra as Map<String, dynamic>? ?? {};
-        final user = extra['user'] as User?;
-        return CustomerServiceScreen(userId: userId);
-      },
+      path: '/customer-service',
+      builder: (context, state) => const CustomerSupport(),
     ),
-
-    // Tuyến quản lý
     GoRoute(
-      path: '/manager',
-      builder: (context, state) {
-        final isWeb = MediaQuery.of(context).size.width >= 600;
-        return isWeb ? const WebDashboard() : const MobileDashboard();
-      },
-      routes: [
-        GoRoute(
-          path: 'dashboard',
-          builder: (context, state) {
-            final isWeb = MediaQuery.of(context).size.width >= 600;
-            return isWeb ? const WebDashboard() : const MobileDashboard();
-          },
-        ),
-        GoRoute(
-          path: 'dashboard',
-          builder: (context, state) {
-            final isWeb = MediaQuery.of(context).size.width >= 600;
-            return isWeb ? const WebDashboard() : const MobileDashboard();
-          },
-        ),
-        GoRoute(
-          path: 'products',
-          builder: (context, state) => const ProductManagementScreen(),
-          routes: [
-            GoRoute(
-              path: ':id', // Admin product detail route
-              builder: (context, state) {
-                final id = state.pathParameters['id']!;
-                return ProductDetailScreenManager(productId: id); // Use admin screen
-              },
-            ),
-            GoRoute(
-              path: 'edit',
-              builder: (context, state) {
-                final extra = state.extra as Map<String, dynamic>? ?? {};
-                return AddProductScreen(product: extra['product'] as Product?);
-              },
-            ),
-            GoRoute(
-              path: 'delete',
-              builder: (context, state) {
-                final extra = state.extra as Map<String, dynamic>? ?? {};
-                return DeleteProductScreen(product: extra['product'] as Product);
-              },
-            ),
-          ],
-        ),
-        GoRoute(
-          path: 'coupons',
-          builder: (context, state) => const CouponManagement(),
-        ),
-        GoRoute(
-          path: 'categories',
-          builder: (context, state) => const CategoriesManagement(),
-        ),
-        GoRoute(
-          path: 'users',
-          builder: (context, state) => const UserListScreen(),
-        ),
-        GoRoute(
-          path: 'orders',
-          builder: (context, state) => const OrderListScreen(),
-          routes: [
-            GoRoute(
-              path: ':id',
-              builder: (context, state) {
-                // Lấy orderId từ pathParameters
-                final orderId = state.pathParameters['id']!;
-                // Bây giờ OrderDetailScreen chỉ cần 1 tham số orderId
-                return OrderDetailScreen(orderId: orderId);
-              },
-            ),
-          ],
-        ),
-
-        GoRoute(
-          path: 'orders-report',
-          builder: (context, state) => const OrdersReport(),
-        ),
-        GoRoute(
-          path: 'revenue-report',
-          builder: (context, state) => const RevenueReport(),
-        ),
-        GoRoute(
-          path: 'user-report',
-          builder: (context, state) => const UserReportScreen(),
-        ),
-        GoRoute(
-          path: 'support',
-          builder: (context, state) => const CustomerSupport(),
-        ),
-        GoRoute(
-          path: 'profile',
-          builder: (context, state) => const ProfileManagementScreen(),
-        ),
-      ],
+      path: '/manager-profile',
+      builder: (context, state) => const ProfileManagementScreen(),
     ),
   ],
-  errorBuilder: (context, state) => Scaffold(
-    body: Center(
-      child: Text('Lỗi: Trang không tìm thấy - ${state.uri}'),
-    ),
-  ),
 );

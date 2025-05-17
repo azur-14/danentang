@@ -90,28 +90,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onNavTapped(int idx) {
-    final bool isLoggedIn = userData['isLoggedIn'] as bool;
-    if (!isLoggedIn && idx != 0) {
-      context.go('/login-signup');
-      return;
-    }
     setState(() => selectedIndex = idx);
-    final extraData = {'isLoggedIn': isLoggedIn, 'userData': userData};
     switch (idx) {
       case 0:
         context.go('/');
         break;
       case 1:
-        context.go('/cart', extra: extraData);
+        context.go('/checkout');
         break;
       case 2:
-        context.go('/profile', extra: extraData);
+        context.go('/profile');
         break;
       case 3:
         context.go('/chat');
         break;
     }
   }
+
 
   int _calculateItemsPerRow(double screenWidth, double itemWidth, double spacing, double pad) {
     final avail = screenWidth - pad * 2;

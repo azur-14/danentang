@@ -109,7 +109,7 @@ class WebSearchBar extends StatelessWidget {
                   color: Color(0xFF1976D2),
                 ),
                 onPressed: () {
-                  context.go('/checkout', extra: isLoggedIn);
+                  context.go('/checkout');
                 },
                 tooltip: 'Giỏ hàng',
                 hoverColor: Color(0xFF1976D2).withOpacity(0.2),

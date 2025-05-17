@@ -28,12 +28,20 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
-        final jsonData = jsonDecode(response.body);
-        final exists = jsonData['exists'];
-        if (exists == true) {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => LoginScreen(email: email)));
+        final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+        final exists = jsonData['exists'] as bool;
+        final isVerified = jsonData['isEmailVerified'] as bool;
+
+        if (exists && isVerified) {
+          // Đã có tài khoản và đã verify
+          Navigator.push(context, MaterialPageRoute(
+            builder: (_) => LoginScreen(email: email),
+          ));
         } else {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => Signup(email: email)));
+          // Chưa có tài khoản, hoặc chỉ là guest (chưa verify) → vẫn redirect tới Signup
+          Navigator.push(context, MaterialPageRoute(
+            builder: (_) => Signup(email: email),
+          ));
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -46,6 +54,7 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
       );
     }
   }
+
 
   @override
   void initState() {

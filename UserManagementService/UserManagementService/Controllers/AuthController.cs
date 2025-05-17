@@ -29,26 +29,67 @@ namespace UserManagementService.Controllers
             _configuration = configuration;
         }
 
-        // --- 1. Kiểm tra email ---
+        // --- 1. Kiểm tra email kèm isEmailVerified ---
         // GET /api/auth/check-email?email=...
         [HttpGet("check-email")]
         public async Task<IActionResult> CheckEmail([FromQuery] string email)
         {
-            var exists = await _context.Users
+            var user = await _context.Users
                 .Find(u => u.Email == email)
-                .AnyAsync();
-            return Ok(new { exists });
+                .FirstOrDefaultAsync();
+
+            if (user == null)
+                return Ok(new { exists = false, isEmailVerified = false });
+
+            return Ok(new { exists = true, isEmailVerified = user.IsEmailVerified });
         }
 
-        // --- 2. Đăng ký tài khoản ---
-        // POST /api/auth/register
+
+        // --- 2. Đăng ký hoặc cập nhật thông tin user ---
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
-            var exists = await _context.Users.Find(u => u.Email == dto.Email).AnyAsync();
-            if (exists)
-                return BadRequest("Email already exists.");
+            // Tìm user theo email
+            var existing = await _context.Users
+                .Find(u => u.Email == dto.Email)
+                .FirstOrDefaultAsync();
 
+            if (existing != null)
+            {
+                // Cập nhật thông tin mới, bật verify
+                var update = Builders<User>.Update
+                    .Set(u => u.FullName, dto.FullName)
+                    .Set(u => u.PasswordHash, BCrypt.Net.BCrypt.HashPassword(dto.Password))
+                    .Set(u => u.IsEmailVerified, true)
+                    .Set(u => u.Status, "Active")
+                    .Set(u => u.UpdatedAt, DateTime.UtcNow);
+
+                // Nếu có AddressLine, upsert Address mặc định
+                if (!string.IsNullOrEmpty(dto.AddressLine))
+                {
+                    var address = new Address
+                    {
+                        ReceiverName = dto.ReceiverName ?? dto.FullName,
+                        Phone = dto.Phone ?? "",
+                        AddressLine = dto.AddressLine,
+                        Commune = dto.Commune,
+                        District = dto.District,
+                        City = dto.City,
+                        IsDefault = true,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    update = update.Push(u => u.Addresses, address);
+                }
+
+                await _context.Users.UpdateOneAsync(
+                    u => u.Id == existing.Id,
+                    update
+                );
+
+                return Ok("User thông tin đã được cập nhật và kích hoạt tài khoản.");
+            }
+
+            // Nếu chưa có user thì tạo mới
             var user = new User
             {
                 Email = dto.Email,
@@ -57,15 +98,14 @@ namespace UserManagementService.Controllers
                 Role = "customer",
                 Status = "Active",
                 LoyaltyPoints = 0,
-                IsEmailVerified = true,     // <-- Quan trọng: user đăng ký thì xác thực mail luôn
+                IsEmailVerified = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 Addresses = new List<Address>()
             };
-            // Thêm địa chỉ nếu có
             if (!string.IsNullOrEmpty(dto.AddressLine))
             {
-                var address = new Address
+                user.Addresses.Add(new Address
                 {
                     ReceiverName = dto.ReceiverName ?? dto.FullName,
                     Phone = dto.Phone ?? "",
@@ -75,13 +115,13 @@ namespace UserManagementService.Controllers
                     City = dto.City,
                     IsDefault = true,
                     CreatedAt = DateTime.UtcNow
-                };
-                user.Addresses.Add(address);
+                });
             }
 
             await _context.Users.InsertOneAsync(user);
-            return Ok("User registered successfully.");
+            return Ok("User đăng ký thành công.");
         }
+
         // Đăng ký user guest (isEmailVerified = false)
         [HttpPost("register-guest")]
         public async Task<IActionResult> RegisterGuest([FromBody] RegisterGuestDto dto)
