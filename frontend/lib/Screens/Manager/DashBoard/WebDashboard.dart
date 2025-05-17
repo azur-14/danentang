@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-
-import '../Chart/piechart.dart';
-import '../Chart/linechartuser.dart';
-import '../Chart/revenuechart.dart';
-import '../Chart/oderschart.dart';
-import '../Chart/barchart.dart';
-
+import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:danentang/Screens/Manager/User/user_list.dart';
 import 'package:danentang/Screens/Manager/Product/product_management.dart';
 import 'package:danentang/Screens/Manager/Coupon/coupon_management.dart';
 import 'package:danentang/Screens/Manager/Category/categories_management.dart';
 import 'package:danentang/Screens/Manager/Support/customer_support.dart';
 import 'package:danentang/Screens/Manager/Order/order_list.dart';
+import '../Chart/piechart.dart';
+import '../Chart/linechartuser.dart';
+import '../Chart/revenuechart.dart';
+import '../Chart/oderschart.dart';
+import '../Chart/barchart.dart';
 
 class WebDashboard extends StatefulWidget {
   const WebDashboard({super.key});
@@ -34,6 +34,16 @@ class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMix
     );
     _opacityAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
     _controller.forward();
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    final role = prefs.getString('role');
+    if (token == null || role != 'admin') {
+      context.go('/login');
+    }
   }
 
   @override
@@ -44,29 +54,37 @@ class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      drawer: _buildDrawer(context),
-      appBar: AppBar(
-        title: const Text(
-          'Trang chủ',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (!didPop) {
+          context.go('/manager'); // Giữ người dùng ở dashboard
+        }
+      },
+      child: Scaffold(
+        drawer: _buildDrawer(context),
+        appBar: AppBar(
+          title: const Text(
+            'Trang chủ',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          backgroundColor: Colors.deepPurple,
         ),
-        backgroundColor: Colors.deepPurple,
-      ),
-      body: FadeTransition(
-        opacity: _opacityAnimation,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildStatCards(context),
-                const SizedBox(height: 20),
-                _buildChartsGrid(),
-                const SizedBox(height: 20),
-                _buildManagementLinks(context),
-              ],
+        body: FadeTransition(
+          opacity: _opacityAnimation,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildStatCards(context),
+                  const SizedBox(height: 20),
+                  _buildChartsGrid(),
+                  const SizedBox(height: 20),
+                  _buildManagementLinks(context),
+                ],
+              ),
             ),
           ),
         ),
@@ -83,19 +101,22 @@ class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMix
             decoration: BoxDecoration(color: Colors.deepPurple),
             child: Text('Admin Menu', style: TextStyle(color: Colors.white, fontSize: 24)),
           ),
-          _drawerItem(context, 'Trang chủ', Icons.dashboard, null),
-          _drawerItem(context, 'Quản lý Sản phẩm', Icons.shopping_cart, ProductManagementScreen()),
-          _drawerItem(context, 'Quản lý Mã giảm giá', Icons.card_giftcard, CouponManagement()),
-          _drawerItem(context, 'Quản lý Danh mục', Icons.category, CategoriesManagement()),
-          _drawerItem(context, 'Quản lý Người dùng', Icons.people, UserListScreen()),
-          _drawerItem(context, 'Quản lý Đơn hàng', Icons.receipt, OrderListScreen()),
-          _drawerItem(context, 'Hỗ trợ người dùng', Icons.support, CustomerSupportScreen()),
+          _drawerItem(context, 'Trang chủ', Icons.dashboard, '/manager/dashboard'),
+          _drawerItem(context, 'Quản lý Sản phẩm', Icons.shopping_cart, '/manager/products'),
+          _drawerItem(context, 'Quản lý Mã giảm giá', Icons.card_giftcard, '/manager/coupons'),
+          _drawerItem(context, 'Quản lý Danh mục', Icons.category, '/manager/categories'),
+          _drawerItem(context, 'Quản lý Người dùng', Icons.people, '/manager/users'),
+          _drawerItem(context, 'Quản lý Đơn hàng', Icons.receipt, '/manager/orders'),
+          _drawerItem(context, 'Hỗ trợ người dùng', Icons.support, '/manager/support'),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout),
             title: const Text('Đăng xuất'),
-            onTap: () {
-              Navigator.pop(context);
+            onTap: () async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.clear();
+              Navigator.pop(context); // Đóng drawer
+              context.go('/login');
             },
           ),
         ],
@@ -103,14 +124,14 @@ class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMix
     );
   }
 
-  Widget _drawerItem(BuildContext context, String title, IconData icon, Widget? screen) {
+  Widget _drawerItem(BuildContext context, String title, IconData icon, String? path) {
     return ListTile(
       leading: Icon(icon),
       title: Text(title),
       onTap: () {
-        Navigator.pop(context);
-        if (screen != null) {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+        Navigator.pop(context); // Đóng drawer
+        if (path != null) {
+          context.go(path); // Sử dụng GoRouter
         }
       },
     );
@@ -253,12 +274,12 @@ class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMix
 
   Widget _buildManagementLinks(BuildContext context) {
     List<Map<String, dynamic>> managements = [
-      {"title": "Quản lý Sản phẩm", "screen": ProductManagementScreen()},
-      {"title": "Quản lý Mã giảm giá", "screen": CouponManagement()},
-      {"title": "Quản lý Danh mục", "screen": CategoriesManagement()},
-      {"title": "Quản lý Người dùng", "screen": UserListScreen()},
-      {"title": "Quản lý Đơn hàng", "screen": OrderListScreen()},
-      {"title": "Hỗ trợ người dùng", "screen": CustomerSupportScreen()},
+      {"title": "Quản lý Sản phẩm", "path": "/manager/products"},
+      {"title": "Quản lý Mã giảm giá", "path": "/manager/coupons"},
+      {"title": "Quản lý Danh mục", "path": "/manager/categories"},
+      {"title": "Quản lý Người dùng", "path": "/manager/users"},
+      {"title": "Quản lý Đơn hàng", "path": "/manager/orders"},
+      {"title": "Hỗ trợ người dùng", "path": "/manager/support"},
     ];
 
     return Column(
@@ -276,7 +297,7 @@ class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMix
                   title: Text(item["title"]),
                   trailing: const Icon(Icons.arrow_forward_ios),
                   onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => item["screen"]));
+                    context.go(item["path"]); // Sử dụng GoRouter
                   },
                 ),
               ),

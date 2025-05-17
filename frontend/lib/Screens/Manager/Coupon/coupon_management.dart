@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
 import 'package:danentang/models/Coupon.dart';
 import 'package:danentang/Service/order_service.dart';
@@ -26,72 +27,77 @@ class _ResponsiveCouponScreenState extends State<ResponsiveCouponScreen> {
   final _codeCtrl = TextEditingController();
   final _discountCtrl = TextEditingController();
   final _limitCtrl = TextEditingController();
-  DateTime? _expiresAt;
   final _couponService = OrderService.instance;
   late Future<List<Coupon>> _couponFuture;
-  List<Coupon> _coupons = [];
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
     _refreshCoupons();
+    _loadSelectedIndex();
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    final role = prefs.getString('role');
+    if (token == null || role != 'admin') {
+      context.go('/login');
+    }
+  }
+
+  Future<void> _loadSelectedIndex() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _selectedIndex = prefs.getInt('coupon_management_nav_index') ?? 0;
+    });
+  }
+
+  Future<void> _saveSelectedIndex(int index) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('coupon_management_nav_index', index);
   }
 
   void _refreshCoupons() {
-    _couponFuture = _couponService.fetchAllCoupons();
-    _couponFuture.then((data) => setState(() => _coupons = data));
+    setState(() {
+      _couponFuture = _couponService.fetchAllCoupons();
+    });
   }
 
-  void _onItemTapped(int index) => setState(() => _selectedIndex = index);
-
-  Future<bool> _onWillPop() async => true;
+  void _onItemTapped(int index) {
+    setState(() => _selectedIndex = index);
+    _saveSelectedIndex(index);
+  }
 
   Future<void> _createCoupon() async {
-    // Validate inputs
     final code = _codeCtrl.text.trim();
     final discount = int.tryParse(_discountCtrl.text.trim());
     final usageLimit = int.tryParse(_limitCtrl.text.trim());
 
-    // Validation checks
     if (code.isEmpty || code.length < 5) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mã giảm giá phải có ít nhất 5 ký tự')),
-      );
+      setState(() => _errorMessage = 'Mã giảm giá phải có ít nhất 5 ký tự');
       return;
     }
 
     if (discount == null || discount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Giá trị giảm phải là số nguyên dương')),
-      );
+      setState(() => _errorMessage = 'Giá trị giảm phải là số nguyên dương');
       return;
     }
 
     if (usageLimit == null || usageLimit <= 0 || usageLimit > 1000) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Số lần sử dụng phải từ 1 đến 1000')),
-      );
+      setState(() => _errorMessage = 'Số lần sử dụng phải từ 1 đến 1000');
       return;
     }
 
-    if (_expiresAt != null && _expiresAt!.isBefore(DateTime.now())) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ngày hết hạn phải là trong tương lai')),
-      );
-      return;
-    }
-
-    // Check if code is unique
     try {
       final existingCoupons = await _couponFuture;
       if (existingCoupons.any((c) => c.code.toLowerCase() == code.toLowerCase())) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Mã giảm giá đã tồn tại')),
-        );
+        setState(() => _errorMessage = 'Mã giảm giá đã tồn tại');
         return;
       }
 
-      // Create coupon
       final coupon = Coupon(
         code: code,
         discountValue: discount,
@@ -106,38 +112,37 @@ class _ResponsiveCouponScreenState extends State<ResponsiveCouponScreen> {
         const SnackBar(content: Text('Tạo mã giảm giá thành công')),
       );
 
-      // Clear inputs
       _codeCtrl.clear();
       _discountCtrl.clear();
       _limitCtrl.clear();
-      _expiresAt = null;
+      setState(() => _errorMessage = null);
       _refreshCoupons();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: $e')),
-      );
+      setState(() => _errorMessage = 'Lỗi: $e');
     }
   }
 
-  Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(DateTime.now().year + 5),
-    );
-    if (picked != null) setState(() => _expiresAt = picked);
+  void _clearForm() {
+    _codeCtrl.clear();
+    _discountCtrl.clear();
+    _limitCtrl.clear();
+    setState(() => _errorMessage = null);
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _onWillPop,
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (!didPop) {
+          context.go('/manager'); // Quay lại dashboard
+        }
+      },
       child: LayoutBuilder(
         builder: (context, constraints) {
           return constraints.maxWidth < 600
               ? MobileCouponScreen(
-            onBackPressed: () => Navigator.of(context).maybePop(),
+            onBackPressed: () => context.go('/manager'),
             selectedIndex: _selectedIndex,
             onItemTapped: _onItemTapped,
             isLoggedIn: true,
@@ -145,18 +150,18 @@ class _ResponsiveCouponScreenState extends State<ResponsiveCouponScreen> {
             codeCtrl: _codeCtrl,
             discountCtrl: _discountCtrl,
             limitCtrl: _limitCtrl,
-            expiresAt: _expiresAt,
             onCreateCoupon: _createCoupon,
-            onPickDate: _pickDate,
+            onClearForm: _clearForm,
+            errorMessage: _errorMessage,
           )
               : WebCouponScreen(
             couponFuture: _couponFuture,
             codeCtrl: _codeCtrl,
             discountCtrl: _discountCtrl,
             limitCtrl: _limitCtrl,
-            expiresAt: _expiresAt,
             onCreateCoupon: _createCoupon,
-            onPickDate: _pickDate,
+            onClearForm: _clearForm,
+            errorMessage: _errorMessage,
           );
         },
       ),
@@ -171,9 +176,9 @@ class MobileCouponScreen extends StatelessWidget {
   final bool isLoggedIn;
   final Future<List<Coupon>> couponFuture;
   final TextEditingController codeCtrl, discountCtrl, limitCtrl;
-  final DateTime? expiresAt;
   final VoidCallback onCreateCoupon;
-  final VoidCallback onPickDate;
+  final VoidCallback onClearForm;
+  final String? errorMessage;
 
   const MobileCouponScreen({
     super.key,
@@ -185,9 +190,9 @@ class MobileCouponScreen extends StatelessWidget {
     required this.codeCtrl,
     required this.discountCtrl,
     required this.limitCtrl,
-    required this.expiresAt,
     required this.onCreateCoupon,
-    required this.onPickDate,
+    required this.onClearForm,
+    this.errorMessage,
   });
 
   @override
@@ -201,12 +206,15 @@ class MobileCouponScreen extends StatelessWidget {
           onPressed: onBackPressed,
         ),
         title: const Text(
-          "Quản lý Mã giảm giá",
+          "Quản lý mã giảm giá",
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
         ),
         centerTitle: true,
-        actions: const [
-          SizedBox(width: 10),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.black),
+            onPressed: () => context.findAncestorStateOfType<_ResponsiveCouponScreenState>()?._refreshCoupons(),
+          ),
         ],
       ),
       backgroundColor: Colors.white,
@@ -215,15 +223,15 @@ class MobileCouponScreen extends StatelessWidget {
         codeCtrl: codeCtrl,
         discountCtrl: discountCtrl,
         limitCtrl: limitCtrl,
-        expiresAt: expiresAt,
         onCreateCoupon: onCreateCoupon,
-        onPickDate: onPickDate,
+        onClearForm: onClearForm,
+        errorMessage: errorMessage,
       ),
       bottomNavigationBar: MobileNavigationBar(
         selectedIndex: selectedIndex,
         onItemTapped: onItemTapped,
         isLoggedIn: isLoggedIn,
-        role: 'manager',
+        role: 'admin',
       ),
     );
   }
@@ -232,9 +240,9 @@ class MobileCouponScreen extends StatelessWidget {
 class WebCouponScreen extends StatelessWidget {
   final Future<List<Coupon>> couponFuture;
   final TextEditingController codeCtrl, discountCtrl, limitCtrl;
-  final DateTime? expiresAt;
   final VoidCallback onCreateCoupon;
-  final VoidCallback onPickDate;
+  final VoidCallback onClearForm;
+  final String? errorMessage;
 
   const WebCouponScreen({
     super.key,
@@ -242,9 +250,9 @@ class WebCouponScreen extends StatelessWidget {
     required this.codeCtrl,
     required this.discountCtrl,
     required this.limitCtrl,
-    required this.expiresAt,
     required this.onCreateCoupon,
-    required this.onPickDate,
+    required this.onClearForm,
+    this.errorMessage,
   });
 
   @override
@@ -255,12 +263,15 @@ class WebCouponScreen extends StatelessWidget {
         elevation: 0,
         automaticallyImplyLeading: false,
         title: const Text(
-          "Quản lý Mã giảm giá",
+          "Quản lý mã giảm giá",
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
         ),
         centerTitle: true,
-        actions: const [
-          SizedBox(width: 10),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.black),
+            onPressed: () => context.findAncestorStateOfType<_ResponsiveCouponScreenState>()?._refreshCoupons(),
+          ),
         ],
       ),
       backgroundColor: Colors.white,
@@ -273,9 +284,9 @@ class WebCouponScreen extends StatelessWidget {
             codeCtrl: codeCtrl,
             discountCtrl: discountCtrl,
             limitCtrl: limitCtrl,
-            expiresAt: expiresAt,
             onCreateCoupon: onCreateCoupon,
-            onPickDate: onPickDate,
+            onClearForm: onClearForm,
+            errorMessage: errorMessage,
           ),
         ),
       ),
@@ -286,9 +297,9 @@ class WebCouponScreen extends StatelessWidget {
 class CouponContent extends StatelessWidget {
   final Future<List<Coupon>> couponFuture;
   final TextEditingController codeCtrl, discountCtrl, limitCtrl;
-  final DateTime? expiresAt;
   final VoidCallback onCreateCoupon;
-  final VoidCallback onPickDate;
+  final VoidCallback onClearForm;
+  final String? errorMessage;
 
   const CouponContent({
     super.key,
@@ -296,9 +307,9 @@ class CouponContent extends StatelessWidget {
     required this.codeCtrl,
     required this.discountCtrl,
     required this.limitCtrl,
-    required this.expiresAt,
     required this.onCreateCoupon,
-    required this.onPickDate,
+    required this.onClearForm,
+    this.errorMessage,
   });
 
   @override
@@ -311,10 +322,28 @@ class CouponContent extends StatelessWidget {
         FutureBuilder<List<Coupon>>(
           future: couponFuture,
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) return const CircularProgressIndicator();
-            if (snapshot.hasError) return Text("Lỗi: ${snapshot.error}");
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text("Lỗi: ${snapshot.error}"),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => context.findAncestorStateOfType<_ResponsiveCouponScreenState>()?._refreshCoupons(),
+                      child: const Text('Thử lại'),
+                    ),
+                  ],
+                ),
+              );
+            }
             final coupons = snapshot.data!;
-            if (coupons.isEmpty) return const Text("Chưa có mã giảm giá.");
+            if (coupons.isEmpty) {
+              return const Text("Chưa có mã giảm giá.");
+            }
             return Column(
               children: coupons.map((c) => _buildCouponItem(context, c)).toList(),
             );
@@ -323,6 +352,13 @@ class CouponContent extends StatelessWidget {
         const Divider(height: 32),
         const Text("Tạo mã giảm giá mới", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
+        if (errorMessage != null) ...[
+          Text(
+            errorMessage!,
+            style: const TextStyle(color: Colors.red),
+          ),
+          const SizedBox(height: 10),
+        ],
         TextField(
           controller: codeCtrl,
           decoration: const InputDecoration(
@@ -331,7 +367,7 @@ class CouponContent extends StatelessWidget {
             errorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
             focusedErrorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
           ),
-          maxLength: 20, // Giới hạn độ dài mã
+          maxLength: 20,
         ),
         const SizedBox(height: 10),
         TextField(
@@ -355,26 +391,20 @@ class CouponContent extends StatelessWidget {
             focusedErrorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Expanded(
-              child: Text(
-                expiresAt != null
-                    ? 'Hạn dùng: ${DateFormat('dd/MM/yyyy').format(expiresAt!)}'
-                    : 'Không giới hạn ngày',
-              ),
-            ),
             ElevatedButton(
-              onPressed: onPickDate,
-              child: const Text('Chọn ngày'),
+              onPressed: onCreateCoupon,
+              child: const Text("Tạo mã giảm giá"),
+            ),
+            const SizedBox(width: 16),
+            OutlinedButton(
+              onPressed: onClearForm,
+              child: const Text("Xóa dữ liệu"),
             ),
           ],
-        ),
-        const SizedBox(height: 12),
-        ElevatedButton(
-          onPressed: onCreateCoupon,
-          child: const Text("Tạo mã giảm giá"),
         ),
       ],
     );
@@ -403,29 +433,45 @@ class CouponContent extends StatelessWidget {
                 Text("Giảm: ${c.discountValue}đ"),
                 Text("Đã dùng: ${c.usageCount}/${c.usageLimit} (${percentUsed}%)"),
                 if (c.orderIds.isNotEmpty)
-                  Text("Đơn đã dùng: ${c.orderIds.join(', ')}", style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                  Text(
+                    "Đơn đã dùng: ${c.orderIds.join(', ')}",
+                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  ),
               ],
             ),
           ),
           IconButton(
             icon: const Icon(Icons.delete, color: Colors.red),
             onPressed: () async {
-              final confirmed = await showDialog(
+              final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (ctx) => AlertDialog(
                   title: const Text("Xác nhận xóa"),
                   content: Text("Bạn có chắc muốn xóa mã '${c.code}' không?"),
                   actions: [
-                    TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Hủy")),
-                    TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Xóa")),
+                    TextButton(
+                      onPressed: () => ctx.pop(false),
+                      child: const Text("Hủy"),
+                    ),
+                    TextButton(
+                      onPressed: () => ctx.pop(true),
+                      child: const Text("Xóa"),
+                    ),
                   ],
                 ),
               );
               if (confirmed == true) {
-                await OrderService.instance.deleteCoupon(c.id!);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Đã xóa mã")));
-                // Refresh coupons after deletion
-                context.findAncestorStateOfType<_ResponsiveCouponScreenState>()?._refreshCoupons();
+                try {
+                  await OrderService.instance.deleteCoupon(c.id!);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Đã xóa mã giảm giá")),
+                  );
+                  context.findAncestorStateOfType<_ResponsiveCouponScreenState>()?._refreshCoupons();
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Lỗi xóa mã: $e")),
+                  );
+                }
               }
             },
           ),

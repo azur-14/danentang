@@ -1,7 +1,7 @@
-// lib/Screens/Manager/Product/product_detail_screen.dart
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:danentang/models/product.dart';
 import 'package:danentang/models/tag.dart';
 import 'package:danentang/Service/product_service.dart';
@@ -9,9 +9,9 @@ import '../../../widgets/Footer/mobile_navigation_bar.dart';
 import 'add_product.dart';
 import 'delete_product.dart';
 
-class ProductDetailScreen extends StatefulWidget {
+class ProductDetailScreenManager extends StatefulWidget {
   final String productId;
-  const ProductDetailScreen({
+  const ProductDetailScreenManager({
     required this.productId,
     Key? key,
   }) : super(key: key);
@@ -20,14 +20,14 @@ class ProductDetailScreen extends StatefulWidget {
   _ProductDetailScreenState createState() => _ProductDetailScreenState();
 }
 
-class _ProductDetailScreenState extends State<ProductDetailScreen>
+class _ProductDetailScreenState extends State<ProductDetailScreenManager>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
-
   late Future<Product> _futureProduct;
   late Future<List<ProductImage>> _futureImages;
   late Future<List<ProductVariant>> _futureVariants;
   late Future<List<Tag>> _futureTags;
+  int _selectedTabIndex = 0;
 
   @override
   void initState() {
@@ -37,11 +37,43 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('ID sản phẩm không hợp lệ')),
         );
-        Navigator.of(context).pop();
+        context.go('/manager/products');
       });
     }
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        setState(() {
+          _selectedTabIndex = _tabController.index;
+        });
+        _saveTabIndex(_selectedTabIndex);
+      }
+    });
+    _loadTabIndex();
     _loadAll();
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    final role = prefs.getString('role');
+    if (token == null || role != 'admin') {
+      context.go('/login');
+    }
+  }
+
+  Future<void> _loadTabIndex() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _selectedTabIndex = prefs.getInt('product_detail_tab_${widget.productId}') ?? 0;
+      _tabController.index = _selectedTabIndex;
+    });
+  }
+
+  Future<void> _saveTabIndex(int index) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('product_detail_tab_${widget.productId}', index);
   }
 
   void _loadAll() {
@@ -67,100 +99,113 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return FutureBuilder<Product>(
-      future: _futureProduct,
-      builder: (ctx, snap) {
-        if (snap.connectionState != ConnectionState.done) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (!didPop) {
+          context.go('/manager/products'); // Quay lại danh sách sản phẩm
         }
-        if (snap.hasError || !snap.hasData) {
+      },
+      child: FutureBuilder<Product>(
+        future: _futureProduct,
+        builder: (ctx, snap) {
+          if (snap.connectionState != ConnectionState.done) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          if (snap.hasError || !snap.hasData) {
+            return Scaffold(
+              appBar: AppBar(
+                title: const Text('Lỗi'),
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => context.go('/manager/products'),
+                ),
+              ),
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Lỗi: ${snap.error ?? "Sản phẩm không tồn tại"}'),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(_loadAll); // Thử lại
+                      },
+                      child: const Text('Thử lại'),
+                    ),
+                    const SizedBox(height: 8),
+                    ElevatedButton(
+                      onPressed: () => context.go('/manager/products'),
+                      child: const Text('Quay lại'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+          final product = snap.data!;
+          final productName = product.name.isNotEmpty ? product.name : 'Sản phẩm không tên';
           return Scaffold(
             appBar: AppBar(
-              title: const Text('Lỗi'),
+              title: Text(productName),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.white),
+                  onPressed: () async {
+                    final edited = await context.push<bool>(
+                      '/manager/products/edit',
+                      extra: {'product': product},
+                    );
+                    await _onEditedOrDeleted(edited);
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.white),
+                  onPressed: () async {
+                    final deleted = await context.push<bool>(
+                      '/manager/products/delete',
+                      extra: {'product': product},
+                    );
+                    if (deleted == true) {
+                      context.go('/manager/products', extra: {'refresh': true});
+                    }
+                  },
+                ),
+              ],
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => context.go('/manager/products'),
               ),
-            ),
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Lỗi: ${snap.error ?? "Sản phẩm không tồn tại"}'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Quay lại'),
-                  ),
+              bottom: TabBar(
+                controller: _tabController,
+                tabs: const [
+                  Tab(text: 'Images'),
+                  Tab(text: 'Variants'),
+                  Tab(text: 'Tags'),
                 ],
               ),
             ),
-          );
-        }
-        final product = snap.data!;
-        final productName = product.name.isNotEmpty ? product.name : 'Sản phẩm không tên';
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(productName),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.edit, color: Colors.white),
-                onPressed: () async {
-                  final edited = await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AddProductScreen(product: product),
-                    ),
-                  );
-                  await _onEditedOrDeleted(edited);
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete, color: Colors.white),
-                onPressed: () async {
-                  final deleted = await Navigator.push<bool>(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => DeleteProductScreen(product: product),
-                    ),
-                  );
-                  if (deleted == true) Navigator.pop(context, true);
-                },
-              ),
-            ],
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            bottom: TabBar(
+            body: TabBarView(
               controller: _tabController,
-              tabs: const [
-                Tab(text: 'Images'),
-                Tab(text: 'Variants'),
-                Tab(text: 'Tags'),
+              children: [
+                _buildImagesTab(),
+                _buildVariantsTab(),
+                _buildTagsTab(),
               ],
             ),
-          ),
-          body: TabBarView(
-            controller: _tabController,
-            children: [
-              _buildImagesTab(),
-              _buildVariantsTab(),
-              _buildTagsTab(),
-            ],
-          ),
-          bottomNavigationBar: isMobile
-              ? MobileNavigationBar(
-            selectedIndex: 0,
-            onItemTapped: (_) {},
-            isLoggedIn: true,
-            role: 'manager',
-          )
-              : null,
-        );
-      },
+            bottomNavigationBar: isMobile
+                ? MobileNavigationBar(
+              selectedIndex: 0,
+              onItemTapped: (_) {},
+              isLoggedIn: true,
+              role: 'admin', // Đồng bộ với vai trò admin
+            )
+                : null,
+          );
+        },
+      ),
     );
   }
 
@@ -172,7 +217,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
           return const Center(child: CircularProgressIndicator());
         }
         if (snap.hasError) {
-          return Center(child: Text('Lỗi tải hình ảnh: ${snap.error}'));
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Lỗi tải hình ảnh: ${snap.error}'),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: () => setState(_loadAll),
+                  child: const Text('Thử lại'),
+                ),
+              ],
+            ),
+          );
         }
         final imgs = snap.data ?? [];
         if (imgs.isEmpty) {
@@ -227,7 +284,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
           return const Center(child: CircularProgressIndicator());
         }
         if (snap.hasError) {
-          return Center(child: Text('Lỗi tải biến thể: ${snap.error}'));
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Lỗi tải biến thể: ${snap.error}'),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: () => setState(_loadAll),
+                  child: const Text('Thử lại'),
+                ),
+              ],
+            ),
+          );
         }
         final vars = snap.data ?? [];
         if (vars.isEmpty) {
@@ -261,7 +330,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
           return const Center(child: CircularProgressIndicator());
         }
         if (snap.hasError) {
-          return Center(child: Text('Lỗi tải thẻ: ${snap.error}'));
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Lỗi tải thẻ: ${snap.error}'),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: () => setState(_loadAll),
+                  child: const Text('Thử lại'),
+                ),
+              ],
+            ),
+          );
         }
         final tags = snap.data ?? [];
         if (tags.isEmpty) {
@@ -286,12 +367,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     );
   }
 
-  /// Xử lý image: Nếu là base64 thì decode, còn lại là network
   Widget _smartImage(String urlOrBase64, {double? width, double? height, BoxFit? fit}) {
     if (urlOrBase64.isEmpty || urlOrBase64.trim().isEmpty) {
       return _fallbackImage(width, height);
     }
-    // Nếu là link http(s) thì dùng Image.network
     if (urlOrBase64.startsWith('http')) {
       return Image.network(
         urlOrBase64,
@@ -301,7 +380,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         errorBuilder: (_, __, ___) => _fallbackImage(width, height),
       );
     }
-    // Nếu là base64 (thường dài và không có "http")
     try {
       final bytes = base64Decode(urlOrBase64);
       return Image.memory(
@@ -309,9 +387,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         width: width,
         height: height,
         fit: fit ?? BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) => _fallbackImage(width, height),
+        errorBuilder: (context, error, stackTrace) {
+          print('Lỗi giải mã base64: $error'); // Ghi log lỗi
+          return _fallbackImage(width, height);
+        },
       );
-    } catch (_) {
+    } catch (e) {
+      print('Lỗi xử lý ảnh: $e'); // Ghi log lỗi
       return _fallbackImage(width, height);
     }
   }

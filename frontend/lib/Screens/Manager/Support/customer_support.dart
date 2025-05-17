@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
-import 'package:danentang/models/User.dart';
-import 'package:danentang/Service/user_service.dart';
-import 'package:danentang/Screens/Manager/Support/customer_service.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../models/User.dart';
+import '../../../Service/user_service.dart';
 import '../../../ultis/image_helper.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
+import '../Support/customer_service.dart';
 
-class Customer_Support extends StatelessWidget {
-  const Customer_Support({super.key});
+class CustomerSupport extends StatelessWidget {
+  const CustomerSupport({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: const CustomerSupportScreen(),
-    );
+    return const CustomerSupportScreen();
   }
 }
 
@@ -26,34 +24,35 @@ class CustomerSupportScreen extends StatefulWidget {
 }
 
 class _CustomerSupportScreenState extends State<CustomerSupportScreen> {
-  int _selectedIndex = 0;
-  List<User> _users = [];
+  late Future<List<User>> _usersFuture;
   List<bool> _selectedTickets = [];
-  bool _isLoading = true;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _loadUsers();
+    _checkLoginStatus();
+    _refreshUsers();
   }
 
-  Future<void> _loadUsers() async {
-    try {
-      final userService = UserService();
-      final users = await userService.getComplainingUsers();
-      setState(() {
-        _users = users;
-        _selectedTickets = List.generate(users.length, (_) => false);
-        _isLoading = false;
-      });
-    } catch (e) {
-      print("Lỗi khi tải danh sách người dùng khiếu nại: $e");
+  Future<void> _checkLoginStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    final role = prefs.getString('role');
+    if (token == null || role != 'admin') {
+      context.go('/login');
     }
   }
 
-  void _onItemTapped(int index) {
+  void _refreshUsers() {
     setState(() {
-      _selectedIndex = index;
+      _isLoading = true;
+      _errorMessage = null;
+      _usersFuture = UserService().getComplainingUsers().then((users) {
+        _selectedTickets = List.generate(users.length, (_) => false);
+        return users;
+      });
     });
   }
 
@@ -81,80 +80,125 @@ class _CustomerSupportScreenState extends State<CustomerSupportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = defaultTargetPlatform == TargetPlatform.android ||
-        defaultTargetPlatform == TargetPlatform.iOS;
+    final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return Scaffold(
-      backgroundColor: Colors.grey.shade100,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        leading: isMobile
-            ? IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        )
-            : const SizedBox(),
-        title: const Text(
-          "Hỗ trợ người dùng",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
-        ),
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) {
-              switch (value) {
-                case 'select_all':
-                  _selectAllTickets();
-                  break;
-                case 'deselect_all':
-                  _deselectAllTickets();
-                  break;
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem<String>(
-                value: 'select_all',
-                child: Text('Chọn tất cả'),
-              ),
-              const PopupMenuItem<String>(
-                value: 'deselect_all',
-                child: Text('Bỏ chọn tất cả'),
-              ),
-            ],
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (!didPop) {
+          context.go('/manager');
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.grey.shade100,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            onPressed: () => context.go('/manager'),
           ),
-          const SizedBox(width: 10),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemCount: _users.length,
-        itemBuilder: (context, index) {
-          return AnimatedSupportTicketItem(
-            delay: index * 200,
-            isSelected: _selectedTickets[index],
-            onTap: () => _toggleTicketSelection(index),
-            user: _users[index],
-          );
-        },
-      ),
-      bottomNavigationBar: LayoutBuilder(
-        builder: (context, constraints) {
-          if (constraints.maxWidth < 600) {
-            return MobileNavigationBar(
-              selectedIndex: _selectedIndex,
-              onItemTapped: _onItemTapped,
-              isLoggedIn: true,
-              role: 'manager',
-            );
-          } else {
-            return const SizedBox.shrink();
-          }
-        },
+          title: const Text(
+            "Hỗ trợ người dùng",
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.black),
+              onPressed: _refreshUsers,
+              tooltip: 'Làm mới',
+            ),
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                switch (value) {
+                  case 'select_all':
+                    _selectAllTickets();
+                    break;
+                  case 'deselect_all':
+                    _deselectAllTickets();
+                    break;
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem<String>(
+                  value: 'select_all',
+                  child: Text('Chọn tất cả'),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'deselect_all',
+                  child: Text('Bỏ chọn tất cả'),
+                ),
+              ],
+              tooltip: 'Quản lý lựa chọn',
+            ),
+            const SizedBox(width: 10),
+          ],
+        ),
+        body: Stack(
+          children: [
+            FutureBuilder<List<User>>(
+              future: _usersFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("Lỗi: ${snapshot.error}"),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _refreshUsers,
+                          child: const Text('Thử lại'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                final users = snapshot.data ?? [];
+                if (users.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text('Không có người dùng khiếu nại.'),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _refreshUsers,
+                          child: const Text('Làm mới'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16.0),
+                  itemCount: users.length,
+                  itemBuilder: (context, index) {
+                    return AnimatedSupportTicketItem(
+                      delay: index * 200,
+                      isSelected: _selectedTickets[index],
+                      onTap: () => _toggleTicketSelection(index),
+                      user: users[index],
+                    );
+                  },
+                );
+              },
+            ),
+            if (_isLoading) const Center(child: CircularProgressIndicator()),
+          ],
+        ),
+        bottomNavigationBar: isMobile
+            ? MobileNavigationBar(
+          selectedIndex: 0,
+          onItemTapped: (_) {},
+          isLoggedIn: true,
+          role: 'admin',
+        )
+            : null,
       ),
     );
   }
@@ -175,8 +219,7 @@ class AnimatedSupportTicketItem extends StatefulWidget {
   });
 
   @override
-  State<AnimatedSupportTicketItem> createState() =>
-      _AnimatedSupportTicketItemState();
+  State<AnimatedSupportTicketItem> createState() => _AnimatedSupportTicketItemState();
 }
 
 class _AnimatedSupportTicketItemState extends State<AnimatedSupportTicketItem>
@@ -192,16 +235,20 @@ class _AnimatedSupportTicketItemState extends State<AnimatedSupportTicketItem>
       vsync: this,
       duration: const Duration(milliseconds: 500),
     );
-
-    _offsetAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-          CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-        );
+    _offsetAnimation = Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
     _opacity = Tween<double>(begin: 0, end: 1).animate(_controller);
 
     Future.delayed(Duration(milliseconds: widget.delay), () {
       if (mounted) _controller.forward();
     });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -219,12 +266,6 @@ class _AnimatedSupportTicketItemState extends State<AnimatedSupportTicketItem>
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 }
 
@@ -255,8 +296,10 @@ class SupportTicketItem extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text("#${user.id.substring(user.id.length - 5)}",
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Text(
+                "#${user.id.substring(user.id.length - 5)}",
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -264,8 +307,10 @@ class SupportTicketItem extends StatelessWidget {
                   color: Colors.purple.shade100,
                   borderRadius: BorderRadius.circular(15),
                 ),
-                child: const Text("Đang thực hiện",
-                    style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold)),
+                child: const Text(
+                  "Đang thực hiện",
+                  style: TextStyle(color: Colors.purple, fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
@@ -274,12 +319,15 @@ class SupportTicketItem extends StatelessWidget {
             children: [
               CircleAvatar(
                 backgroundImage: (user.avatarUrl != null && user.avatarUrl!.isNotEmpty)
-                    ? memoryImageProvider(user.avatarUrl!)
+                    ? NetworkImage(user.avatarUrl!)
                     : const AssetImage('assets/Manager/Avatar/avatar.jpg') as ImageProvider,
                 radius: 14,
               ),
               const SizedBox(width: 10),
-              Text(user.fullName, style: const TextStyle(fontWeight: FontWeight.w600)),
+              Text(
+                user.fullName,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -288,12 +336,7 @@ class SupportTicketItem extends StatelessWidget {
           const SizedBox(height: 14),
           GestureDetector(
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CustomerServiceScreen(userId: user.id)
-                ),
-              );
+              context.push('/manager/customer-service/${user.id}', extra: user);
             },
             child: Center(
               child: Container(
@@ -302,8 +345,10 @@ class SupportTicketItem extends StatelessWidget {
                   border: Border.all(color: Colors.black),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text("Đã Gửi Đến Bạn Một Tin Nhắn",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text(
+                  "Đã Gửi Đến Bạn Một Tin Nhắn",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           ),
@@ -317,8 +362,16 @@ class SupportTicketItem extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         children: [
-          Text("$title: ", style: const TextStyle(fontWeight: FontWeight.bold)),
-          Flexible(child: Text(value, overflow: TextOverflow.ellipsis)),
+          Text(
+            "$title: ",
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          Flexible(
+            child: Text(
+              value,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );
