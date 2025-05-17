@@ -12,6 +12,7 @@ using System.Net.Mail;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System.Text;
 
 namespace OrderManagementService.Controllers
 {
@@ -22,16 +23,19 @@ namespace OrderManagementService.Controllers
         private readonly IMongoCollection<Order> _orders;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
+        private readonly IMongoCollection<Coupon> _coupons;
 
         public OrdersController(
-            MongoDbContext context,
-            IHttpClientFactory httpClientFactory,
-            IConfiguration configuration)
+    MongoDbContext context,
+    IHttpClientFactory httpClientFactory,
+    IConfiguration configuration)
         {
             _orders = context.Orders;
+            _coupons = context.Coupons;  // THÊM DÒNG NÀY
             _httpClientFactory = httpClientFactory;
             _configuration = configuration;
         }
+
 
         // GET: api/orders
         [HttpGet]
@@ -99,12 +103,50 @@ namespace OrderManagementService.Controllers
             try
             {
                 await _orders.InsertOneAsync(order);
+
+                // 1. Cộng lượt dùng coupon
+                if (!string.IsNullOrEmpty(order.CouponCode))
+                {
+                    var filter = Builders<Coupon>.Filter.Eq(c => c.Code, order.CouponCode);
+                    var update = Builders<Coupon>.Update
+                        .Inc(c => c.UsageCount, 1)
+                        .AddToSet(c => c.OrderIds, order.Id);
+                    await _coupons.UpdateOneAsync(filter, update);
+                }
+
+                // 2. Trừ điểm loyalty nếu có
+                if (!string.IsNullOrEmpty(order.UserId) && order.LoyaltyPointsUsed > 0)
+                {
+                    var userClient = _httpClientFactory.CreateClient();
+                    userClient.BaseAddress = new Uri(_configuration["UserServiceUrl"] ?? "http://localhost:5012");
+                    var patchBody = new { LoyaltyPointsDelta = -order.LoyaltyPointsUsed };
+                    var jsonContent = new StringContent(JsonSerializer.Serialize(patchBody), Encoding.UTF8, "application/json");
+                    var res = await userClient.PatchAsync($"/api/user/{order.UserId}/loyalty", jsonContent);
+
+                    if (!res.IsSuccessStatusCode)
+                    {
+                        Console.WriteLine("Trừ điểm loyalty thất bại: " + await res.Content.ReadAsStringAsync());
+                    }
+                }
+                foreach (var item in order.Items)
+                {
+                    var jsonContent = new StringContent(item.Quantity.ToString(), Encoding.UTF8, "application/json");
+                    var res = await client.PatchAsync($"products/variants/{item.ProductVariantId}/decrease", jsonContent);
+
+                    if (!res.IsSuccessStatusCode)
+                    {
+                        Console.WriteLine($"Trừ kho thất bại cho biến thể {item.ProductVariantId}: {await res.Content.ReadAsStringAsync()}");
+                        // Optional: rollback hoặc thông báo admin
+                    }
+                }
+
             }
             catch (Exception ex)
             {
                 Console.WriteLine("Lỗi lưu database: " + ex.Message);
                 return StatusCode(500, "Lỗi lưu vào MongoDB: " + ex.Message);
             }
+
 
             // Gửi email xác nhận đơn hàng
             try

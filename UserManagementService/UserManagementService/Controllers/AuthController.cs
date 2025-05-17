@@ -45,12 +45,10 @@ namespace UserManagementService.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
-            // Kiểm tra email trùng
             var exists = await _context.Users.Find(u => u.Email == dto.Email).AnyAsync();
             if (exists)
                 return BadRequest("Email already exists.");
 
-            // Tạo user mới
             var user = new User
             {
                 Email = dto.Email,
@@ -59,11 +57,11 @@ namespace UserManagementService.Controllers
                 Role = "customer",
                 Status = "Active",
                 LoyaltyPoints = 0,
+                IsEmailVerified = true,     // <-- Quan trọng: user đăng ký thì xác thực mail luôn
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 Addresses = new List<Address>()
             };
-
             // Thêm địa chỉ nếu có
             if (!string.IsNullOrEmpty(dto.AddressLine))
             {
@@ -83,6 +81,53 @@ namespace UserManagementService.Controllers
 
             await _context.Users.InsertOneAsync(user);
             return Ok("User registered successfully.");
+        }
+        // Đăng ký user guest (isEmailVerified = false)
+        [HttpPost("register-guest")]
+        public async Task<IActionResult> RegisterGuest([FromBody] RegisterGuestDto dto)
+        {
+            var exists = await _context.Users.Find(u => u.Email == dto.Email).FirstOrDefaultAsync();
+            if (exists != null)
+            {
+                return Ok(new
+                {
+                    id = exists.Id,
+                    email = exists.Email,
+                    fullName = exists.FullName,
+                    role = exists.Role,
+                    status = exists.Status,
+                    isEmailVerified = exists.IsEmailVerified,
+                    createdAt = exists.CreatedAt,
+                    updatedAt = exists.UpdatedAt
+                });
+            }
+
+            var guest = new User
+            {
+                Email = dto.Email,
+                FullName = dto.FullName ?? "Guest",
+                PasswordHash = "",
+                Role = "customer",
+                Status = "Active",
+                LoyaltyPoints = 0,
+                IsEmailVerified = false,   // <-- Quan trọng: guest thì chưa xác thực mail
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                Addresses = new List<Address>()
+            };
+
+            await _context.Users.InsertOneAsync(guest);
+            return Ok(new
+            {
+                id = guest.Id,
+                email = guest.Email,
+                fullName = guest.FullName,
+                role = guest.Role,
+                status = guest.Status,
+                isEmailVerified = guest.IsEmailVerified,
+                createdAt = guest.CreatedAt,
+                updatedAt = guest.UpdatedAt
+            });
         }
 
         // --- 3. Đăng nhập và sinh JWT ---
@@ -277,7 +322,12 @@ namespace UserManagementService.Controllers
     public string? District { get; set; }
     public string? City { get; set; }
 }
-
+    // DTO cho register guest
+    public class RegisterGuestDto
+    {
+        public string Email { get; set; } = null!;
+        public string? FullName { get; set; }
+    }
     public class ForgotPasswordDto
     {
         public string Email { get; set; } = null!;

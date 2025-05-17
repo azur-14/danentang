@@ -81,6 +81,7 @@ class UserService {
     final body = {
       'email': email,
       'fullName': fullName,
+      'password': 'guest123',
       'isVerifiedMail': false,   // xác định là guest
       'receiverName': receiverName,
       'phone': phone,
@@ -91,7 +92,7 @@ class UserService {
     }..removeWhere((_, v) => v == null);
 
     final res = await http.post(
-      Uri.parse('$_authBase/register'),
+      Uri.parse('$_authBase/register-guest'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(body),
     );

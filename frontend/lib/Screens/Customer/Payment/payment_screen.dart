@@ -11,6 +11,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../Service/order_service.dart';
 import '../../../models/Order.dart';
+import 'order_success_screen.dart';
 
 class PaymentScreen extends StatefulWidget {
   final List<Map<String, dynamic>> products; // mỗi item: {'product', 'variant', 'quantity'}
@@ -43,6 +44,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
   User? user;
   Address? shippingAddress;
   String? email;
+  Address? selectedAddress;  // Địa chỉ đang chọn
+  List<Address> addressList = []; // Danh sách tất cả địa chỉ
 
   @override
   void initState() {
@@ -220,26 +223,21 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
     try {
       print('Order gửi lên: ${order.toJson()}');
-      final createdOrder = await OrderService.instance.createOrder(order);
+      var createdOrder = await OrderService.instance.createOrder(order);
 
       // 6. Xóa cart sau khi đặt hàng
       await _clearCartAfterOrder();
-
       setState(() => _isLoading = false);
-
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: Text('Đặt hàng thành công!'),
-          content: Text('Đơn hàng #${createdOrder.orderNumber} đã được ghi nhận.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
-              child: Text('OK'),
-            ),
-          ],
+// Lấy id để truyền sang màn success:
+      final orderId = createdOrder.id; // Đảm bảo là String, không nullable
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => OrderSuccessScreen(orderId: orderId),
         ),
       );
+
+
+
     } catch (e) {
       setState(() => _isLoading = false);
       showDialog(
@@ -257,6 +255,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       );
     }
   }
+
   Future<User> _handleGuestUserByEmail(String email) async {
     try {
       // 1. Thử fetch user theo email

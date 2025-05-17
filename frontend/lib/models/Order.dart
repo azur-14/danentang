@@ -3,7 +3,7 @@ import 'OrderStatusHistory.dart';
 import 'ShippingAddress.dart';
 
 class Order {
-  final String? id;
+  final String id;
   final String? userId;
   final String orderNumber;
   final ShippingAddress shippingAddress;
@@ -20,7 +20,7 @@ class Order {
   DateTime updatedAt;
 
   Order({
-    this.id,
+    required this.id,
     this.userId,
     required this.orderNumber,
     required this.shippingAddress,

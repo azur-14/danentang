@@ -158,31 +158,13 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const AddCardScreen(),
     ),
     GoRoute(
-      path: '/order-success',
+      path: '/order-success/:id',
       builder: (context, state) {
-        final extra = state.extra as Map<String, dynamic>;
-        final address = extra['address'] as Address? ?? Address(
-          receiverName: 'Unknown',
-          phone: '0000000000',
-          addressLine: 'N/A',
-          commune: 'N/A',
-          district: 'N/A',
-          city: 'N/A',
-          isDefault: false,
-        );
-        return OrderSuccessScreen(
-          products: extra['products'] as List<Map<String, dynamic>>? ?? [],
-          total: extra['total'] as double? ?? 0.0,
-          shippingMethod: extra['shippingMethod'] as ShippingMethod?,
-          paymentMethod: extra['paymentMethod'] as String? ?? 'Unknown',
-          sellerNote: extra['sellerNote'] as String?,
-          voucher: extra['voucher'] as Voucher?,
-          address: address,
-          card: extra['card'] as CardInfo?,
-          order: extra['order'] as Order?,
-        );
+        final orderId = state.pathParameters['id']!;
+        return OrderSuccessScreen(orderId: orderId);
       },
     ),
+
     GoRoute(
       path: '/chat',
       builder: (context, state) => const CustomerServiceScreen(), // customer
@@ -201,6 +183,7 @@ final GoRouter router = GoRouter(
       path: '/my-orders',
       builder: (context, state) => const MyOrdersScreen(),
     ),
+
     GoRoute(
       path: '/order-details/:orderId',
       builder: (context, state) {
