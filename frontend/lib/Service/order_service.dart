@@ -193,13 +193,19 @@ class OrderService {
 
   Future<Coupon> validateCoupon(String code) async {
     final uri = Uri.parse('$_baseUrl/coupons/validate/$code');
-    final resp = await _http.get(uri);
-    if (resp.statusCode == 200) {
-      return Coupon.fromJson(json.decode(resp.body));
-    }
-    throw Exception('Coupon không hợp lệ (${resp.statusCode})');
-  }
+    final resp = await http.get(uri);
 
+    if (resp.statusCode == 200) {
+      // Coupon hợp lệ, trả về Coupon object
+      return Coupon.fromJson(json.decode(resp.body));
+    } else if (resp.statusCode == 400 || resp.statusCode == 404) {
+      // Coupon hết lượt hoặc không tồn tại
+      throw Exception(json.decode(resp.body)["title"] ?? "Coupon không hợp lệ");
+    } else {
+      // Lỗi khác
+      throw Exception('Có lỗi khi kiểm tra coupon (${resp.statusCode})');
+    }
+  }
   Future<Coupon> createCoupon(Coupon coupon) async {
     final uri = Uri.parse('$_baseUrl/coupons');
     final body = json.encode(coupon.toJson());
@@ -278,19 +284,26 @@ class OrderService {
   }
 
   Future<Order> createOrder(Order order) async {
-    final uri = Uri.parse('$_baseUrl/orders');
-    final body = json.encode(order.toJson());
-    debugPrint('→ POST $uri  body=$body');
-    final resp = await _http.post(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-      body: body,
+    final url = Uri.parse('$_baseUrl/orders');
+    final headers = {'Content-Type': 'application/json'};
+
+    // Nếu cần debug:
+    print('POST $url');
+    print('Order JSON: ${jsonEncode(order.toJson())}');
+
+    final resp = await http.post(
+      url,
+      headers: headers,
+      body: jsonEncode(order.toJson()),
     );
-    debugPrint('← ${resp.statusCode} ${resp.body}');
+
     if (resp.statusCode == 201) {
-      return Order.fromJson(json.decode(resp.body));
+      return Order.fromJson(jsonDecode(utf8.decode(resp.bodyBytes)));
+    } else {
+      // Nên in log ra để biết lỗi gì từ backend
+      print('Lỗi tạo đơn hàng: ${resp.statusCode} ${resp.body}');
+      throw Exception('Tạo đơn hàng thất bại: ${resp.body}');
     }
-    throw Exception('createOrder failed (${resp.statusCode})');
   }
   // trong order_service.dart
   Future<Map<String, dynamic>> fetchProductInfo(String productId, String? variantId) async {

@@ -2,21 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:danentang/models/CartItem.dart';
 import 'package:danentang/models/product.dart'; // Thêm để dùng ProductVariant
 import 'package:danentang/constants/colors.dart';
-
 class CartItemWidget extends StatelessWidget {
   final CartItem item;
+  final Product product; // <- Thêm dòng này
   final bool isEditing;
   final VoidCallback onDelete;
   final Function(int) onQuantityChanged;
   final bool isMobile;
-
-  // Thêm 2 prop mới:
   final List<ProductVariant> variants;
   final Function(String?)? onVariantChanged;
 
   const CartItemWidget({
     Key? key,
     required this.item,
+    required this.product, // <- Thêm dòng này
     required this.isEditing,
     required this.onDelete,
     required this.onQuantityChanged,
@@ -27,15 +26,21 @@ class CartItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Lấy variant hiện tại
     final currentVariant = variants.firstWhere(
           (v) => v.id == item.productVariantId,
-      orElse: () => variants.isNotEmpty ? variants.first : ProductVariant(
-        id: '', variantName: 'Không có', additionalPrice: 0, inventory: 0,
-        createdAt: DateTime.now(), updatedAt: DateTime.now(),
+      orElse: () => variants.isNotEmpty
+          ? variants.first
+          : ProductVariant(
+        id: '',
+        variantName: 'Không có',
+        additionalPrice: 0,
+        inventory: 0,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       ),
     );
-    final imageUrl = ''; // Lấy ảnh theo product nếu cần
+    // Lấy ảnh nếu cần
+    final imageUrl = product.images.isNotEmpty ? product.images.first.url : '';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -50,28 +55,33 @@ class CartItemWidget extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // (Bổ sung lấy imageUrl nếu muốn)
               Container(
                 width: isMobile ? 60 : 80,
                 height: isMobile ? 60 : 80,
                 decoration: BoxDecoration(
                   color: Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(8),
+                  image: imageUrl.isNotEmpty
+                      ? DecorationImage(
+                    image: NetworkImage(imageUrl),
+                    fit: BoxFit.cover,
+                  )
+                      : null,
                 ),
-                child: Icon(Icons.image),
+                child: imageUrl.isEmpty ? Icon(Icons.image) : null,
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Tên & delete
+                    // Tên sản phẩm
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
                           child: Text(
-                            currentVariant.variantName, // Chỉnh theo tên sản phẩm hoặc variant
+                            product.name, // <- Tên sản phẩm!
                             style: const TextStyle(
                                 fontSize: 16, fontWeight: FontWeight.bold),
                             overflow: TextOverflow.ellipsis,
@@ -84,7 +94,7 @@ class CartItemWidget extends StatelessWidget {
                           ),
                       ],
                     ),
-                    // Nếu có nhiều variant thì dropdown chọn
+                    // Tên biến thể (nếu có)
                     if (variants.length > 1)
                       DropdownButton<String>(
                         value: item.productVariantId,
@@ -155,4 +165,3 @@ class CartItemWidget extends StatelessWidget {
     );
   }
 }
-

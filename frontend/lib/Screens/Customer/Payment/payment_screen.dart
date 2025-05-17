@@ -11,7 +11,7 @@ import 'package:danentang/Service/user_service.dart';
 import 'package:uuid/uuid.dart';
 
 class PaymentScreen extends StatefulWidget {
-  final List<Map<String, dynamic>> products;
+  final List<Map<String, dynamic>> products; // mỗi item: {'product', 'variant', 'quantity'}
   final Coupon? voucher;
   final int loyaltyPointsToUse;
 
@@ -70,18 +70,28 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   double get shippingFee => 30000;
+
   double get subtotal => widget.products.fold<double>(
-    0, (sum, item) => sum + (item['product'].price * item['quantity']),
+      0,
+          (sum, item) => sum + (item['variant'].additionalPrice * item['quantity'])
   );
+
   double get voucherDiscount {
     if (widget.voucher == null) return 0.0;
+    // Giả sử: coupon có 2 loại: giảm trực tiếp (discountValue >= 1) hoặc giảm phần trăm (discountValue < 1)
     if (widget.voucher!.discountValue != null) {
-      return subtotal - widget.voucher!.discountValue!;
+      final value = widget.voucher!.discountValue!;
+      if (value < 1) {
+        return subtotal * value;
+      } else {
+        return value.toDouble();
+      }
     }
-    return widget.voucher!.discountValue?.toDouble() ?? 0.0;
+    return 0.0;
   }
 
-  double get loyaltyDiscount => (widget.loyaltyPointsToUse * 1000);
+  double get loyaltyDiscount => (widget.loyaltyPointsToUse * 1000).toDouble();
+
   double get total => subtotal + shippingFee - voucherDiscount - loyaltyDiscount;
 
   void _placeOrder() {
@@ -111,15 +121,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
     // Tạo OrderItems (nếu muốn gửi backend, xử lý tiếp ở đây)
     final List<OrderItem> orderItems = widget.products.map((item) {
       final product = item['product'];
+      final variant = item['variant'];
       final qty = item['quantity'] as int;
-      final variant = item['variant']?.toString() ?? 'Không có biến thể';
       return OrderItem(
         productId: product.id ?? const Uuid().v4(),
-        productVariantId: null,
+        productVariantId: variant.id ?? const Uuid().v4(),
         productName: product.name,
-        variantName: variant,
+        variantName: variant.variantName,
         quantity: qty,
-        price: product.price,
+        price: variant.additionalPrice, // lấy giá từ variant
       );
     }).toList();
 
@@ -191,32 +201,31 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 else ...[
                   TextField(
                     decoration: InputDecoration(labelText: 'Tên người nhận'),
-                    onChanged: (v) => guestName = v,
+                    onChanged: (v) => setState(() => guestName = v),
                   ),
                   TextField(
                     decoration: InputDecoration(labelText: 'Số điện thoại'),
                     keyboardType: TextInputType.phone,
-                    onChanged: (v) => guestPhone = v,
+                    onChanged: (v) => setState(() => guestPhone = v),
                   ),
                   TextField(
                     decoration: InputDecoration(labelText: 'Địa chỉ giao hàng'),
-                    onChanged: (v) => guestAddress = v,
+                    onChanged: (v) => setState(() => guestAddress = v),
                   ),
                 ],
                 const SizedBox(height: 20),
                 Text('Sản phẩm', style: TextStyle(fontWeight: FontWeight.bold)),
                 ...widget.products.map((item) {
                   final product = item['product'];
-                  final qty = item['quantity'];
                   final variant = item['variant'];
+                  final qty = item['quantity'];
                   return ListTile(
                     leading: Icon(Icons.shopping_bag),
                     title: Text(product.name),
-                    subtitle: Text('Số lượng: $qty'
-                        '${variant != null ? '\nBiến thể: $variant' : ''}'),
-                    trailing: Text('${(product.price * qty).toStringAsFixed(0)}đ'),
+                    subtitle: Text('Biến thể: ${variant.variantName}\nSố lượng: $qty'),
+                    trailing: Text('${(variant.additionalPrice * qty).toStringAsFixed(0)}đ'),
                   );
-                }),
+                }).toList(),
                 Divider(),
                 ListTile(
                   title: Text('Tạm tính'), trailing: Text('${subtotal.toStringAsFixed(0)}đ'),

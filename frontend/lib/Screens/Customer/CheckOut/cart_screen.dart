@@ -76,7 +76,8 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
     // Fetch cart và preload products
     final cart = await _api.fetchCart(_effectiveCartId);
     final ids = cart.items.map((i) => i.productId).toSet().toList();
-    final products = await Future.wait(ids.map((id) => ProductService.getById(id)));
+    final products = await Future.wait(
+        ids.map((id) => ProductService.getById(id)));
     _productsById = {for (var p in products) p.id: p};
 
     setState(() {
@@ -111,11 +112,23 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
     });
     try {
       final coupon = await OrderService.instance.validateCoupon(code);
-      setState(() {
-        _appliedCoupon = coupon;
-        _couponDiscountAmount = coupon.discountValue;
-        _errorCoupon = null;
-      });
+      final cart = await _cartFuture!;
+      final subtotal = await _calculateSubtotal(cart.items);
+
+      // CHECK: chỉ áp dụng coupon nếu discountValue <= subtotal
+      if (coupon.discountValue > subtotal) {
+        setState(() {
+          _appliedCoupon = null;
+          _couponDiscountAmount = 0;
+          _errorCoupon = "Giá trị giảm giá lớn hơn giá trị đơn hàng. Không thể áp dụng!";
+        });
+      } else {
+        setState(() {
+          _appliedCoupon = coupon;
+          _couponDiscountAmount = coupon.discountValue;
+          _errorCoupon = null;
+        });
+      }
     } catch (e) {
       setState(() {
         _appliedCoupon = null;
@@ -126,6 +139,7 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
       setState(() => _applyingCoupon = false);
     }
   }
+
 
   void _onLoyaltyChanged(String v) {
     final maxPoints = _currentUser?.loyaltyPoints ?? 0;
@@ -162,16 +176,16 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => PaymentScreen(
-          products: products,
-          voucher: _appliedCoupon,
-          loyaltyPointsToUse: _loyaltyPointsToUse, // <- TRUYỀN VÀO ĐÂY
-          // Có thể truyền thêm address/user nếu cần
-        ),
+        builder: (_) =>
+            PaymentScreen(
+              products: products,
+              voucher: _appliedCoupon,
+              loyaltyPointsToUse: _loyaltyPointsToUse, // <- TRUYỀN VÀO ĐÂY
+              // Có thể truyền thêm address/user nếu cần
+            ),
       ),
     );
   }
-
 
 
   @override
@@ -181,7 +195,10 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-    final width = MediaQuery.of(context).size.width;
+    final width = MediaQuery
+        .of(context)
+        .size
+        .width;
     return width > 800 ? _buildWeb(context) : _buildMobile(context);
   }
 
@@ -233,6 +250,8 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
 
                         return CartItemWidget(
                           item: item,
+                          product: product!,
+                          // <-- FIX: thêm dòng này
                           isEditing: isEditing,
                           variants: variants,
                           onVariantChanged: (String? newVariantId) async {
@@ -248,7 +267,8 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
                             await _refresh();
                           },
                           onDelete: () async {
-                            final idToRemove = item.productVariantId ?? item.productId;
+                            final idToRemove = item.productVariantId ??
+                                item.productId;
                             await _api.removeCartItem(cart.id, idToRemove);
                             await _refresh();
                           },
@@ -263,7 +283,7 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
                             );
                             await _refresh();
                           },
-                          isMobile: true,
+                          isMobile: true, // hoặc false ở web
                         );
                       },
                     ),
@@ -283,7 +303,17 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
                     loyaltyController: _loyaltyController,
                     onLoyaltyChanged: _onLoyaltyChanged,
                     onCheckout: () => _onCheckout(cart),
-                  ),
+                    couponDiscountValue: _couponDiscountAmount,
+                    couponApplied: _appliedCoupon != null,
+                    onRemoveCoupon: () {
+                      setState(() {
+                        _appliedCoupon = null;
+                        _couponDiscountAmount = 0;
+                        _discountController.clear();
+                      });
+                    },
+                  )
+
                 ],
               );
             },
@@ -336,9 +366,12 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
                                 final variants = product?.variants ?? [];
                                 return CartItemWidget(
                                   item: item,
+                                  product: product!,
+                                  // <-- FIX: thêm dòng này
                                   isEditing: isEditing,
                                   variants: variants,
-                                  onVariantChanged: (String? newVariantId) async {
+                                  onVariantChanged: (
+                                      String? newVariantId) async {
                                     if (newVariantId == null) return;
                                     await _api.upsertCartItem(
                                       cart.id,
@@ -351,8 +384,10 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
                                     await _refresh();
                                   },
                                   onDelete: () async {
-                                    final idToRemove = item.productVariantId ?? item.productId;
-                                    await _api.removeCartItem(cart.id, idToRemove);
+                                    final idToRemove = item.productVariantId ??
+                                        item.productId;
+                                    await _api.removeCartItem(
+                                        cart.id, idToRemove);
                                     await _refresh();
                                   },
                                   onQuantityChanged: (qty) async {
@@ -389,7 +424,16 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
                               loyaltyController: _loyaltyController,
                               onLoyaltyChanged: _onLoyaltyChanged,
                               onCheckout: () => _onCheckout(cart),
-                            ),
+                              couponDiscountValue: _couponDiscountAmount,
+                              couponApplied: _appliedCoupon != null,
+                              onRemoveCoupon: () {
+                                setState(() {
+                                  _appliedCoupon = null;
+                                  _couponDiscountAmount = 0;
+                                  _discountController.clear();
+                                });
+                              },
+                            )
                           ),
                         ],
                       ),

@@ -17,6 +17,11 @@ class OrderSummaryWidget extends StatelessWidget {
   final ValueChanged<String> onLoyaltyChanged;
   final VoidCallback onCheckout;
 
+  // Thêm các thuộc tính để xử lý coupon rõ ràng
+  final int couponDiscountValue;
+  final bool couponApplied;
+  final VoidCallback onRemoveCoupon;
+
   const OrderSummaryWidget({
     Key? key,
     required this.subtotal,
@@ -33,10 +38,17 @@ class OrderSummaryWidget extends StatelessWidget {
     required this.loyaltyController,
     required this.onLoyaltyChanged,
     required this.onCheckout,
+    // Thêm 3 prop cho coupon
+    required this.couponDiscountValue,
+    required this.couponApplied,
+    required this.onRemoveCoupon,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    // Discount không vượt quá subtotal
+    final int displayedDiscount = discount > subtotal ? subtotal.toInt() : discount.toInt();
+
     return Container(
       padding: const EdgeInsets.all(16),
       color: Colors.white,
@@ -54,6 +66,7 @@ class OrderSummaryWidget extends StatelessWidget {
               Expanded(
                 child: TextField(
                   controller: discountController,
+                  enabled: !couponApplied, // Disable nếu đã có mã
                   decoration: InputDecoration(
                     hintText: "Nhập mã giảm giá",
                     border: OutlineInputBorder(
@@ -65,7 +78,13 @@ class OrderSummaryWidget extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              ElevatedButton(
+              couponApplied
+                  ? IconButton(
+                icon: const Icon(Icons.close, color: Colors.red),
+                tooltip: "Hủy mã giảm giá",
+                onPressed: onRemoveCoupon,
+              )
+                  : ElevatedButton(
                 onPressed: applyingCoupon ? null : onApplyCoupon,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.hexToColor(AppColors.purple),
@@ -81,6 +100,22 @@ class OrderSummaryWidget extends StatelessWidget {
               ),
             ],
           ),
+          if (couponApplied)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                "Điểm từ mã giảm giá: -₫$couponDiscountValue",
+                style: const TextStyle(color: Colors.green, fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+            ),
+          if (couponApplied)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                "Chỉ được sử dụng 1 mã giảm giá cho mỗi đơn hàng.",
+                style: const TextStyle(color: Colors.orange, fontSize: 13, fontStyle: FontStyle.italic),
+              ),
+            ),
           if (errorCoupon != null)
             Padding(
               padding: const EdgeInsets.only(top: 4),
@@ -124,7 +159,7 @@ class OrderSummaryWidget extends StatelessWidget {
           _buildSummaryRow("Giá", "₫${subtotal.toInt()}"),
           _buildSummaryRow("VAT", "₫${vat.toInt()}"),
           _buildSummaryRow("Vận chuyển", "₫${shipping.toInt()}"),
-          _buildSummaryRow("Giảm giá", "-₫${discount.toInt()}"),
+          _buildSummaryRow("Giảm giá", "-₫$displayedDiscount"),
           const Divider(),
           _buildSummaryRow(
             "Tổng giá",

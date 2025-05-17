@@ -249,5 +249,48 @@ namespace ProductManagementService.Controllers
                 return NotFound("Variant or product not found.");
             return NoContent();
         }
+        [HttpGet("available/{variantId}")]
+        public async Task<ActionResult<int>> GetAvailable(string variantId)
+        {
+            variantId = variantId.Trim();
+
+            // Tìm sản phẩm chứa variant có id trùng
+            var product = await _products
+                .Find(p => p.Variants.Any(v => v.Id == variantId))
+                .FirstOrDefaultAsync();
+
+            if (product == null)
+                return NotFound("Product or variant not found.");
+
+            var variant = product.Variants.FirstOrDefault(v => v.Id == variantId);
+            if (variant == null)
+                return NotFound("Variant not found.");
+
+            return Ok(variant.Inventory);
+        }
+        [HttpGet("variants/{variantId}")]
+        public async Task<IActionResult> GetVariantById(string variantId)
+        {
+            var product = await _products.Find(p => p.Variants.Any(v => v.Id == variantId)).FirstOrDefaultAsync();
+            if (product == null) return NotFound("Variant not found.");
+            var variant = product.Variants.FirstOrDefault(v => v.Id == variantId);
+            if (variant == null) return NotFound("Variant not found.");
+            return Ok(variant);
+        }
+
+
+        // PATCH giảm tồn kho khi xác nhận đơn hàng
+        [HttpPatch("variants/{variantId}/decrease")]
+        public async Task<IActionResult> DecreaseVariantInventory(string variantId, [FromBody] int quantity)
+        {
+            var filter = Builders<Product>.Filter.ElemMatch(p => p.Variants, v => v.Id == variantId);
+            var update = Builders<Product>.Update.Inc("variants.$.inventory", -quantity);
+
+            var result = await _products.UpdateOneAsync(filter, update);
+
+            if (result.ModifiedCount == 0)
+                return BadRequest("Không giảm được tồn kho (variant không tồn tại hoặc số lượng không hợp lệ).");
+            return NoContent();
+        }
     }
 }
