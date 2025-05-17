@@ -4,6 +4,9 @@ import 'package:danentang/models/OrderStatusHistory.dart';
 import 'package:danentang/models/ShippingAddress.dart';
 import 'package:danentang/models/product.dart';
 
+// Đường dẫn đến tài nguyên cục bộ thay vì chuỗi base64
+const String placeholderImagePath = 'assets/placeholder.jpg';
+
 // Danh sách sản phẩm (products)
 final List<Product> products = [
   Product(
@@ -18,7 +21,7 @@ final List<Product> products = [
     images: [
       ProductImage(
         id: 'img001',
-        url: 'assets/images/laptop.jpg',
+        url: placeholderImagePath, // Sử dụng đường dẫn tài nguyên
         sortOrder: 1,
       ),
     ],
@@ -45,7 +48,7 @@ final List<Product> products = [
     images: [
       ProductImage(
         id: 'img002',
-        url: 'assets/images/laptop.jpg', // Base64 ảnh mẫu
+        url: placeholderImagePath,
         sortOrder: 1,
       ),
     ],
@@ -71,8 +74,8 @@ final List<Product> products = [
     updatedAt: DateTime(2025, 5, 15),
     images: [
       ProductImage(
-        id: 'img001',
-        url: "assets/images/laptop.jpg",
+        id: 'img003',
+        url: placeholderImagePath,
         sortOrder: 1,
       ),
     ],
@@ -99,7 +102,7 @@ final List<Product> products = [
     images: [
       ProductImage(
         id: 'img004',
-        url: "assets/images/laptop.jpg",
+        url: placeholderImagePath,
         sortOrder: 1,
       ),
     ],
@@ -126,7 +129,7 @@ final List<Product> products = [
     images: [
       ProductImage(
         id: 'img005',
-        url: "assets/images/laptop.jpg",
+        url: placeholderImagePath,
         sortOrder: 1,
       ),
     ],
@@ -153,7 +156,7 @@ final List<Product> products = [
     images: [
       ProductImage(
         id: 'img006',
-        url: "assets/images/laptop.jpg",
+        url: placeholderImagePath,
         sortOrder: 1,
       ),
     ],
@@ -180,7 +183,7 @@ final List<Product> products = [
     images: [
       ProductImage(
         id: 'img007',
-        url: "assets/images/laptop.jpg",
+        url: placeholderImagePath,
         sortOrder: 1,
       ),
     ],
@@ -207,7 +210,7 @@ final List<Product> products = [
     images: [
       ProductImage(
         id: 'img008',
-        url: "assets/images/laptop.jpg",
+        url: placeholderImagePath,
         sortOrder: 1,
       ),
     ],
@@ -234,7 +237,7 @@ final List<Product> products = [
     images: [
       ProductImage(
         id: 'img009',
-        url: "assets/images/laptop.jpg",
+        url: placeholderImagePath,
         sortOrder: 1,
       ),
     ],
@@ -261,7 +264,7 @@ final List<Product> products = [
     images: [
       ProductImage(
         id: 'img010',
-        url: "assets/images/laptop.jpg",
+        url: placeholderImagePath,
         sortOrder: 1,
       ),
     ],
@@ -318,10 +321,22 @@ List<Order> testOrders = [
       ),
     ],
     statusHistory: [
-      OrderStatusHistory(status: 'Đặt hàng', timestamp: DateTime(2025, 5, 15, 11, 00)),
-      OrderStatusHistory(status: 'Đang xử lý', timestamp: DateTime(2025, 5, 15, 11, 10)),
-      OrderStatusHistory(status: 'Đang giao', timestamp: DateTime(2025, 5, 15, 11, 30)),
-      OrderStatusHistory(status: 'Đã giao', timestamp: DateTime(2025, 5, 15, 11, 55)),
+      OrderStatusHistory(
+        status: 'Đặt hàng',
+        timestamp: DateTime(2025, 5, 15, 11, 00),
+      ),
+      OrderStatusHistory(
+        status: 'Đang xử lý',
+        timestamp: DateTime(2025, 5, 15, 11, 10),
+      ),
+      OrderStatusHistory(
+        status: 'Đang giao',
+        timestamp: DateTime(2025, 5, 15, 11, 30),
+      ),
+      OrderStatusHistory(
+        status: 'Đã giao',
+        timestamp: DateTime(2025, 5, 15, 11, 55),
+      ),
     ],
   ),
   Order(
@@ -362,9 +377,18 @@ List<Order> testOrders = [
       ),
     ],
     statusHistory: [
-      OrderStatusHistory(status: 'Đặt hàng', timestamp: DateTime(2025, 5, 15, 10, 00)),
-      OrderStatusHistory(status: 'Đang xử lý', timestamp: DateTime(2025, 5, 15, 10, 30)),
-      OrderStatusHistory(status: 'Đang giao', timestamp: DateTime(2025, 5, 15, 11, 30)),
+      OrderStatusHistory(
+        status: 'Đặt hàng',
+        timestamp: DateTime(2025, 5, 15, 10, 00),
+      ),
+      OrderStatusHistory(
+        status: 'Đang xử lý',
+        timestamp: DateTime(2025, 5, 15, 10, 30),
+      ),
+      OrderStatusHistory(
+        status: 'Đang giao',
+        timestamp: DateTime(2025, 5, 15, 11, 30),
+      ),
     ],
   ),
   Order(
@@ -405,7 +429,10 @@ List<Order> testOrders = [
       ),
     ],
     statusHistory: [
-      OrderStatusHistory(status: 'Đặt hàng', timestamp: DateTime(2025, 5, 15, 11, 58)),
+      OrderStatusHistory(
+        status: 'Đặt hàng',
+        timestamp: DateTime(2025, 5, 15, 11, 58),
+      ),
     ],
   ),
   Order(
@@ -446,8 +473,14 @@ List<Order> testOrders = [
       ),
     ],
     statusHistory: [
-      OrderStatusHistory(status: 'Đặt hàng', timestamp: DateTime(2025, 5, 14, 15, 00)),
-      OrderStatusHistory(status: 'Đã hủy', timestamp: DateTime(2025, 5, 15, 11, 59)),
+      OrderStatusHistory(
+        status: 'Đặt hàng',
+        timestamp: DateTime(2025, 5, 14, 15, 00),
+      ),
+      OrderStatusHistory(
+        status: 'Đã hủy',
+        timestamp: DateTime(2025, 5, 15, 11, 59),
+      ),
     ],
   ),
   Order(
@@ -488,7 +521,10 @@ List<Order> testOrders = [
       ),
     ],
     statusHistory: [
-      OrderStatusHistory(status: 'Đặt hàng', timestamp: DateTime(2025, 5, 16, 3, 0)),
+      OrderStatusHistory(
+        status: 'Đặt hàng',
+        timestamp: DateTime(2025, 5, 16, 3, 0),
+      ),
     ],
   ),
 ];
