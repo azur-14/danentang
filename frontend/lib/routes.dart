@@ -197,29 +197,10 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const AddCardScreen(),
     ),
     GoRoute(
-      path: '/order-success',
+      path: '/order-success/:id',
       builder: (context, state) {
-        final extra = state.extra as Map<String, dynamic>? ?? {};
-        return OrderSuccessScreen(
-          products: extra['products'] as List<Map<String, dynamic>>? ?? [],
-          total: extra['total'] as double? ?? 0.0,
-          shippingMethod: extra['shippingMethod'] as ShippingMethod?,
-          paymentMethod: extra['paymentMethod'] ?? 'Không xác định',
-          sellerNote: extra['sellerNote'],
-          voucher: extra['voucher'] as Voucher?,
-          address: extra['address'] as Address? ??
-              Address(
-                receiverName: 'Không xác định',
-                phone: '0000000000',
-                addressLine: 'N/A',
-                commune: 'N/A',
-                district: 'N/A',
-                city: 'N/A',
-                isDefault: false,
-              ),
-          card: extra['card'] as CardInfo?,
-          order: extra['order'] as Order?,
-        );
+        final orderId = state.pathParameters['id']!;
+        return OrderSuccessScreen(orderId: orderId);
       },
     ),
 
