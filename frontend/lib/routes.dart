@@ -1,5 +1,4 @@
 import 'package:danentang/Screens/Customer/User/profile_page.dart';
-import 'package:danentang/Screens/Manager/Support/customer_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:danentang/Screens/Customer/Home/home_screen.dart';
@@ -30,13 +29,44 @@ import 'package:danentang/Screens/Customer/Order/OrderDetailsScreen.dart';
 import 'package:danentang/Screens/Customer/Order/ReviewScreen.dart'; // Import ReviewScreen
 import 'package:danentang/models/Order.dart';
 import 'package:danentang/data/order_data.dart';
+import 'package:danentang/Screens/Customer/User/profile_page.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:danentang/Screens/Customer/Home/home_screen.dart';
+import 'package:danentang/Screens/Customer/Home/product_list_screen.dart';
+import 'package:danentang/Screens/Customer/CheckOut/cart_screen.dart';
+import 'package:danentang/Screens/Customer/Login/Login_Screen.dart';
+import 'package:danentang/Screens/Customer/Login/Login_SignUp_Screen.dart';
+import 'package:danentang/Screens/Customer/Login/SignUp.dart';
+import 'package:danentang/Screens/Customer/User/profile_page.dart';
+import 'package:danentang/Screens/Customer/User/personal_info_screen.dart';
+import 'package:danentang/Screens/Customer/User/account_settings_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import 'Screens/Customer/Home/sentiment_screen.dart';
+import 'Screens/Customer/Login/ChangePassword.dart';
+import 'Screens/Customer/Login/Intro.dart';
+import 'Screens/Customer/Product/test_product_details.dart';
+import 'Screens/Customer/Search/search_v2.dart';
+import 'Screens/Manager/Support/customer_support.dart';
+import 'Screens/Manager/DashBoard/MobileDashboard.dart';
+import 'models/product.dart';
+
+import 'Screens/Customer/Home/sentiment_screen.dart';
+import 'Screens/Customer/Login/ChangePassword.dart';
+import 'Screens/Customer/Login/Intro.dart';
+import 'Screens/Customer/Product/test_product_details.dart';
+import 'Screens/Customer/Search/search_v2.dart';
 import 'Screens/Manager/Support/customer_service.dart';
-import 'models/ShippingAddress.dart'; // Import testOrders
+import 'Screens/Manager/Support/customer_support.dart';
+import 'Screens/Manager/DashBoard/MobileDashboard.dart';
+import 'models/product.dart';
+
 
 final GoRouter router = GoRouter(
   initialLocation: '/homepage',
   routes: [
+
     /// Splash / Intro
     GoRoute(
       path: '/intro',
@@ -68,6 +98,16 @@ final GoRouter router = GoRouter(
         final email = state.extra as String? ?? '';
         return ForgotPasswordScreen(email: email);
       },
+    ),
+
+    GoRoute(
+      path: '/search',
+      builder: (context, state) => const Searching(),
+    ),
+
+    GoRoute(
+      path: '/sentiment',
+      builder: (context, state) => const ReviewScreen(),
     ),
 
     /// Product listing & details
