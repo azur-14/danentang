@@ -5,6 +5,7 @@ class ShippingAddress {
   final String ward;
   final String district;
   final String city;
+  final String email; // <-- thêm trường này
 
   ShippingAddress({
     required this.receiverName,
@@ -13,6 +14,7 @@ class ShippingAddress {
     required this.ward,
     required this.district,
     required this.city,
+    required this.email, // <-- thêm vào constructor
   });
 
   factory ShippingAddress.fromJson(Map<String, dynamic> json) => ShippingAddress(
@@ -22,6 +24,7 @@ class ShippingAddress {
     ward: json['ward'],
     district: json['district'],
     city: json['city'],
+    email: json['email'], // <-- bổ sung khi parse từ JSON
   );
 
   Map<String, dynamic> toJson() => {
@@ -31,5 +34,6 @@ class ShippingAddress {
     'ward': ward,
     'district': district,
     'city': city,
+    'email': email, // <-- thêm khi convert sang JSON
   };
 }

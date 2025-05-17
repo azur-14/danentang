@@ -1,7 +1,7 @@
-import 'package:danentang/models/Order.dart';
-import 'package:danentang/models/OrderItem.dart';
-import 'package:danentang/models/OrderStatusHistory.dart';
-import 'package:danentang/models/ShippingAddress.dart';
+import '../models/Order.dart';
+import '../models/OrderItem.dart';
+import '../models/OrderStatusHistory.dart';
+import '../models/ShippingAddress.dart';
 import 'package:danentang/models/product.dart';
 
 // Đường dẫn đến tài nguyên cục bộ thay vì chuỗi base64
@@ -281,7 +281,6 @@ final List<Product> products = [
   ),
 ];
 
-// Danh sách đơn hàng (testOrders)
 List<Order> testOrders = [
   Order(
     id: '1',
@@ -294,6 +293,7 @@ List<Order> testOrders = [
       ward: 'Phường Bến Thành',
       district: 'Quận 1',
       city: 'TP. Hồ Chí Minh',
+      email: 'minhquan@example.com',
     ),
     createdAt: DateTime(2025, 5, 15, 11, 00),
     updatedAt: DateTime(2025, 5, 15, 11, 55),
@@ -350,6 +350,7 @@ List<Order> testOrders = [
       ward: 'Phường Thanh Xuân Trung',
       district: 'Quận Thanh Xuân',
       city: 'Hà Nội',
+      email: 'lemai@example.com',
     ),
     createdAt: DateTime(2025, 5, 15, 10, 00),
     updatedAt: DateTime(2025, 5, 15, 11, 30),
@@ -402,6 +403,7 @@ List<Order> testOrders = [
       ward: 'Phường Hải Châu 1',
       district: 'Quận Hải Châu',
       city: 'Đà Nẵng',
+      email: 'vandung@example.com',
     ),
     createdAt: DateTime(2025, 5, 15, 11, 58),
     updatedAt: DateTime(2025, 5, 15, 11, 58),
@@ -446,6 +448,7 @@ List<Order> testOrders = [
       ward: 'Phường An Hội',
       district: 'Quận Ninh Kiều',
       city: 'Cần Thơ',
+      email: 'vanhoa@example.com',
     ),
     createdAt: DateTime(2025, 5, 14, 15, 00),
     updatedAt: DateTime(2025, 5, 15, 11, 59),
@@ -494,6 +497,7 @@ List<Order> testOrders = [
       ward: 'Phường Tân Định',
       district: 'Quận 1',
       city: 'TP. Hồ Chí Minh',
+      email: 'thilan@example.com',
     ),
     createdAt: DateTime(2025, 5, 16, 3, 0),
     updatedAt: DateTime(2025, 5, 16, 3, 0),

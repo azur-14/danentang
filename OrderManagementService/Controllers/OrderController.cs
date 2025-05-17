@@ -7,11 +7,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Net;            // <- Thêm dòng này
-using System.Net.Mail;       // <- Và dòng này
+using System.Net;
+using System.Net.Mail;
 using System.Text.Json;
-using System.Threading.Tasks;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
+
 namespace OrderManagementService.Controllers
 {
     [ApiController]
@@ -31,6 +32,7 @@ namespace OrderManagementService.Controllers
             _httpClientFactory = httpClientFactory;
             _configuration = configuration;
         }
+
         // GET: api/orders
         [HttpGet]
         public async Task<ActionResult<List<Order>>> GetAll() =>
@@ -66,7 +68,9 @@ namespace OrderManagementService.Controllers
                 return BadRequest("Địa chỉ giao hàng không hợp lệ!");
             }
 
-            // Kiểm tra tồn kho từng biến thể
+            // Đảm bảo luôn có shippingFee (nếu không gửi lên thì mặc định 30000)
+            if (order.ShippingFee <= 0) order.ShippingFee = 30000;
+
             // Kiểm tra tồn kho từng biến thể
             var client = _httpClientFactory.CreateClient("ProductService");
             foreach (var item in order.Items)
@@ -77,19 +81,16 @@ namespace OrderManagementService.Controllers
                 Console.WriteLine($"Gọi tới ProductService: products/variants/{item.ProductVariantId}");
 
                 var json = await response.Content.ReadAsStringAsync();
-                // Parse object từ JSON
                 var variantDto = JsonSerializer.Deserialize<ProductVariantDto>(json);
                 if (variantDto == null)
                     return BadRequest($"Không lấy được thông tin biến thể {item.ProductVariantId}");
 
-                // Lấy số lượng tồn kho
                 int availableInventory = variantDto.Inventory;
-                Console.WriteLine($"VariantId: {item.ProductVariantId}, Inventory: {variantDto?.Inventory}, Request: {item.Quantity}");
+                Console.WriteLine($"VariantId: {item.ProductVariantId}, Inventory: {variantDto.Inventory}, Request: {item.Quantity}");
 
                 if (availableInventory < item.Quantity)
                     return BadRequest($"Không đủ số lượng hàng tồn kho cho biến thể {item.ProductVariantId}");
             }
-
 
             // Tính điểm tích lũy (10k = 1 điểm)
             var totalAfterDiscount = order.TotalAmount - order.DiscountAmount;
@@ -119,6 +120,7 @@ SĐT: {order.ShippingAddress.PhoneNumber}<br>
 <ul>
 {string.Join("", order.Items.Select(i => $"<li>{i.ProductName} ({i.VariantName}) x{i.Quantity}: {i.Price:N0}đ</li>"))}
 </ul>
+<b>Phí vận chuyển:</b> {order.ShippingFee:N0}đ<br>
 <b>Tổng cộng:</b> {order.TotalAmount:N0}đ<br>
 <b>Giảm giá:</b> {order.DiscountAmount:N0}đ<br>
 <b>Điểm thưởng tích lũy:</b> {order.LoyaltyPointsEarned} điểm<br>
@@ -221,6 +223,8 @@ SĐT: {order.ShippingAddress.PhoneNumber}<br>
             return NoContent();
         }
     }
+
+    // Dùng cho kiểm tra tồn kho variant
     public class ProductVariantDto
     {
         [JsonPropertyName("id")]

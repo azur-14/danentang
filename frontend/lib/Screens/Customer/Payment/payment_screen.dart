@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:danentang/models/CartItem.dart';
-import 'package:danentang/models/User.dart';
-import 'package:danentang/models/Coupon.dart';
-import 'package:danentang/models/Address.dart';
 import 'package:danentang/models/OrderItem.dart';
 import 'package:danentang/models/ShippingAddress.dart';
 import 'package:danentang/widgets/Header/web_header.dart';
+import 'package:danentang/models/Coupon.dart';
+import 'package:danentang/models/User.dart';
+import 'package:danentang/models/Address.dart';
 import 'package:danentang/Service/user_service.dart';
 import 'package:uuid/uuid.dart';
+
+import '../../../Service/order_service.dart';
+import '../../../models/Order.dart';
 
 class PaymentScreen extends StatefulWidget {
   final List<Map<String, dynamic>> products; // mỗi item: {'product', 'variant', 'quantity'}
@@ -27,26 +29,46 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  bool isLoggedIn = false;
-  User? user;
-  Address? shippingAddress;
+  // Biến cho guest (customer chưa đăng nhập)
   String guestName = '';
   String guestPhone = '';
   String guestAddress = '';
+  String guestWard = '';
+  String guestDistrict = '';
+  String guestCity = '';
+  String guestEmail = '';
+  bool _isLoading = false;
+  // Biến cho user đã login
+  bool isLoggedIn = false;
+  User? user;
+  Address? shippingAddress;
+  String? email;
 
   @override
   void initState() {
     super.initState();
     _initUserAndAddress();
   }
+  Future<void> _clearCartAfterOrder() async {
+    final prefs = await SharedPreferences.getInstance();
+    final cartId = prefs.getString('cartId');
+    if (cartId != null) {
+      try {
+        await OrderService.instance.clearCartOnServer(cartId);
+      } catch (e) {
+        print('Lỗi khi xóa cart trên server: $e');
+      }
+      await prefs.remove('cartId');
+    }
+  }
 
   Future<void> _initUserAndAddress() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
-    final email = prefs.getString('email');
+    email = prefs.getString('email');
     if (token != null && email != null) {
       try {
-        final u = await UserService().fetchUserByEmail(email);
+        final u = await UserService().fetchUserByEmail(email!);
         setState(() {
           isLoggedIn = true;
           user = u;
@@ -60,11 +82,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
       } catch (_) {
         setState(() {
           isLoggedIn = false;
+          email = null;
         });
       }
     } else {
       setState(() {
         isLoggedIn = false;
+        email = null;
       });
     }
   }
@@ -78,7 +102,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   double get voucherDiscount {
     if (widget.voucher == null) return 0.0;
-    // Giả sử: coupon có 2 loại: giảm trực tiếp (discountValue >= 1) hoặc giảm phần trăm (discountValue < 1)
     if (widget.voucher!.discountValue != null) {
       final value = widget.voucher!.discountValue!;
       if (value < 1) {
@@ -94,23 +117,46 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   double get total => subtotal + shippingFee - voucherDiscount - loyaltyDiscount;
 
-  void _placeOrder() {
-    // Kiểm tra địa chỉ giao hàng
+  void _placeOrder() async {
+    setState(() => _isLoading = true);
+
+    String? guestUserId;
+
+    // 1. Xác thực thông tin
     if (!isLoggedIn) {
-      if (guestName.isEmpty || guestPhone.isEmpty || guestAddress.isEmpty) {
+      // Kiểm tra dữ liệu nhập
+      if (guestName.isEmpty || guestPhone.isEmpty || guestAddress.isEmpty ||
+          guestWard.isEmpty || guestDistrict.isEmpty || guestCity.isEmpty ||
+          guestEmail.isEmpty) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Vui lòng nhập đầy đủ thông tin giao hàng')),
         );
         return;
       }
-      shippingAddress = Address(
-        receiverName: guestName,
-        phone: guestPhone,
-        addressLine: guestAddress,
-        city: '', district: '', commune: '', isDefault: true,
-      );
+      // 2. Xử lý tài khoản guest (QUAN TRỌNG)
+      final guestUser = await _handleGuestUserByEmail(guestEmail);
+      if (guestUser == null) {
+        setState(() => _isLoading = false);
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text('Email đã đăng ký!'),
+            content: Text('Email này đã đăng ký tài khoản và đã xác thực. Vui lòng đăng nhập để tiếp tục mua hàng.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('OK'),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+      guestUserId = guestUser.id;
     } else {
       if (shippingAddress == null) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Vui lòng chọn địa chỉ giao hàng')),
         );
@@ -118,36 +164,121 @@ class _PaymentScreenState extends State<PaymentScreen> {
       }
     }
 
-    // Tạo OrderItems (nếu muốn gửi backend, xử lý tiếp ở đây)
+    // 3. Chuẩn bị địa chỉ giao hàng
+    final shippingAddr = isLoggedIn
+        ? ShippingAddress(
+      receiverName: shippingAddress!.receiverName,
+      phoneNumber: shippingAddress!.phone,
+      addressLine: shippingAddress!.addressLine,
+      ward: shippingAddress!.commune ?? '',
+      district: shippingAddress!.district ?? '',
+      city: shippingAddress!.city ?? '',
+      email: email ?? '',
+    )
+        : ShippingAddress(
+      receiverName: guestName,
+      phoneNumber: guestPhone,
+      addressLine: guestAddress,
+      ward: guestWard,
+      district: guestDistrict,
+      city: guestCity,
+      email: guestEmail,
+    );
+
+    // 4. Chuẩn bị danh sách sản phẩm
     final List<OrderItem> orderItems = widget.products.map((item) {
       final product = item['product'];
       final variant = item['variant'];
       final qty = item['quantity'] as int;
       return OrderItem(
-        productId: product.id ?? const Uuid().v4(),
-        productVariantId: variant.id ?? const Uuid().v4(),
+        productId: product.id ?? '',
+        productVariantId: variant.id ?? '',
         productName: product.name,
         variantName: variant.variantName,
         quantity: qty,
-        price: variant.additionalPrice, // lấy giá từ variant
+        price: variant.additionalPrice,
       );
     }).toList();
 
-    // Xử lý tiếp tạo Order gửi backend, hoặc show màn hình xác nhận
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: Text('Đặt hàng thành công!'),
-        content: Text('Đơn hàng của bạn đã được ghi nhận.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
-            child: Text('OK'),
-          ),
-        ],
-      ),
+    // 5. Tạo Order
+    final order = Order(
+      id: '',
+      userId: isLoggedIn ? (user?.id ?? '') : guestUserId,
+      orderNumber: '',
+      shippingAddress: shippingAddr,
+      items: orderItems,
+      totalAmount: subtotal + shippingFee,
+      discountAmount: voucherDiscount + loyaltyDiscount,
+      couponCode: widget.voucher?.code,
+      loyaltyPointsUsed: widget.loyaltyPointsToUse,
+      loyaltyPointsEarned: 0,
+      status: 'pending',
+      statusHistory: [],
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     );
+
+    try {
+      print('Order gửi lên: ${order.toJson()}');
+      final createdOrder = await OrderService.instance.createOrder(order);
+
+      // 6. Xóa cart sau khi đặt hàng
+      await _clearCartAfterOrder();
+
+      setState(() => _isLoading = false);
+
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text('Đặt hàng thành công!'),
+          content: Text('Đơn hàng #${createdOrder.orderNumber} đã được ghi nhận.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
+              child: Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      setState(() => _isLoading = false);
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text('Lỗi đặt hàng'),
+          content: Text(e.toString()),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Đóng'),
+            ),
+          ],
+        ),
+      );
+    }
   }
+  Future<User> _handleGuestUserByEmail(String email) async {
+    try {
+      // 1. Thử fetch user theo email
+      final user = await UserService().fetchUserByEmail(email);
+
+      // 2. Nếu user đã tồn tại và là guest (isVerifiedMail == false), return luôn
+      if (user.isEmailVerified == false) {
+        return user;
+      }
+
+      // 3. Nếu user đã tồn tại nhưng là user chính thức, có thể báo lỗi hoặc xử lý khác
+      throw Exception('Email đã được đăng ký chính thức, vui lòng đăng nhập.');
+
+    } catch (e) {
+      // 4. Nếu fetch thất bại (user chưa tồn tại), tiến hành tạo guest user
+      await UserService().registerGuest(email: email);
+
+      // 5. Sau khi tạo xong, fetch lại user để lấy dữ liệu mới
+      return await UserService().fetchUserByEmail(email);
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -188,12 +319,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 if (isLoggedIn && shippingAddress != null)
                   Card(
                     child: ListTile(
-                      title: Text(shippingAddress!.receiverName ?? 'Chưa có tên'),
+                      title: Text(shippingAddress!.receiverName),
                       subtitle: Text(
-                        '${shippingAddress!.addressLine ?? ''}'
+                        '${shippingAddress!.addressLine}'
                             '${shippingAddress!.commune != null ? ', ${shippingAddress!.commune}' : ''}'
                             '${shippingAddress!.district != null ? ', ${shippingAddress!.district}' : ''}'
-                            '${shippingAddress!.city != null ? ', ${shippingAddress!.city}' : ''}',
+                            '${shippingAddress!.city != null ? ', ${shippingAddress!.city}' : ''}'
+                            '${email != null ? '\nEmail: $email' : ''}',
                       ),
                       trailing: Icon(Icons.check_circle, color: Colors.green),
                     ),
@@ -209,8 +341,35 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     onChanged: (v) => setState(() => guestPhone = v),
                   ),
                   TextField(
-                    decoration: InputDecoration(labelText: 'Địa chỉ giao hàng'),
+                    decoration: InputDecoration(labelText: 'Địa chỉ (số nhà, tên đường)'),
                     onChanged: (v) => setState(() => guestAddress = v),
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          decoration: InputDecoration(labelText: 'Phường/Xã'),
+                          onChanged: (v) => setState(() => guestWard = v),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          decoration: InputDecoration(labelText: 'Quận/Huyện'),
+                          onChanged: (v) => setState(() => guestDistrict = v),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    decoration: InputDecoration(labelText: 'Thành phố/Tỉnh'),
+                    onChanged: (v) => setState(() => guestCity = v),
+                  ),
+                  TextField(
+                    decoration: InputDecoration(labelText: 'Email'),
+                    keyboardType: TextInputType.emailAddress,
+                    onChanged: (v) => setState(() => guestEmail = v),
                   ),
                 ],
                 const SizedBox(height: 20),

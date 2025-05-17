@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:danentang/data/order_data.dart';
+import 'package:danentang/data/order_data.dart'; // Import dữ liệu mẫu products ở đây!
 import '../../models/Order.dart';
 import '../../models/OrderItem.dart';
 import '../../models/OrderStatusHistory.dart';
@@ -209,6 +209,7 @@ class _OrderCardState extends State<OrderCard> {
   }
 
   Widget _buildOrderItem(OrderItem item) {
+    // Sử dụng biến toàn cục products từ order_data.dart
     final Product product = products.firstWhere(
           (p) => p.variants.any((v) => v.id == item.productVariantId),
       orElse: () => Product(
@@ -225,7 +226,9 @@ class _OrderCardState extends State<OrderCard> {
       ),
     );
 
-    final imageUrl = product.images.isNotEmpty ? product.images.first.url : 'assets/placeholder.jpg';
+    final imageUrl = product.images.isNotEmpty
+        ? product.images.first.url
+        : 'assets/placeholder.jpg';
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),

@@ -282,12 +282,18 @@ class OrderService {
     }
     throw Exception('getOrderById failed (${resp.statusCode})');
   }
-
+// Xóa toàn bộ items trong cart
+  Future<void> clearCartOnServer(String cartId) async {
+    final url = Uri.parse('$_baseUrl/$cartId/items');
+    final resp = await http.delete(url);
+    if (resp.statusCode != 204) {
+      throw Exception('Không thể xóa cart trên server');
+    }
+  }
   Future<Order> createOrder(Order order) async {
     final url = Uri.parse('$_baseUrl/orders');
     final headers = {'Content-Type': 'application/json'};
 
-    // Nếu cần debug:
     print('POST $url');
     print('Order JSON: ${jsonEncode(order.toJson())}');
 
@@ -300,11 +306,11 @@ class OrderService {
     if (resp.statusCode == 201) {
       return Order.fromJson(jsonDecode(utf8.decode(resp.bodyBytes)));
     } else {
-      // Nên in log ra để biết lỗi gì từ backend
       print('Lỗi tạo đơn hàng: ${resp.statusCode} ${resp.body}');
       throw Exception('Tạo đơn hàng thất bại: ${resp.body}');
     }
   }
+
   // trong order_service.dart
   Future<Map<String, dynamic>> fetchProductInfo(String productId, String? variantId) async {
     final productUri = Uri.parse('http://localhost:5011/api/products/$productId');

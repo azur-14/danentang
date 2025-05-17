@@ -67,6 +67,38 @@ class UserService {
       throw Exception('register failed: ${res.body}');
     }
   }
+  Future<void> registerGuest({
+    required String email,
+    String? receiverName,
+    String? phone,
+    String? addressLine,
+    String? commune,
+    String? district,
+    String? city,
+  }) async {
+    final String fullName = email.split('@').first;
+
+    final body = {
+      'email': email,
+      'fullName': fullName,
+      'isVerifiedMail': false,   // xác định là guest
+      'receiverName': receiverName,
+      'phone': phone,
+      'addressLine': addressLine,
+      'commune': commune,
+      'district': district,
+      'city': city,
+    }..removeWhere((_, v) => v == null);
+
+    final res = await http.post(
+      Uri.parse('$_authBase/register'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
+    if (res.statusCode != 200) {
+      throw Exception('registerGuest failed: ${res.body}');
+    }
+  }
 
   /// 3. Login, returns JWT token
   Future<String> login({

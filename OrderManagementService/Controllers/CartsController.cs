@@ -104,5 +104,17 @@ namespace OrderManagementService.Controllers
             if (result.MatchedCount == 0) return NotFound();
             return NoContent();
         }
+        // DELETE api/carts/{cartId}/items
+        [HttpDelete("{cartId:length(24)}/items")]
+        public async Task<IActionResult> ClearCartItems(string cartId)
+        {
+            var update = Builders<Cart>.Update
+                .Set(c => c.Items, new List<CartItem>())
+                .CurrentDate(c => c.UpdatedAt);
+
+            var result = await _carts.UpdateOneAsync(c => c.Id == cartId, update);
+            if (result.MatchedCount == 0) return NotFound();
+            return NoContent();
+        }
     }
 }

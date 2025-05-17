@@ -95,7 +95,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     status: _selectedStatus,
                     timestamp: DateTime.now(),
                   );
-                  await OrderService.instance.updateOrderStatus(widget.order.id, history);
+                  if (widget.order.id != null) {
+                    await OrderService.instance.updateOrderStatus(widget.order.id!, history);
+                  } else {
+                    // Xử lý trường hợp id bị null, báo lỗi hoặc không làm gì cả
+                  }
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text("Đã lưu trạng thái đơn hàng")),
                   );
