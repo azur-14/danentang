@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:danentang/data/user_data.dart'; // Import file dữ liệu mẫu
+import 'package:danentang/data/user_data.dart';
 import 'package:danentang/widgets/User/profile_drawer.dart';
 import 'package:danentang/widgets/User/profile_mobile_layout.dart';
 import 'package:danentang/widgets/User/profile_web_layout.dart';
@@ -12,35 +12,42 @@ class ProfileManagementScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Sử dụng userData được truyền vào, nếu null thì lấy từ UserData.userData
+    final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
     final Map<String, dynamic> effectiveUserData = userData ?? UserData.userData;
-
-    final bool isWideScreen = MediaQuery.of(context).size.width > 600;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
 
     return Scaffold(
-      appBar: kIsWeb
-          ? null
-          : AppBar(
+      key: _scaffoldKey,
+      appBar: isMobile
+          ? AppBar(
         title: const Text('Hồ sơ của bạn'),
-        backgroundColor: kIsWeb ? Colors.white : null,
-        elevation: kIsWeb ? 0 : null,
-        leading: Builder(
-          builder: (context) => IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
+        backgroundColor: const Color(0xFF4B5EFC), // Match MyOrdersScreen
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.menu, color: Color(0xFF3B82F6)),
+          onPressed: () {
+            _scaffoldKey.currentState?.openDrawer();
+          },
         ),
-      ),
-      drawer: !isWideScreen && !kIsWeb
-          ? ProfileDrawer()
+      )
           : null,
+      drawer: isMobile ? const ProfileDrawer() : null,
+      backgroundColor: const Color(0xFFF8FAFC), // Match MyOrdersScreen
       body: Row(
         children: [
-          if (kIsWeb) ProfileDrawer(),
+          if (!isMobile && kIsWeb)
+            const SizedBox(
+              width: 250,
+              child: ProfileDrawer(),
+            ),
           Expanded(
-            child: kIsWeb
-                ? const ProfileWebLayout()
-                : const ProfileMobileLayout(),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 800),
+                child: kIsWeb ? const ProfileWebLayout() : const ProfileMobileLayout(),
+              ),
+            ),
           ),
         ],
       ),

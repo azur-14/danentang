@@ -186,186 +186,30 @@ final GoRouter router = GoRouter(
     GoRoute(
       path: '/order-details/:orderId',
       builder: (context, state) {
-        final orderId = state.pathParameters['orderId']!;
-        // Tìm order từ testOrders
-        final order = testOrders.firstWhere(
-              (o) => o.id == orderId,
-          orElse: () => Order(
-            id: '',
-            userId: '',
-            orderNumber: 'Not Found',
-            shippingAddress: ShippingAddress(
-              receiverName: '',
-              phoneNumber: '',
-              addressLine: '',
-              ward: '',
-              district: '',
-              city: '',
-            ),
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-            status: 'Not Found',
-            totalAmount: 0.0,
-            discountAmount: 0.0,
-            couponCode: null,
-            loyaltyPointsUsed: 0,
-            items: [],
-            statusHistory: [],
-          ),
-        );
-
-        if (order.id.isEmpty) {
-          return Scaffold(
-            appBar: AppBar(title: const Text('Lỗi')),
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Đơn hàng không tồn tại! (Order ID: $orderId)'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => context.go('/my-orders'),
-                    child: const Text('Quay lại danh sách đơn hàng'),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        // Tạo danh sách products từ testOrders
-        final products = testOrders
-            .expand((o) => o.items)
-            .map((item) => Product(
-          id: item.productId,
-          name: item.productName,
-          brand: '',
-          description: '',
-          discountPercentage: 0,
-          categoryId: '',
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-          images: [
-            ProductImage(
-              id: 'img001',
-              url: 'assets/images/laptop.jpg',
-              sortOrder: 1,
-            ),
-          ],
-          variants: [
-            ProductVariant(
-              id: item.productVariantId ?? '',
-              variantName: item.variantName,
-              additionalPrice: 0,
-              inventory: 0,
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-            ),
-          ],
-        ))
-            .toSet()
-            .toList();
-
-        return OrderDetailsScreen(
-          orderId: '',
-        );
+        final orderId = state.pathParameters['orderId'] ?? '';
+        return OrderDetailsScreen(orderId: orderId);
       },
     ),
     GoRoute(
       path: '/review/:orderId',
       builder: (context, state) {
-        final orderId = state.pathParameters['orderId']!;
-        // Tìm order từ testOrders
-        final order = testOrders.firstWhere(
-              (o) => o.id == orderId,
-          orElse: () => Order(
-            id: '',
-            userId: '',
-            orderNumber: 'Not Found',
-            shippingAddress: ShippingAddress(
-              receiverName: '',
-              phoneNumber: '',
-              addressLine: '',
-              ward: '',
-              district: '',
-              city: '',
-            ),
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-            status: 'Not Found',
-            totalAmount: 0.0,
-            discountAmount: 0.0,
-            couponCode: null,
-            loyaltyPointsUsed: 0,
-            items: [],
-            statusHistory: [],
-          ),
-        );
-
-        if (order.id.isEmpty) {
-          return Scaffold(
-            appBar: AppBar(title: const Text('Lỗi')),
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Đơn hàng không tồn tại! (Order ID: $orderId)'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => context.go('/my-orders'),
-                    child: const Text('Quay lại danh sách đơn hàng'),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        // Tạo danh sách products từ testOrders
-        final products = testOrders
-            .expand((o) => o.items)
-            .map((item) => Product(
-          id: item.productId,
-          name: item.productName,
-          brand: '',
-          description: '',
-          discountPercentage: 0,
-          categoryId: '',
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-          images: [
-            ProductImage(
-              id: 'img001',
-              url: 'assets/images/laptop.jpg',
-              sortOrder: 1,
-            ),
-          ],
-          variants: [
-            ProductVariant(
-              id: item.productVariantId ?? '',
-              variantName: item.variantName,
-              additionalPrice: 0,
-              inventory: 0,
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-            ),
-          ],
-        ))
-            .toSet()
-            .toList();
-
-        return ReviewScreen(
-          orderId: orderId,
-        );
+        final orderId = state.pathParameters['orderId'] ?? '';
+        return ReviewScreen(orderId: orderId);
       },
     ),
     GoRoute(
       path: '/reorder/:orderId',
-      builder: (context, state) => Placeholder(),
+      builder: (context, state) {
+        final orderId = state.pathParameters['orderId'] ?? '';
+        return const Placeholder(); // Replace with ReorderScreen when implemented
+      },
     ),
     GoRoute(
       path: '/return/:orderId',
-      builder: (context, state) => Placeholder(),
+      builder: (context, state) {
+        final orderId = state.pathParameters['orderId'] ?? '';
+        return const Placeholder(); // Replace with ReturnScreen when implemented
+      },
     ),
 
     /// User profile & settings

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:animate_do/animate_do.dart';
 
 import '../../Service/user_service.dart';
 import '../../models/Address.dart';
@@ -155,11 +156,29 @@ class _ProfileWebLayoutState extends State<ProfileWebLayout> {
     return await showDialog<String?>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Chỉnh sửa $title'),
-        content: TextField(controller: controller),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            filled: true,
+            fillColor: Colors.grey[100],
+          ),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Hủy')),
-          TextButton(onPressed: () => Navigator.pop(context, controller.text), child: const Text('Lưu')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3e80f6),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            child: const Text('Lưu'),
+          ),
         ],
       ),
     );
@@ -167,163 +186,328 @@ class _ProfileWebLayoutState extends State<ProfileWebLayout> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading || _user == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 600;
+        final maxWidth = constraints.maxWidth > 1200 ? 1200.0 : constraints.maxWidth * 0.9;
+        final crossAxisCount = constraints.maxWidth > 1200
+            ? 4
+            : constraints.maxWidth > 900
+            ? 3
+            : constraints.maxWidth > 600
+            ? 2
+            : 1;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('User Profile', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 24),
-          Center(
-            child: Column(
-              children: [
-                CircleAvatar(
-                  radius: 50,
-                  backgroundImage: _user!.avatarUrl != null ? NetworkImage(_user!.avatarUrl!) : null,
-                  child: _user!.avatarUrl == null ? const Icon(Icons.person, size: 50) : null,
-                ),
-                const SizedBox(height: 16),
-                Text(_user!.fullName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    ElevatedButton(
-                      onPressed: _pickImage,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2A2E5B),
-                        foregroundColor: Colors.white,
+        return Scaffold(
+          body: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maxWidth),
+              child: _isLoading || _user == null
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF3e80f6)))
+                  : SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
+                child: FadeIn(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+
+                      const SizedBox(height: 24),
+                      Center(
+                        child: Column(
+                          children: [
+                            MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: GestureDetector(
+                                onTap: _pickImage,
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 300),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 60,
+                                    backgroundImage: _user!.avatarUrl != null
+                                        ? NetworkImage(_user!.avatarUrl!)
+                                        : null,
+                                    backgroundColor: Colors.grey[200],
+                                    child: _user!.avatarUrl == null
+                                        ? const Icon(Icons.person, size: 60, color: Colors.grey)
+                                        : null,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              _user!.fullName,
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[800],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _buildHoverButton(
+                                  onPressed: _pickImage,
+                                  text: 'TẢI ẢNH MỚI',
+                                  isElevated: true,
+                                ),
+                                const SizedBox(width: 12),
+                                _buildHoverButton(
+                                  onPressed: _deleteImage,
+                                  text: 'XÓA',
+                                  isElevated: false,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                      child: const Text('UPLOAD NEW PHOTO'),
-                    ),
-                    const SizedBox(width: 10),
-                    OutlinedButton(
-                      onPressed: _deleteImage,
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFF2A2E5B)),
-                        foregroundColor: const Color(0xFF2A2E5B),
+                      const SizedBox(height: 32),
+                      TextFieldWidget(
+                        label: 'HỌ VÀ TÊN',
+                        value: _user!.fullName,
+                        onChanged: (value) => setState(
+                                () => _user = _user!.copyWith(fullName: value)),
                       ),
-                      child: const Text('DELETE'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          TextFieldWidget(
-            label: 'HỌ VÀ TÊN',
-            value: _user!.fullName,
-            onChanged: (value) => setState(() => _user = _user!.copyWith(fullName: value)),
-          ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            value: _user!.gender,
-            decoration: const InputDecoration(labelText: 'GIỚI TÍNH'),
-            items: ['Nam', 'Nữ', 'Khác'].map((g) {
-              return DropdownMenuItem<String>(
-                value: g,
-                child: Text(g),
-              );
-            }).toList(),
-            onChanged: (value) => setState(() => _user = _user!.copyWith(gender: value)),
-          ),
-          const SizedBox(height: 16),
-          InputDecorator(
-            decoration: const InputDecoration(labelText: 'NGÀY SINH'),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  _user!.dateOfBirth != null
-                      ? '${_user!.dateOfBirth!.day}/${_user!.dateOfBirth!.month}/${_user!.dateOfBirth!.year}'
-                      : 'Chưa chọn',
-                ),
-                TextButton(
-                  onPressed: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: _user!.dateOfBirth ?? DateTime(2000),
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime.now(),
-                    );
-                    if (date != null) {
-                      setState(() => _user = _user!.copyWith(dateOfBirth: date));
-                    }
-                  },
-                  child: const Text('Chọn ngày'),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextFieldWidget(
-            label: 'EMAIL ADDRESS',
-            value: _user!.email,
-            onChanged: (_) {},
-            icon: Icons.email,
-          ),
-          const SizedBox(height: 16),
-          TextFieldWidget(
-            label: 'SỐ ĐIỆN THOẠI',
-            value: _user!.phoneNumber ?? '',
-            onChanged: (value) => setState(() => _user = _user!.copyWith(phoneNumber: value)),
-            icon: Icons.phone,
-          ),
-          const SizedBox(height: 32),
-          const Text('ĐỊA CHỈ', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          ..._user!.addresses.asMap().entries.map((entry) {
-            final index = entry.key;
-            final addr = entry.value;
-            return Card(
-              child: ListTile(
-                title: Text('${addr.receiverName} - ${addr.phone}'),
-                subtitle: Text(
-                  '${addr.addressLine}, ${addr.commune ?? ''}, ${addr.district ?? ''}, ${addr.city ?? ''}',
-                ),
-                leading: IconButton(
-                  icon: Icon(
-                    addr.isDefault ? Icons.star : Icons.star_border,
-                    color: Colors.amber,
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        value: _user!.gender,
+                        decoration: InputDecoration(
+                          labelText: 'GIỚI TÍNH',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                        ),
+                        items: ['Nam', 'Nữ', 'Khác'].map((g) {
+                          return DropdownMenuItem<String>(
+                            value: g,
+                            child: Text(g),
+                          );
+                        }).toList(),
+                        onChanged: (value) => setState(() => _user = _user!.copyWith(gender: value)),
+                      ),
+                      const SizedBox(height: 16),
+                      InputDecorator(
+                        decoration: InputDecoration(
+                          labelText: 'NGÀY SINH',
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _user!.dateOfBirth != null
+                                  ? '${_user!.dateOfBirth!.day}/${_user!.dateOfBirth!.month}/${_user!.dateOfBirth!.year}'
+                                  : 'Chưa chọn',
+                              style: TextStyle(color: Colors.grey[700]),
+                            ),
+                            TextButton(
+                              onPressed: () async {
+                                final date = await showDatePicker(
+                                  context: context,
+                                  initialDate: _user!.dateOfBirth ?? DateTime(2000),
+                                  firstDate: DateTime(1900),
+                                  lastDate: DateTime.now(),
+                                  builder: (context, child) {
+                                    return Theme(
+                                      data: Theme.of(context).copyWith(
+                                        colorScheme: const ColorScheme.light(
+                                          primary: Color(0xFF3e80f6),
+                                          onPrimary: Colors.white,
+                                        ),
+                                      ),
+                                      child: child!,
+                                    );
+                                  },
+                                );
+                                if (date != null) {
+                                  setState(() => _user = _user!.copyWith(dateOfBirth: date));
+                                }
+                              },
+                              child: const Text(
+                                'Chọn ngày',
+                                style: TextStyle(color: Color(0xFF3e80f6)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextFieldWidget(
+                        label: 'EMAIL',
+                        value: _user!.email,
+                        onChanged: (_) {},
+                        icon: Icons.email,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFieldWidget(
+                        label: 'SỐ ĐIỆN THOẠI',
+                        value: _user!.phoneNumber ?? '',
+                        onChanged: (value) => setState(
+                                () => _user = _user!.copyWith(phoneNumber: value)),
+                        icon: Icons.phone,
+                      ),
+                      const SizedBox(height: 32),
+                      Text(
+                        'ĐỊA CHỈ',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[900],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: crossAxisCount == 1
+                              ? 3
+                              : crossAxisCount == 2
+                              ? 2.5
+                              : 2,
+                        ),
+                        itemCount: _user!.addresses.length,
+                        itemBuilder: (context, index) {
+                          final addr = _user!.addresses[index];
+                          return _buildAddressCard(index, addr);
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      Center(
+                        child: _buildHoverButton(
+                          onPressed: _addAddress,
+                          text: 'THÊM ĐỊA CHỈ MỚI',
+                          icon: Icons.add,
+                          isElevated: false,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      Center(
+                        child: _buildHoverButton(
+                          onPressed: _submitChanges,
+                          text: 'LƯU THAY ĐỔI',
+                          icon: Icons.save,
+                          isElevated: true,
+                          backgroundColor: const Color(0xFF3e80f6),
+                          textColor: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
-                  onPressed: () => _setDefaultAddress(index),
                 ),
-                trailing: Wrap(
-                  spacing: 8,
-                  children: [
-                    IconButton(icon: const Icon(Icons.edit), onPressed: () => _editAddress(index)),
-                    IconButton(icon: const Icon(Icons.delete), onPressed: () => _deleteAddress(index)),
-                  ],
-                ),
-              ),
-            );
-          }),
-          const SizedBox(height: 12),
-          Center(
-            child: OutlinedButton.icon(
-              onPressed: _addAddress,
-              icon: const Icon(Icons.add),
-              label: const Text('Thêm địa chỉ mới'),
-            ),
-          ),
-          const SizedBox(height: 32),
-          Center(
-            child: ElevatedButton.icon(
-              onPressed: _submitChanges,
-              icon: const Icon(Icons.save),
-              label: const Text('Xác nhận sửa'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.teal,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
               ),
             ),
           ),
-        ],
+        );
+      },
+    );
+  }
+
+  Widget _buildAddressCard(int index, Address addr) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          title: Text(
+            '${addr.receiverName} - ${addr.phone}',
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+          subtitle: Text(
+            '${addr.addressLine}, ${addr.commune ?? ''}, ${addr.district ?? ''}, ${addr.city ?? ''}',
+            style: TextStyle(color: Colors.grey[600]),
+          ),
+          leading: IconButton(
+            icon: Icon(
+              addr.isDefault ? Icons.star : Icons.star_border,
+              color: Colors.amber,
+            ),
+            onPressed: () => _setDefaultAddress(index),
+          ),
+          trailing: Wrap(
+            spacing: 8,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.edit, color: Color(0xFF3e80f6)),
+                onPressed: () => _editAddress(index),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete, color: Colors.redAccent),
+                onPressed: () => _deleteAddress(index),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHoverButton({
+    required VoidCallback onPressed,
+    required String text,
+    IconData? icon,
+    bool isElevated = true,
+    Color? backgroundColor,
+    Color? textColor,
+  }) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        child: isElevated
+            ? ElevatedButton.icon(
+          onPressed: onPressed,
+          icon: icon != null ? Icon(icon, size: 20) : const SizedBox(),
+          label: Text(text),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: backgroundColor ?? const Color(0xFF3e80f6),
+            foregroundColor: textColor ?? Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            elevation: 0,
+            shadowColor: Colors.black.withOpacity(0.2),
+          ),
+        )
+            : OutlinedButton.icon(
+          onPressed: onPressed,
+          icon: icon != null ? Icon(icon, size: 20) : const SizedBox(),
+          label: Text(text),
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: Color(0xFF3e80f6)),
+            foregroundColor: const Color(0xFF3e80f6),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        ),
       ),
     );
   }
