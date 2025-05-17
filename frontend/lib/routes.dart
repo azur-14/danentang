@@ -78,8 +78,7 @@ final GoRouter router = GoRouter(
     if (!isLoggedIn &&
         (path.startsWith('/manager') ||
             path.startsWith('/profile') ||
-            path.startsWith('/my-orders') ||
-            path.startsWith('/checkout'))) {
+            path.startsWith('/my-orders'))) {
       return '/login';
     }
 
@@ -208,31 +207,13 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const AddCardScreen(),
     ),
     GoRoute(
-      path: '/order-success',
+      path: '/order-success/:id',
       builder: (context, state) {
-        final extra = state.extra as Map<String, dynamic>? ?? {};
-        return OrderSuccessScreen(
-          products: extra['products'] as List<Map<String, dynamic>>? ?? [],
-          total: extra['total'] as double? ?? 0.0,
-          shippingMethod: extra['shippingMethod'] as ShippingMethod?,
-          paymentMethod: extra['paymentMethod'] ?? 'Không xác định',
-          sellerNote: extra['sellerNote'],
-          voucher: extra['voucher'] as Voucher?,
-          address: extra['address'] as Address? ??
-              Address(
-                receiverName: 'Không xác định',
-                phone: '0000000000',
-                addressLine: 'N/A',
-                commune: 'N/A',
-                district: 'N/A',
-                city: 'N/A',
-                isDefault: false,
-              ),
-          card: extra['card'] as CardInfo?,
-          order: extra['order'] as Order?,
-        );
+        final orderId = state.pathParameters['id']!;
+        return OrderSuccessScreen(orderId: orderId);
       },
     ),
+
 
     // Tuyến đơn hàng
     GoRoute(
@@ -359,17 +340,11 @@ final GoRouter router = GoRouter(
           builder: (context, state) => const UserListScreen(),
         ),
         GoRoute(
-          path: 'orders',
-          builder: (context, state) => const OrderListScreen(),
-          routes: [
-            GoRoute(
-              path: ':id',
-              builder: (context, state) {
-                final order = state.extra as Order;
-                return OrderDetailScreen(order: order);
-              },
-            ),
-          ],
+          path: '/order-details/:orderId',
+          builder: (context, state) {
+            final orderId = state.pathParameters['orderId'] ?? '';
+            return OrderDetailsScreen(orderId: orderId);
+          },
         ),
         GoRoute(
           path: 'orders-report',
