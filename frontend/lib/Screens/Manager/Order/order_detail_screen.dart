@@ -2,22 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../Service/order_service.dart';
 import '../../../models/Order.dart';
 import '../../../models/OrderStatusHistory.dart';
 
 class OrderDetailScreen extends StatefulWidget {
-  final Order order;
+  final String orderId;
 
-  const OrderDetailScreen({super.key, required this.order});
+  const OrderDetailScreen({super.key, required this.orderId});
 
   @override
   State<OrderDetailScreen> createState() => _OrderDetailScreenState();
 }
 
 class _OrderDetailScreenState extends State<OrderDetailScreen> {
+  Order? _order;
   late String _selectedStatus;
-  bool _isLoading = false;
+  bool _isLoading = true;
   String? _errorMessage;
 
   final List<String> _statusOptions = [
@@ -30,8 +32,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedStatus = widget.order.status;
     _checkLoginStatus();
+    _fetchOrder();
   }
 
   Future<void> _checkLoginStatus() async {
@@ -43,8 +45,25 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     }
   }
 
+  Future<void> _fetchOrder() async {
+    try {
+      final order = await OrderService.instance.getOrderById(widget.orderId);
+      setState(() {
+        _order = order;
+        _selectedStatus = order.status;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Lỗi khi tải đơn hàng: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
   Future<void> _updateOrderStatus() async {
-    if (_selectedStatus == widget.order.status) {
+    if (_order == null) return;
+    if (_selectedStatus == _order!.status) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Trạng thái không thay đổi')),
       );
@@ -57,34 +76,25 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         title: const Text('Xác nhận cập nhật'),
         content: Text('Bạn có chắc muốn cập nhật trạng thái thành "$_selectedStatus"?'),
         actions: [
-          TextButton(
-            onPressed: () => ctx.pop(false),
-            child: const Text('Hủy'),
-          ),
-          TextButton(
-            onPressed: () => ctx.pop(true),
-            child: const Text('Xác nhận'),
-          ),
+          TextButton(onPressed: () => ctx.pop(false), child: const Text('Hủy')),
+          TextButton(onPressed: () => ctx.pop(true),  child: const Text('Xác nhận')),
         ],
       ),
     );
-
     if (confirmed != true) return;
 
     setState(() => _isLoading = true);
     try {
-      if (widget.order.id == null) {
-        throw Exception('ID đơn hàng không hợp lệ');
-      }
       final history = OrderStatusHistory(
         status: _selectedStatus,
         timestamp: DateTime.now(),
       );
-      await OrderService.instance.updateOrderStatus(widget.order.id!, history);
+      await OrderService.instance.updateOrderStatus(_order!.id!, history);
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Đã cập nhật trạng thái đơn hàng')),
       );
-      context.go('/manager/orders'); // Quay lại danh sách đơn hàng
+      context.go('/manager/orders');
     } catch (e) {
       setState(() => _errorMessage = 'Lỗi: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -97,27 +107,34 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final order = widget.order;
-    final address = order.shippingAddress;
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_errorMessage != null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Chi tiết đơn hàng')),
+        body: Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red))),
+      );
+    }
+
+    final order = _order!;
+    final addr  = order.shippingAddress;
 
     return PopScope(
       canPop: false,
       onPopInvoked: (didPop) async {
-        if (!didPop) {
-          context.go('/manager/orders'); // Quay lại danh sách đơn hàng
-        }
+        if (!didPop) context.go('/manager/orders');
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text("Chi tiết đơn hàng ${order.orderNumber}"),
+          title: Text("Chi tiết đơn hàng #${order.id}"),
           centerTitle: true,
           backgroundColor: Colors.indigo,
           foregroundColor: Colors.white,
           actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () => setState(() {}), // Làm mới giao diện
-            ),
+            IconButton(icon: const Icon(Icons.refresh), onPressed: _fetchOrder),
           ],
         ),
         body: Stack(
@@ -126,19 +143,19 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               padding: const EdgeInsets.all(16),
               children: [
                 _buildSectionTitle("Thông tin người nhận"),
-                _buildInfoRow("Họ tên", address.receiverName),
-                _buildInfoRow("SĐT", address.phoneNumber),
-                _buildInfoRow(
-                  "Địa chỉ",
-                  "${address.addressLine}, ${address.ward}, ${address.district}, ${address.city}",
+                _buildInfoRow("Họ tên",     addr.receiverName),
+                _buildInfoRow("SĐT",        addr.phoneNumber),
+                _buildInfoRow("Địa chỉ",
+                    "${addr.addressLine}, ${addr.ward}, ${addr.district}, ${addr.city}"
                 ),
                 const SizedBox(height: 16),
                 _buildSectionTitle("Thông tin đơn hàng"),
-                _buildInfoRow("Mã đơn hàng", order.orderNumber),
-                _buildInfoRow("Tổng tiền", "${order.totalAmount.toStringAsFixed(0)} ₫"),
+                _buildInfoRow("Mã đơn hàng",    order.orderNumber),
+                _buildInfoRow("Tổng tiền",      "${order.totalAmount.toStringAsFixed(0)} ₫"),
                 if (order.discountAmount > 0)
-                  _buildInfoRow("Giảm giá", "-${order.discountAmount.toStringAsFixed(0)} ₫"),
-                if (order.couponCode != null) _buildInfoRow("Mã giảm giá", order.couponCode!),
+                  _buildInfoRow("Giảm giá",   "-${order.discountAmount.toStringAsFixed(0)} ₫"),
+                if (order.couponCode != null)
+                  _buildInfoRow("Mã giảm giá", order.couponCode!),
                 _buildInfoRow("Điểm thưởng dùng", "${order.loyaltyPointsUsed}"),
                 const SizedBox(height: 16),
                 _buildSectionTitle("Danh sách sản phẩm"),
@@ -156,9 +173,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     border: OutlineInputBorder(),
                   ),
                   items: _statusOptions
-                      .map((status) => DropdownMenuItem(value: status, child: Text(status)))
+                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                       .toList(),
-                  onChanged: (value) => setState(() => _selectedStatus = value!),
+                  onChanged: (v) => setState(() => _selectedStatus = v!),
                 ),
                 const SizedBox(height: 16),
                 _buildSectionTitle("Lịch sử trạng thái"),
@@ -168,10 +185,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     child: Text("Chưa có lịch sử trạng thái"),
                   )
                 else
-                  ...order.statusHistory.map((s) => ListTile(
+                  ...order.statusHistory.map((h) => ListTile(
                     leading: const Icon(Icons.history),
-                    title: Text(s.status),
-                    subtitle: Text(DateFormat('dd/MM/yyyy – HH:mm').format(s.timestamp)),
+                    title: Text(h.status),
+                    subtitle: Text(DateFormat('dd/MM/yyyy – HH:mm').format(h.timestamp)),
                   )),
                 if (_errorMessage != null) ...[
                   const SizedBox(height: 16),
@@ -205,35 +222,19 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Text(
-        title,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
+  Widget _buildSectionTitle(String t) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Text(t, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+  );
 
-  Widget _buildInfoRow(String title, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              "$title:",
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(value),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildInfoRow(String title, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(flex: 2, child: Text("$title:", style: const TextStyle(fontWeight: FontWeight.bold))),
+        Expanded(flex: 3, child: Text(value)),
+      ],
+    ),
+  );
 }

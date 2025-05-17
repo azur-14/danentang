@@ -179,7 +179,7 @@ class _OrderCardState extends State<OrderCard> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Đơn hàng #${widget.order.orderNumber}',
+                  'Đơn hàng #${widget.order.id}',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,

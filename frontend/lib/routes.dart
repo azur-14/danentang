@@ -244,10 +244,6 @@ final GoRouter router = GoRouter(
       builder: (context, state) => const ProfileManagementScreen(),
     ),
     GoRoute(
-      path: '/personal-info',
-      builder: (context, state) => const ProfileManagementScreen(),
-    ),
-    GoRoute(
       path: '/account-settings',
       builder: (context, state) => const AccountSettingsScreen(),
     ),
@@ -335,12 +331,15 @@ final GoRouter router = GoRouter(
             GoRoute(
               path: ':id',
               builder: (context, state) {
-                final order = state.extra as Order;
-                return OrderDetailScreen(order: order);
+                // Lấy orderId từ pathParameters
+                final orderId = state.pathParameters['id']!;
+                // Bây giờ OrderDetailScreen chỉ cần 1 tham số orderId
+                return OrderDetailScreen(orderId: orderId);
               },
             ),
           ],
         ),
+
         GoRoute(
           path: 'orders-report',
           builder: (context, state) => const OrdersReport(),

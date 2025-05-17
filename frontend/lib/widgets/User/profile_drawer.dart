@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,13 +31,6 @@ class ProfileDrawer extends StatelessWidget {
               borderRadius: const BorderRadius.only(
                 topRight: Radius.circular(16),
               ),
-              boxShadow: [
-                //BoxShadow(
-                 // color: Colors.black,
-                  //blurRadius: 8,
-                  //offset: const Offset(0, 4),
-                //),
-              ],
             ),
             child: Center(
               child: Image.asset('assets/images/logoapbar.jpg', width: 180),
@@ -59,43 +53,29 @@ class ProfileDrawer extends StatelessWidget {
         bool isLogout = false,
       }) {
     final currentRoute = GoRouterState.of(context).uri.toString();
-    final bool selected = currentRoute == route && !isLogout;
     return _DrawerItem(
       title: title,
       icon: icon,
       route: route,
       isLogout: isLogout,
-      selected: selected,
+      selected: currentRoute == route,
       onTap: () async {
-        try {
-          print('Navigating to $route from ProfileDrawer');
-          print('Current route: $currentRoute');
-          print('GoRouter available: ${GoRouter.of(context) != null}');
-          if (isLogout) {
-            await _handleLogout();
-            context.go(route);
-          } else if (route == '/my-orders') {
-            final prefs = await SharedPreferences.getInstance();
-            final isLoggedIn = prefs.getString('token') != null;
-            context.go(route, extra: isLoggedIn);
-          } else {
-            context.go(route);
-          }
+        // 1. Trên mobile: đóng drawer; trên web thì không pop
+        if (!kIsWeb) {
           Navigator.of(context).pop();
-        } catch (e) {
-          print('Navigation error for route $route: $e');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Không thể điều hướng tới $title')),
-          );
         }
+
+        // 2. Nếu là logout thì xóa token
+        if (isLogout) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove('token');
+          await prefs.remove('userId');
+        }
+
+        // 3. Điều hướng
+        context.go(route);
       },
     );
-  }
-
-  Future<void> _handleLogout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('token');
-    await prefs.remove('userId');
   }
 }
 
@@ -132,14 +112,10 @@ class _DrawerItemState extends State<_DrawerItem> {
         borderRadius: BorderRadius.circular(12),
         onTap: widget.onTap,
         onHighlightChanged: (isHighlighted) {
-          setState(() {
-            _isPressed = isHighlighted;
-          });
+          setState(() => _isPressed = isHighlighted);
         },
         onHover: (isHovered) {
-          setState(() {
-            _isHovered = isHovered;
-          });
+          setState(() => _isHovered = isHovered);
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
