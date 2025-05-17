@@ -36,7 +36,6 @@ import 'package:danentang/models/ship.dart';
 import 'package:danentang/models/voucher.dart';
 import 'package:danentang/models/Address.dart';
 import 'package:danentang/models/Order.dart';
-import 'package:danentang/data/order_data.dart';
 
 import 'Screens/Manager/Support/customer_service.dart';
 
@@ -219,14 +218,14 @@ final GoRouter router = GoRouter(
       path: '/reorder/:orderId',
       builder: (context, state) {
         final orderId = state.pathParameters['orderId'] ?? '';
-        return const Placeholder(); // Replace with ReorderScreen when implemented
+        return const Placeholder();
       },
     ),
     GoRoute(
       path: '/return/:orderId',
       builder: (context, state) {
         final orderId = state.pathParameters['orderId'] ?? '';
-        return const Placeholder(); // Replace with ReturnScreen when implemented
+        return const Placeholder();
       },
     ),
 
