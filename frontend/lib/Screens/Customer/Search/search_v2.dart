@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../Service/search_service.dart';
 import '../../../models/product.dart';
+import '../../../models/review.dart';
 
 class Searching extends StatelessWidget {
   const Searching({super.key});
@@ -20,72 +22,262 @@ class SearchScreen extends StatefulWidget {
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
-class _SearchScreenState extends State<SearchScreen> {
+class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   final SearchService _searchService = SearchService();
   List<Product> _searchResults = [];
+  List<Product> _recommendedProducts = [];
   List<String> _autocompleteSuggestions = [];
-  List<String> _selectedBrands = [];
-  double? _minPrice;
-  double? _maxPrice;
-  String? _selectedCategory;
   Timer? _debounce;
   Map<String, String> _categoryNames = {};
+  List<String> _brands = [];
+  final FocusNode _searchFocusNode = FocusNode();
+  bool _isSearchFocused = false;
+  Map<String, List<Review>> _productReviews = {};
+  AnimationController? _animationController;
+  Animation<double>? _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
-    _loadCategoryNames();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController!, curve: Curves.easeInOut),
+    );
+    _loadInitialData();
+    _searchFocusNode.addListener(() {
+      setState(() {
+        _isSearchFocused = _searchFocusNode.hasFocus;
+        if (_isSearchFocused && _searchController.text.isEmpty) {
+          _loadRecommendedProducts();
+          _animationController?.forward();
+        } else {
+          _animationController?.reverse();
+        }
+      });
+    });
+  }
+
+  Future<void> _loadInitialData() async {
+    await _loadCategoryNames();
+    await _loadBrands();
   }
 
   Future<void> _loadCategoryNames() async {
-    final categories = await _searchService.getCategories();
-    for (var categoryId in categories) {
-      final name = await _searchService.getCategoryName(categoryId!);
-      setState(() {
-        _categoryNames[categoryId] = name;
-      });
+    try {
+      final categories = await _searchService.getCategories();
+      for (var categoryId in categories) {
+        final name = await _searchService.getCategoryName(categoryId!);
+        if (!mounted) return;
+        setState(() {
+          _categoryNames[categoryId] = name;
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi tải danh mục: $e')),
+      );
     }
+  }
+
+  Future<void> _loadBrands() async {
+    try {
+      final brands = await _searchService.getBrands();
+      if (!mounted) return;
+      setState(() {
+        _brands = brands.whereType<String>().toList();
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi tải thương hiệu: $e')),
+      );
+    }
+  }
+
+  Future<void> _loadRecommendedProducts() async {
+    try {
+      final highRatedProducts = await _searchService.getHighRatedProducts(minRating: 3.0);
+      await _loadReviewsForProducts(highRatedProducts);
+      if (!mounted) return;
+      setState(() {
+        _recommendedProducts = highRatedProducts.where((product) {
+          final reviews = _productReviews[product.id] ?? [];
+          final validReviews = reviews.where((r) => r.rating != null).toList();
+          final averageRating = validReviews.isNotEmpty
+              ? validReviews.map((r) => r.rating!.toDouble()).reduce((a, b) => a + b) /
+              validReviews.length
+              : 0.0;
+          return averageRating >= 3.0;
+        }).toList();
+        _animationController?.forward();
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi tải sản phẩm đề xuất: $e')),
+      );
+    }
+  }
+
+  Future<void> _loadReviewsForProducts(List<Product> products) async {
+    for (var product in products) {
+      try {
+        final reviews = await _searchService.getReviewsByProductId(product.id);
+        if (!mounted) return;
+        setState(() {
+          _productReviews[product.id] = reviews;
+        });
+      } catch (e) {
+        _productReviews[product.id] = [];
+      }
+    }
+  }
+
+  Map<String, dynamic> _parseFilterInput(String filterText) {
+    List<String> brands = [];
+    double? minPrice;
+    double? maxPrice;
+    String? category;
+    double? minRating;
+    String? error;
+
+    final parts = filterText.trim().split(' ').where((p) => p.isNotEmpty).toList();
+    for (var part in parts) {
+      if (part.startsWith('brand:')) {
+        brands = part.substring(6).split(',').where((b) => b.isNotEmpty).toList();
+        if (brands.any((b) => !_brands.contains(b))) {
+          error = 'Thương hiệu không hợp lệ: ${brands.firstWhere((b) => !_brands.contains(b))}';
+        }
+      } else if (part.startsWith('min:')) {
+        minPrice = double.tryParse(part.substring(4));
+        if (minPrice == null) error = 'Giá tối thiểu không hợp lệ';
+      } else if (part.startsWith('max:')) {
+        maxPrice = double.tryParse(part.substring(4));
+        if (maxPrice == null) error = 'Giá tối đa không hợp lệ';
+      } else if (part.startsWith('cat:')) {
+        category = part.substring(4);
+        if (!_categoryNames.containsKey(category)) error = 'Danh mục không hợp lệ';
+      } else if (part.startsWith('rating:')) {
+        minRating = double.tryParse(part.substring(7));
+        if (minRating == null || minRating < 0 || minRating > 5) {
+          error = 'Đánh giá phải từ 0 đến 5';
+        }
+      } else {
+        error = 'Tiêu chí không hợp lệ: $part';
+      }
+    }
+
+    if (minPrice != null && maxPrice != null && minPrice > maxPrice) {
+      error = 'Giá tối thiểu không được lớn hơn giá tối đa';
+    }
+
+    return {
+      'brands': brands,
+      'minPrice': minPrice,
+      'maxPrice': maxPrice,
+      'category': category,
+      'minRating': minRating,
+      'error': error,
+    };
   }
 
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 300), () async {
+    _debounce = Timer(const Duration(milliseconds: 400), () async {
       if (query.isNotEmpty) {
         try {
           final suggestions = await _searchService.autocomplete(query);
+          if (!mounted) return;
           setState(() {
             _autocompleteSuggestions = suggestions;
             _searchResults = [];
+            _recommendedProducts = [];
+            _animationController?.forward();
           });
         } catch (e) {
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Lỗi gợi ý: $e')),
           );
         }
       } else {
+        if (!mounted) return;
         setState(() {
           _autocompleteSuggestions.clear();
           _searchResults.clear();
+          if (_searchFocusNode.hasFocus) {
+            _loadRecommendedProducts();
+          } else {
+            _animationController?.reverse();
+          }
         });
       }
     });
   }
 
-  void _submitSearch(String query) async {
+  void _submitSearch(String query, {String filterText = ''}) async {
     try {
+      final filter = _parseFilterInput(filterText);
+      if (filter['error'] != null) {
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Lỗi bộ lọc'),
+            content: Text(filter['error']),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+
       final results = await _searchService.searchProducts(
         query,
-        brands: _selectedBrands,
-        minPrice: _minPrice,
-        maxPrice: _maxPrice,
-        category: _selectedCategory,
+        brands: filter['brands'],
+        minPrice: filter['minPrice'],
+        maxPrice: filter['maxPrice'],
+        category: filter['category'],
+        minRating: filter['minRating'],
       );
+      await _loadReviewsForProducts(results);
+      if (!mounted) return;
       setState(() {
-        _searchResults = results;
+        _searchResults = results
+          ..sort((a, b) {
+            final reviewsA = _productReviews[a.id] ?? [];
+            final validReviewsA = reviewsA.where((r) => r.rating != null).toList();
+            final averageRatingA = validReviewsA.isNotEmpty
+                ? validReviewsA.map((r) => r.rating!.toDouble()).reduce((a, b) => a + b) /
+                validReviewsA.length
+                : 0.0;
+
+            final reviewsB = _productReviews[b.id] ?? [];
+            final validReviewsB = reviewsB.where((r) => r.rating != null).toList();
+            final averageRatingB = validReviewsB.isNotEmpty
+                ? validReviewsB.map((r) => r.rating!.toDouble()).reduce((a, b) => a + b) /
+                validReviewsB.length
+                : 0.0;
+
+            if (averageRatingA == 5.0 && averageRatingB != 5.0) return -1;
+            if (averageRatingA != 5.0 && averageRatingB == 5.0) return 1;
+            return averageRatingB.compareTo(averageRatingA);
+          });
         _autocompleteSuggestions.clear();
+        _recommendedProducts = [];
+        _animationController?.forward();
       });
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi tìm kiếm: $e')),
       );
@@ -104,169 +296,9 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
-  void _showFilterDialog() async {
-    final brands = await _searchService.getBrands();
-    final categories = await _searchService.getCategories();
-    List<String> tempBrands = List.from(_selectedBrands);
-    double? tempMinPrice = _minPrice;
-    double? tempMaxPrice = _maxPrice;
-    String? tempCategory = _selectedCategory;
-    final minPriceController = TextEditingController(text: _minPrice?.toString());
-    final maxPriceController = TextEditingController(text: _maxPrice?.toString());
-    String? errorMessage;
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, dialogSetState) {
-            return AlertDialog(
-              title: const Text('Lọc sản phẩm'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Thương hiệu', style: TextStyle(fontWeight: FontWeight.bold)),
-                    ...brands.map((brand) {
-                      return CheckboxListTile(
-                        title: Text(brand!),
-                        value: tempBrands.contains(brand),
-                        onChanged: (value) {
-                          dialogSetState(() {
-                            if (value == true) {
-                              tempBrands.add(brand!);
-                            } else {
-                              tempBrands.remove(brand);
-                            }
-                          });
-                        },
-                      );
-                    }),
-                    const SizedBox(height: 16),
-                    const Text('Giá', style: TextStyle(fontWeight: FontWeight.bold)),
-                    TextField(
-                      controller: minPriceController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: 'Giá tối thiểu',
-                        errorText: minPriceController.text.isNotEmpty && tempMinPrice == null ? 'Giá không hợp lệ' : null,
-                      ),
-                      onChanged: (value) {
-                        dialogSetState(() {
-                          tempMinPrice = double.tryParse(value);
-                        });
-                      },
-                    ),
-                    TextField(
-                      controller: maxPriceController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        labelText: 'Giá tối đa',
-                        errorText: maxPriceController.text.isNotEmpty && tempMaxPrice == null ? 'Giá không hợp lệ' : null,
-                      ),
-                      onChanged: (value) {
-                        dialogSetState(() {
-                          tempMaxPrice = double.tryParse(value);
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    const Text('Danh mục', style: TextStyle(fontWeight: FontWeight.bold)),
-                    DropdownButton<String>(
-                      isExpanded: true,
-                      value: tempCategory,
-                      hint: const Text('Chọn danh mục'),
-                      items: categories
-                          .map((category) => DropdownMenuItem(
-                        value: category,
-                        child: Text(_categoryNames[category] ?? 'N/A'),
-                      ))
-                          .toList(),
-                      onChanged: (value) {
-                        dialogSetState(() {
-                          tempCategory = value;
-                        });
-                      },
-                    ),
-                    if (errorMessage != null) ...[
-                      const SizedBox(height: 8),
-                      Text(errorMessage!, style: const TextStyle(color: Colors.red)),
-                    ],
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Hủy'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    if (tempBrands.isEmpty && tempMinPrice == null && tempMaxPrice == null && tempCategory == null) {
-                      dialogSetState(() {
-                        errorMessage = 'Vui lòng chọn ít nhất một bộ lọc';
-                      });
-                      return;
-                    }
-                    if (tempMinPrice != null && tempMaxPrice != null && tempMinPrice! > tempMaxPrice!) {
-                      dialogSetState(() {
-                        errorMessage = 'Giá tối thiểu không được lớn hơn giá tối đa';
-                      });
-                      return;
-                    }
-                    setState(() {
-                      _selectedBrands = tempBrands;
-                      _minPrice = tempMinPrice;
-                      _maxPrice = tempMaxPrice;
-                      _selectedCategory = tempCategory;
-                    });
-                    _submitSearch(_searchController.text);
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Áp dụng'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  // Widget hiển thị gợi ý với highlight từ khóa
-  Widget _buildSuggestionItem(String suggestion, String query) {
-    final normalizedQuery = query.toLowerCase();
-    final normalizedSuggestion = suggestion.toLowerCase();
-    final startIndex = normalizedSuggestion.indexOf(normalizedQuery);
-    if (startIndex == -1) {
-      return Text(suggestion);
-    }
-    return RichText(
-      text: TextSpan(
-        children: [
-          TextSpan(
-            text: suggestion.substring(0, startIndex),
-            style: const TextStyle(color: Colors.black),
-          ),
-          TextSpan(
-            text: suggestion.substring(startIndex, startIndex + query.length),
-            style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-          ),
-          TextSpan(
-            text: suggestion.substring(startIndex + query.length),
-            style: const TextStyle(color: Colors.black),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _smartImage(String imageUrl, {double? width, double? height, BoxFit fit = BoxFit.cover}) {
     if (imageUrl.isEmpty) {
-      return const Icon(Icons.image_not_supported);
+      return const Icon(Icons.image_not_supported, size: 50);
     }
     if (imageUrl.startsWith('http')) {
       return Image.network(
@@ -274,7 +306,11 @@ class _SearchScreenState extends State<SearchScreen> {
         width: width,
         height: height,
         fit: fit,
-        errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
+        errorBuilder: (context, error, stackTrace) => const Icon(Icons.error, size: 50),
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return const Center(child: CircularProgressIndicator());
+        },
       );
     }
     try {
@@ -284,11 +320,70 @@ class _SearchScreenState extends State<SearchScreen> {
         width: width,
         height: height,
         fit: fit,
-        errorBuilder: (context, error, stackTrace) => const Icon(Icons.error),
+        errorBuilder: (context, error, stackTrace) => const Icon(Icons.error, size: 50),
       );
     } catch (_) {
-      return const Icon(Icons.image_not_supported);
+      return const Icon(Icons.image_not_supported, size: 50);
     }
+  }
+
+  Widget _buildRatingStars(double rating) {
+    return Row(
+      children: List.generate(5, (index) {
+        if (index < rating.floor()) {
+          return const Icon(Icons.star, color: Colors.amber, size: 16);
+        } else if (index < rating) {
+          return const Icon(Icons.star_half, color: Colors.amber, size: 16);
+        } else {
+          return const Icon(Icons.star_border, color: Colors.amber, size: 16);
+        }
+      }),
+    );
+  }
+
+  void _showFilterBottomSheet() {
+    _animationController?.forward();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return AnimatedBuilder(
+          animation: _fadeAnimation!,
+          builder: (context, child) {
+            return FadeTransition(
+              opacity: _fadeAnimation!,
+              child: SlideTransition(
+                position: Tween<Offset>(
+                  begin: const Offset(0, 0.5),
+                  end: Offset.zero,
+                ).animate(CurvedAnimation(
+                  parent: _animationController!,
+                  curve: Curves.easeInOut,
+                )),
+                child: child,
+              ),
+            );
+          },
+          child: FilterBottomSheet(
+            brands: _brands,
+            categories: _categoryNames,
+            onApply: (brands, minPrice, maxPrice, category, minRating) {
+              final filterText = [
+                if (brands.isNotEmpty) 'brand:${brands.join(',')}',
+                if (minPrice != null) 'min:$minPrice',
+                if (maxPrice != null) 'max:$maxPrice',
+                if (category != null) 'cat:$category',
+                if (minRating != null) 'rating:$minRating',
+              ].join(' ');
+              _submitSearch(_searchController.text, filterText: filterText);
+            },
+          ),
+        );
+      },
+    ).whenComplete(() => _animationController?.reverse());
   }
 
   @override
@@ -297,133 +392,426 @@ class _SearchScreenState extends State<SearchScreen> {
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
         appBar: AppBar(
-          automaticallyImplyLeading: false,
+          backgroundColor: Colors.white,
+          elevation: 0,
           title: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => Navigator.pop(context),
+                icon: const Icon(Icons.arrow_back, color: Colors.black87),
+                onPressed: () {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  }
+                },
               ),
               Expanded(
                 child: TextField(
                   controller: _searchController,
+                  focusNode: _searchFocusNode,
                   onChanged: _onSearchChanged,
-                  onSubmitted: _submitSearch,
-                  decoration: const InputDecoration(
+                  onSubmitted: (query) => _submitSearch(query),
+                  style: const TextStyle(color: Colors.black87),
+                  decoration: InputDecoration(
                     hintText: 'Tìm kiếm sản phẩm...',
-                    border: InputBorder.none,
+                    hintStyle: const TextStyle(color: Colors.grey),
+                    filled: true,
+                    fillColor: Colors.grey.withOpacity(0.1),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                      icon: const Icon(Icons.clear, color: Colors.black87),
+                      onPressed: () {
+                        _searchController.clear();
+                        _onSearchChanged('');
+                      },
+                    )
+                        : null,
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
               IconButton(
-                icon: const Icon(Icons.filter_list),
-                onPressed: _showFilterDialog,
+                icon: const Icon(Icons.filter_list, color: Colors.black87),
+                onPressed: _showFilterBottomSheet,
               ),
               IconButton(
-                icon: const Icon(Icons.shopping_cart_outlined),
-                onPressed: () {},
+                icon: const Icon(Icons.shopping_cart_outlined, color: Colors.black87),
+                onPressed: () {
+                  if (context.mounted) {
+                    context.go('/checkout');
+                  }
+                },
               ),
             ],
           ),
         ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (_searchController.text.isEmpty && _searchService.getSearchHistory().isNotEmpty) ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Lịch sử tìm kiếm', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    TextButton(
-                      onPressed: _clearSearchHistory,
-                      child: const Text('Xóa tất cả', style: TextStyle(color: Colors.redAccent)),
+        body: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              physics: const ClampingScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_isSearchFocused &&
+                      _searchController.text.isEmpty &&
+                      _recommendedProducts.isNotEmpty) ...[
+                    const Text(
+                      'Sản phẩm được đánh giá cao',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    AnimatedOpacity(
+                      opacity: _recommendedProducts.isNotEmpty ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 300),
+                      child: GridView.builder(
+                        shrinkWrap: true,
+                        physics: const ClampingScrollPhysics(),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 6,
+                          mainAxisSpacing: 6,
+                          childAspectRatio: 0.8,
+                        ),
+                        itemCount: _recommendedProducts.length,
+                        itemBuilder: (context, index) {
+                          final product = _recommendedProducts[index];
+                          final imageUrl = product.images.isNotEmpty ? product.images[0].url : '';
+                          final reviews = _productReviews[product.id] ?? [];
+                          final validReviews = reviews.where((r) => r.rating != null).toList();
+                          final averageRating = validReviews.isNotEmpty
+                              ? validReviews
+                              .map((r) => r.rating!.toDouble())
+                              .reduce((a, b) => a + b) /
+                              validReviews.length
+                              : 0.0;
+                          final reviewCount = validReviews.length;
+                          final latestComment =
+                          validReviews.isNotEmpty ? validReviews.first.comment : '';
+                          return Card(
+                            elevation: 2,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: ClipRRect(
+                                    borderRadius:
+                                    const BorderRadius.vertical(top: Radius.circular(10)),
+                                    child: _smartImage(
+                                      imageUrl,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(6.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        product.name,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Text(
+                                        product.minPrice == product.maxPrice
+                                            ? '\$${product.minPrice.toStringAsFixed(0)}'
+                                            : '\$${product.minPrice.toStringAsFixed(0)} - \$${product.maxPrice.toStringAsFixed(0)}',
+                                        style: const TextStyle(
+                                          color: Colors.redAccent,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 3),
+                                      Row(
+                                        children: [
+                                          _buildRatingStars(averageRating),
+                                          const SizedBox(width: 3),
+                                          Text(
+                                            '($reviewCount)',
+                                            style: const TextStyle(fontSize: 10),
+                                          ),
+                                        ],
+                                      ),
+                                      if (latestComment.isNotEmpty) ...[
+                                        const SizedBox(height: 3),
+                                        Text(
+                                          '"$latestComment"',
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            color: Colors.grey,
+                                            fontStyle: FontStyle.italic,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ],
-                ),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _searchService.getSearchHistory().length,
-                  itemBuilder: (context, index) {
-                    final query = _searchService.getSearchHistory()[index];
-                    return ListTile(
-                      leading: const Icon(Icons.history, color: Colors.grey),
-                      title: Text(query),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.close),
-                        onPressed: () => _removeSearchItem(query),
-                      ),
-                      onTap: () {
-                        _searchController.text = query;
-                        _submitSearch(query);
-                      },
-                    );
-                  },
-                ),
-              ],
-              if (_autocompleteSuggestions.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                const Text('Gợi ý', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _autocompleteSuggestions.length,
-                  itemBuilder: (context, index) {
-                    final suggestion = _autocompleteSuggestions[index];
-                    return ListTile(
-                      title: _buildSuggestionItem(suggestion, _searchController.text),
-                      onTap: () {
-                        _searchController.text = suggestion;
-                        _submitSearch(suggestion);
-                      },
-                    );
-                  },
-                ),
-              ],
-              if (_searchResults.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                const Text('Kết quả tìm kiếm', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _searchResults.length,
-                  itemBuilder: (context, index) {
-                    final product = _searchResults[index];
-                    final imageUrl = product.images.isNotEmpty ? product.images[0].url : '';
-                    return Card(
-                      elevation: 2,
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      child: ListTile(
-                        leading: SizedBox(
-                          width: 80,
-                          height: 80,
-                          child: imageUrl.isNotEmpty
-                              ? _smartImage(imageUrl)
-                              : const Icon(Icons.image_not_supported),
+                  if (_searchController.text.isEmpty &&
+                      _searchService.getSearchHistory().isNotEmpty &&
+                      !_isSearchFocused) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Lịch sử tìm kiếm',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.black87,
+                          ),
                         ),
-                        title: Text(product.name),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              product.minPrice == product.maxPrice
-                                  ? 'Giá: \$${product.minPrice.toStringAsFixed(0)}'
-                                  : 'Giá: \$${product.minPrice.toStringAsFixed(0)} - \$${product.maxPrice.toStringAsFixed(0)}',
-                              style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
+                        TextButton(
+                          onPressed: _clearSearchHistory,
+                          child: const Text(
+                            'Xóa tất cả',
+                            style: TextStyle(color: Colors.redAccent),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    AnimatedOpacity(
+                      opacity: _searchService.getSearchHistory().isNotEmpty ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 300),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        physics: const ClampingScrollPhysics(),
+                        itemCount: _searchService.getSearchHistory().length,
+                        itemBuilder: (context, index) {
+                          final query = _searchService.getSearchHistory()[index];
+                          return ListTile(
+                            leading: const Icon(Icons.history, color: Colors.grey),
+                            title: Text(query),
+                            trailing: IconButton(
+                              icon: const Icon(Icons.close),
+                              onPressed: () => _removeSearchItem(query),
                             ),
-                            Text('Thương hiệu: ${product.brand ?? 'N/A'}'),
-                            Text('Danh mục: ${_categoryNames[product.categoryId] ?? 'N/A'}'),
-                          ],
+                            onTap: () {
+                              _searchController.text = query;
+                              _submitSearch(query);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                  if (_searchResults.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Kết quả tìm kiếm',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    AnimatedOpacity(
+                      opacity: _searchResults.isNotEmpty ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 300),
+                      child: GridView.builder(
+                        shrinkWrap: true,
+                        physics: const ClampingScrollPhysics(),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                          childAspectRatio: 0.7,
+                        ),
+                        itemCount: _searchResults.length,
+                        itemBuilder: (context, index) {
+                          final product = _searchResults[index];
+                          final imageUrl = product.images.isNotEmpty ? product.images[0].url : '';
+                          final reviews = _productReviews[product.id] ?? [];
+                          final validReviews = reviews.where((r) => r.rating != null).toList();
+                          final averageRating = validReviews.isNotEmpty
+                              ? validReviews
+                              .map((r) => r.rating!.toDouble())
+                              .reduce((a, b) => a + b) /
+                              validReviews.length
+                              : 0.0;
+                          final reviewCount = validReviews.length;
+                          final latestComment =
+                          validReviews.isNotEmpty ? validReviews.first.comment : '';
+                          return Card(
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: ClipRRect(
+                                    borderRadius:
+                                    const BorderRadius.vertical(top: Radius.circular(12)),
+                                    child: _smartImage(
+                                      imageUrl,
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        product.name,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        product.minPrice == product.maxPrice
+                                            ? '\$${product.minPrice.toStringAsFixed(0)}'
+                                            : '\$${product.minPrice.toStringAsFixed(0)} - \$${product.maxPrice.toStringAsFixed(0)}',
+                                        style: const TextStyle(
+                                          color: Colors.redAccent,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          _buildRatingStars(averageRating),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '($reviewCount)',
+                                            style: const TextStyle(fontSize: 12),
+                                          ),
+                                        ],
+                                      ),
+                                      if (latestComment.isNotEmpty) ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '"$latestComment"',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
+                                            fontStyle: FontStyle.italic,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            if (_autocompleteSuggestions.isNotEmpty && _isSearchFocused)
+              Positioned(
+                top: 0,
+                left: 16,
+                right: 16,
+                child: AnimatedOpacity(
+                  opacity: _autocompleteSuggestions.isNotEmpty ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    transform: Matrix4.identity()
+                      ..scale(_autocompleteSuggestions.isNotEmpty ? 1.0 : 0.95),
+                    child: Material(
+                      elevation: 4,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        constraints: const BoxConstraints(maxHeight: 200),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          physics: const ClampingScrollPhysics(),
+                          itemCount: _autocompleteSuggestions.length,
+                          itemBuilder: (context, index) {
+                            final suggestion = _autocompleteSuggestions[index];
+                            final normalizedQuery = _searchController.text.toLowerCase();
+                            final normalizedSuggestion = suggestion.toLowerCase();
+                            final startIndex = normalizedSuggestion.indexOf(normalizedQuery);
+                            return ListTile(
+                              title: RichText(
+                                text: TextSpan(
+                                  children: [
+                                    if (startIndex != -1) ...[
+                                      TextSpan(
+                                        text: suggestion.substring(0, startIndex),
+                                        style: const TextStyle(color: Colors.black),
+                                      ),
+                                      TextSpan(
+                                        text: suggestion.substring(
+                                            startIndex, startIndex + normalizedQuery.length),
+                                        style: const TextStyle(
+                                            color: Colors.teal, fontWeight: FontWeight.bold),
+                                      ),
+                                      TextSpan(
+                                        text:
+                                        suggestion.substring(startIndex + normalizedQuery.length),
+                                        style: const TextStyle(color: Colors.black),
+                                      ),
+                                    ] else
+                                      TextSpan(
+                                        text: suggestion,
+                                        style: const TextStyle(color: Colors.black),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              onTap: () {
+                                _searchController.text = suggestion;
+                                _submitSearch(suggestion);
+                              },
+                            );
+                          },
                         ),
                       ),
-                    );
-                  },
+                    ),
+                  ),
                 ),
-              ],
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
@@ -433,6 +821,171 @@ class _SearchScreenState extends State<SearchScreen> {
   void dispose() {
     _debounce?.cancel();
     _searchController.dispose();
+    _searchFocusNode.dispose();
+    _animationController?.dispose();
     super.dispose();
+  }
+}
+
+class FilterBottomSheet extends StatefulWidget {
+  final List<String> brands;
+  final Map<String, String> categories;
+  final Function(List<String>, double?, double?, String?, double?) onApply;
+
+  const FilterBottomSheet({
+    super.key,
+    required this.brands,
+    required this.categories,
+    required this.onApply,
+  });
+
+  @override
+  State<FilterBottomSheet> createState() => _FilterBottomSheetState();
+}
+
+class _FilterBottomSheetState extends State<FilterBottomSheet> {
+  List<String> selectedBrands = [];
+  double? minPrice;
+  double? maxPrice;
+  String? selectedCategory;
+  double? minRating;
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.9,
+      minChildSize: 0.5,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (context, scrollController) {
+        return SingleChildScrollView(
+          controller: scrollController,
+          physics: const ClampingScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Bộ lọc nâng cao',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                ),
+                const SizedBox(height: 16),
+                const Text('Thương hiệu', style: TextStyle(fontWeight: FontWeight.bold)),
+                Wrap(
+                  spacing: 8,
+                  children: widget.brands.map((brand) {
+                    final isSelected = selectedBrands.contains(brand);
+                    return ChoiceChip(
+                      label: Text(brand),
+                      selected: isSelected,
+                      onSelected: (selected) {
+                        setState(() {
+                          if (selected) {
+                            selectedBrands.add(brand);
+                          } else {
+                            selectedBrands.remove(brand);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+                const Text('Khoảng giá', style: TextStyle(fontWeight: FontWeight.bold)),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Tối thiểu',
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: (value) {
+                          minPrice = double.tryParse(value);
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(
+                          labelText: 'Tối đa',
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: (value) {
+                          maxPrice = double.tryParse(value);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Text('Danh mục', style: TextStyle(fontWeight: FontWeight.bold)),
+                DropdownButton<String>(
+                  isExpanded: true,
+                  hint: const Text('Chọn danh mục'),
+                  value: selectedCategory,
+                  items: widget.categories.entries
+                      .map((entry) => DropdownMenuItem(
+                    value: entry.key,
+                    child: Text(entry.value),
+                  ))
+                      .toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedCategory = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                const Text('Đánh giá tối thiểu', style: TextStyle(fontWeight: FontWeight.bold)),
+                Slider(
+                  value: minRating ?? 0,
+                  min: 0,
+                  max: 5,
+                  divisions: 5,
+                  label: minRating?.toStringAsFixed(1) ?? '0.0',
+                  onChanged: (value) {
+                    setState(() {
+                      minRating = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Hủy'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        widget.onApply(
+                          selectedBrands,
+                          minPrice,
+                          maxPrice,
+                          selectedCategory,
+                          minRating,
+                        );
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.teal,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Áp dụng'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }

@@ -1,13 +1,120 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:danentang/data/order_data.dart'; // Import dữ liệu mẫu products ở đây!
+import 'package:danentang/data/order_data.dart';
+import '../../Service/order_service.dart';
 import '../../models/Order.dart';
 import '../../models/OrderItem.dart';
 import '../../models/OrderStatusHistory.dart';
 import '../../models/product.dart';
 import 'package:danentang/ultis/image_helper.dart';
 
+// Màn hình danh sách đơn hàng
+class OrderListScreen extends StatefulWidget {
+  const OrderListScreen({super.key});
+
+  @override
+  _OrderListScreenState createState() => _OrderListScreenState();
+}
+
+class _OrderListScreenState extends State<OrderListScreen> {
+  final int _itemsPerPage = 10; // Số đơn hàng mỗi trang
+  int _currentPage = 1; // Trang hiện tại
+
+  // Lấy danh sách đơn hàng từ OrderService
+  Future<List<Order>> _fetchSortedOrders() async {
+    final orders = await OrderService.fetchAllOrders();
+    // Sắp xếp theo createdAt giảm dần (mới nhất lên đầu)
+    return orders..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  }
+
+  // Lấy danh sách đơn hàng cho trang hiện tại
+  List<Order> _getPagedOrders(List<Order> orders) {
+    final startIndex = (_currentPage - 1) * _itemsPerPage;
+    final endIndex = startIndex + _itemsPerPage;
+    return orders.sublist(
+      startIndex,
+      endIndex > orders.length ? orders.length : endIndex,
+    );
+  }
+
+  // Tổng số trang
+  int _getTotalPages(List<Order> orders) => (orders.length / _itemsPerPage).ceil();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Danh sách đơn hàng'),
+        backgroundColor: Colors.blue[700],
+        foregroundColor: Colors.white,
+      ),
+      body: FutureBuilder<List<Order>>(
+        future: _fetchSortedOrders(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Lỗi: ${snapshot.error}'));
+          }
+          final orders = snapshot.data ?? [];
+          if (orders.isEmpty) {
+            return const Center(child: Text('Không có đơn hàng nào'));
+          }
+
+          final pagedOrders = _getPagedOrders(orders);
+          final totalPages = _getTotalPages(orders);
+
+          return Column(
+            children: [
+              // Danh sách đơn hàng
+              Expanded(
+                child: ListView.builder(
+                  itemCount: pagedOrders.length,
+                  itemBuilder: (context, index) => OrderCard(order: pagedOrders[index]),
+                ),
+              ),
+              // Thanh phân trang
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      onPressed: _currentPage > 1 ? () => setState(() => _currentPage--) : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue[700],
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: const Text('Trang trước', style: TextStyle(color: Colors.white)),
+                    ),
+                    const SizedBox(width: 16),
+                    Text(
+                      'Trang $_currentPage / $totalPages',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(width: 16),
+                    ElevatedButton(
+                      onPressed: _currentPage < totalPages ? () => setState(() => _currentPage++) : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue[700],
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      child: const Text('Trang sau', style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+// OrderCard (giữ nguyên từ mã gốc)
 class OrderCard extends StatefulWidget {
   final Order order;
 
@@ -209,7 +316,6 @@ class _OrderCardState extends State<OrderCard> {
   }
 
   Widget _buildOrderItem(OrderItem item) {
-    // Sử dụng biến toàn cục products từ order_data.dart
     final Product product = products.firstWhere(
           (p) => p.variants.any((v) => v.id == item.productVariantId),
       orElse: () => Product(
@@ -226,9 +332,7 @@ class _OrderCardState extends State<OrderCard> {
       ),
     );
 
-    final imageUrl = product.images.isNotEmpty
-        ? product.images.first.url
-        : 'assets/placeholder.jpg';
+    final imageUrl = product.images.isNotEmpty ? product.images.first.url : 'assets/placeholder.jpg';
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),

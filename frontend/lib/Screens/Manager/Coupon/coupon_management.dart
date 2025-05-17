@@ -72,10 +72,12 @@ class _ResponsiveCouponScreenState extends State<ResponsiveCouponScreen> {
   }
 
   Future<void> _createCoupon() async {
+    // Validate inputs
     final code = _codeCtrl.text.trim();
     final discount = int.tryParse(_discountCtrl.text.trim());
     final usageLimit = int.tryParse(_limitCtrl.text.trim());
 
+    // Validation checks
     if (code.isEmpty || code.length < 5) {
       setState(() => _errorMessage = 'Mã giảm giá phải có ít nhất 5 ký tự');
       return;
@@ -91,6 +93,8 @@ class _ResponsiveCouponScreenState extends State<ResponsiveCouponScreen> {
       return;
     }
 
+
+    // Check if code is unique
     try {
       final existingCoupons = await _couponFuture;
       if (existingCoupons.any((c) => c.code.toLowerCase() == code.toLowerCase())) {
@@ -98,6 +102,7 @@ class _ResponsiveCouponScreenState extends State<ResponsiveCouponScreen> {
         return;
       }
 
+      // Create coupon
       final coupon = Coupon(
         code: code,
         discountValue: discount,
@@ -112,6 +117,7 @@ class _ResponsiveCouponScreenState extends State<ResponsiveCouponScreen> {
         const SnackBar(content: Text('Tạo mã giảm giá thành công')),
       );
 
+      // Clear inputs
       _codeCtrl.clear();
       _discountCtrl.clear();
       _limitCtrl.clear();
@@ -412,26 +418,49 @@ class CouponContent extends StatelessWidget {
 
   Widget _buildCouponItem(BuildContext context, Coupon c) {
     final percentUsed = (c.usageCount / c.usageLimit * 100).clamp(0, 100).round();
+    final isExhausted = c.usageCount >= c.usageLimit; // Check if coupon is exhausted
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: isExhausted ? Colors.grey.shade400 : Colors.grey.shade300),
         borderRadius: BorderRadius.circular(10),
+        color: isExhausted ? Colors.grey.shade100 : Colors.white, // Grey background if exhausted
       ),
       child: Row(
         children: [
           const SizedBox(width: 10),
-          const Icon(Icons.card_giftcard, color: Colors.purple, size: 40),
+          Icon(
+            Icons.card_giftcard,
+            color: isExhausted ? Colors.grey : Colors.purple, // Grey icon if exhausted
+            size: 40,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Mã: ${c.code}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                Text("Giảm: ${c.discountValue}đ"),
-                Text("Đã dùng: ${c.usageCount}/${c.usageLimit} (${percentUsed}%)"),
+                Text(
+                  "Mã: ${c.code}",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: isExhausted ? Colors.grey.shade600 : Colors.black,
+                  ),
+                ),
+                Text(
+                  "Giảm: ${c.discountValue}đ",
+                  style: TextStyle(
+                    color: isExhausted ? Colors.grey.shade600 : Colors.black,
+                  ),
+                ),
+                Text(
+                  "Đã dùng: ${c.usageCount}/${c.usageLimit} (${percentUsed}%)",
+                  style: TextStyle(
+                    color: isExhausted ? Colors.grey.shade600 : Colors.black,
+                  ),
+                ),
                 if (c.orderIds.isNotEmpty)
                   Text(
                     "Đơn đã dùng: ${c.orderIds.join(', ')}",
@@ -440,40 +469,45 @@ class CouponContent extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.delete, color: Colors.red),
-            onPressed: () async {
-              final confirmed = await showDialog<bool>(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text("Xác nhận xóa"),
-                  content: Text("Bạn có chắc muốn xóa mã '${c.code}' không?"),
-                  actions: [
-                    TextButton(
-                      onPressed: () => ctx.pop(false),
-                      child: const Text("Hủy"),
-                    ),
-                    TextButton(
-                      onPressed: () => ctx.pop(true),
-                      child: const Text("Xóa"),
-                    ),
-                  ],
-                ),
-              );
-              if (confirmed == true) {
-                try {
+          Tooltip(
+            message: isExhausted ? 'Mã đã hết lượt sử dụng' : 'Xóa mã giảm giá',
+            child: IconButton(
+              icon: Icon(
+                Icons.delete,
+                color: isExhausted ? Colors.grey : Colors.red, // Grey icon if exhausted
+              ),
+              onPressed: isExhausted
+                  ? null // Disable button if exhausted
+                  : () async {
+                final confirmed = await showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text("Xác nhận xóa"),
+                    content: Text("Bạn có chắc muốn xóa mã '${c.code}' không?"),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text("Hủy"),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        child: const Text("Xóa"),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed == true) {
                   await OrderService.instance.deleteCoupon(c.id!);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Đã xóa mã giảm giá")),
+                    const SnackBar(content: Text("Đã xóa mã")),
                   );
-                  context.findAncestorStateOfType<_ResponsiveCouponScreenState>()?._refreshCoupons();
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Lỗi xóa mã: $e")),
-                  );
+                  // Refresh coupons after deletion
+                  context
+                      .findAncestorStateOfType<_ResponsiveCouponScreenState>()
+                      ?._refreshCoupons();
                 }
-              }
-            },
+              },
+            ),
           ),
         ],
       ),

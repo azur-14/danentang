@@ -5,7 +5,7 @@ import 'package:danentang/constants/colors.dart';
 class WebSearchBar extends StatelessWidget {
   final bool isLoggedIn;
 
-  const WebSearchBar({required this.isLoggedIn});
+  const WebSearchBar({required this.isLoggedIn, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -14,8 +14,8 @@ class WebSearchBar extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Color(0xFFF6FAFF), // Light blue
-            Color(0xFFF5F9FF), // Softer white-blue for modern gradient
+            Color(0xFFF6FAFF),
+            Color(0xFFF5F9FF),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -26,8 +26,8 @@ class WebSearchBar extends StatelessWidget {
           Text(
             "HoaLaHe",
             style: TextStyle(
-              color: Color(0xFF190053), // Updated to match blue tone
-              fontSize: 36, // Slightly larger for modern look
+              color: Color(0xFF190053),
+              fontSize: 36,
               fontWeight: FontWeight.bold,
               shadows: [
                 Shadow(
@@ -41,9 +41,13 @@ class WebSearchBar extends StatelessWidget {
           const SizedBox(width: 32),
           Expanded(
             child: Material(
-              elevation: 2, // Subtle elevation for modern depth
+              elevation: 2,
               borderRadius: BorderRadius.circular(40),
               child: TextField(
+                onTap: () {
+                  context.go('/search'); // Chuyển hướng đến Searching
+                },
+                readOnly: true, // Ngăn nhập liệu, chỉ nhấn để chuyển
                 decoration: InputDecoration(
                   hintText: "Tìm kiếm sản phẩm...",
                   hintStyle: TextStyle(color: Colors.grey.shade600),
@@ -52,7 +56,7 @@ class WebSearchBar extends StatelessWidget {
                     child: Transform.scale(
                       scale: 1.0,
                       child: Icon(
-                        Icons.search_rounded, // Modern Material Design 3 icon
+                        Icons.search_rounded,
                         color: Color(0xFFCFCFCF),
                         size: 24,
                       ),
@@ -77,7 +81,7 @@ class WebSearchBar extends StatelessWidget {
                     ),
                   ),
                   filled: true,
-                  fillColor: Colors.white.withOpacity(0.95), // Subtle white for modern look
+                  fillColor: Colors.white.withOpacity(0.95),
                   contentPadding: EdgeInsets.symmetric(vertical: 16),
                 ),
               ),
@@ -85,14 +89,14 @@ class WebSearchBar extends StatelessWidget {
           ),
           const SizedBox(width: 16),
           Material(
-            elevation: 2, // Subtle elevation for modern depth
+            elevation: 2,
             shape: CircleBorder(),
             child: Container(
               width: 48,
               height: 48,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white, // Light blue background
+                color: Colors.white,
                 border: Border.all(
                   color: Color(0xFFF6FAFF),
                   width: 1.0,
@@ -100,7 +104,7 @@ class WebSearchBar extends StatelessWidget {
               ),
               child: IconButton(
                 icon: Icon(
-                  Icons.shopping_cart_rounded, // Modern Material Design 3 icon
+                  Icons.shopping_cart_rounded,
                   size: 32,
                   color: Color(0xFF1976D2),
                 ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../constants/colors.dart';
 
 class MobileSearchBar extends StatelessWidget {
@@ -9,6 +10,10 @@ class MobileSearchBar extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: TextField(
+        onTap: () {
+          context.go('/search');
+        },
+        readOnly: true,
         decoration: InputDecoration(
           hintText: "Search",
           prefixIcon: Icon(Icons.search, color: AppColors.brandPrimary),
