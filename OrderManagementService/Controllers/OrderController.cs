@@ -204,6 +204,19 @@ SĐT: {order.ShippingAddress.PhoneNumber}<br>
             };
             await client.SendMailAsync(mail);
         }
+        // GET: api/orders/user/{userId}
+        [HttpGet("user/{userId}")]
+        public async Task<ActionResult<List<Order>>> GetOrdersByUserId(string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                return BadRequest("userId is required.");
+
+            var orders = await _orders.Find(o => o.UserId == userId)
+                                      .SortByDescending(o => o.CreatedAt)
+                                      .ToListAsync();
+
+            return Ok(orders);
+        }
 
         // PUT: api/orders/{id}
         [HttpPut("{id:length(24)}")]

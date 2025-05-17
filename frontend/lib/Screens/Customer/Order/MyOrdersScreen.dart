@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:danentang/data/order_data.dart';
 import 'package:danentang/models/Order.dart';
-import 'package:go_router/go_router.dart';
+import 'package:danentang/Service/order_service.dart';
 import 'package:danentang/widgets/Order/OrderCard.dart';
-import 'package:danentang/models/product.dart';
 import 'package:danentang/widgets/Order/order_filter_widget.dart';
+import 'package:danentang/models/product.dart';
+import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../Service/user_service.dart';
 
 class MyOrdersScreen extends StatefulWidget {
   const MyOrdersScreen({super.key});
@@ -12,19 +14,22 @@ class MyOrdersScreen extends StatefulWidget {
   @override
   _MyOrdersScreenState createState() => _MyOrdersScreenState();
 }
-
 class _MyOrdersScreenState extends State<MyOrdersScreen>
     with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
-  late TabController _tabController;
-  late List<Product> products;
-  late Map<String, List<Order>> filteredOrders;
-  late Map<String, int> orderCounts;
+  List<Order> allOrders = [];
+  List<Order> userOrders = [];
+  String? userId;
+  List<Product> products = [];
+  bool _isLoading = true;
+  String? _error;
+  Map<String, List<Order>> filteredOrders = {};
+  Map<String, int> orderCounts = {};
   DateTime? _startDate;
   DateTime? _endDate;
   RangeValues _priceRange = const RangeValues(0, 10000000);
   String _searchQuery = '';
   double _maxPrice = 10000000;
-
+  late TabController _tabController;
   String _selectedCategory = 'All';
   String _selectedBrand = 'All';
   final List<String> _categories = ['All', 'Laptop', 'Headphones', 'MacBook'];
@@ -37,48 +42,51 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
-    products = testOrders
-        .expand((o) => o.items)
-        .map((item) => Product(
-      id: item.productId,
-      name: item.productName,
-      brand: '',
-      description: '',
-      discountPercentage: 0,
-      categoryId: '',
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-      images: [
-        ProductImage(
-            id: 'img001',
-            url: 'assets/images/laptop.jpg',
-            sortOrder: 1)
-      ],
-      variants: [
-        ProductVariant(
-            id: item.productVariantId ?? '',
-            variantName: item.variantName,
-            additionalPrice: 0,
-            inventory: 0,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now())
-      ],
-    ))
-        .toSet()
-        .toList();
-
-    _maxPrice = testOrders.isNotEmpty
-        ? testOrders
-        .map((order) => (order.totalAmount ?? 0).toDouble())
-        .reduce((a, b) => a > b ? a : b)
-        : 10000000.0;
-    _priceRange = RangeValues(0, _maxPrice);
-    _applyFilters();
+    _initAndFetch();
   }
 
+  Future<void> _initAndFetch() async {
+    setState(() { _isLoading = true; });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final email = prefs.getString('email') ?? '';
+      if (email.isEmpty) throw Exception("Bạn chưa đăng nhập!");
+
+      final user = await UserService().fetchUserByEmail(email);
+      userId = user.id;
+
+      // Gọi API mới, chỉ lấy đơn của user này
+      userOrders = await OrderService.fetchOrdersByUserId(userId!);
+
+      _applyFilters();
+      setState(() { _isLoading = false; });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _error = e.toString();
+      });
+    }
+  }
+  Future<void> _fetchOrders() async {
+    if (userId == null) return;
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      userOrders = await OrderService.fetchOrdersByUserId(userId!);
+      _applyFilters();
+      setState(() { _isLoading = false; });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _error = e.toString();
+      });
+    }
+  }
   void _applyFilters() {
     setState(() {
-      List<Order> orders = testOrders.where((order) {
+      List<Order> orders = userOrders.where((order) {
         bool passesDateFilter = true;
         if (_startDate != null) {
           passesDateFilter = order.createdAt.isAfter(_startDate!);
@@ -88,18 +96,22 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
               passesDateFilter && order.createdAt.isBefore(_endDate!);
         }
 
-        bool passesPriceFilter = (order.totalAmount ?? 0) >= _priceRange.start &&
-            (order.totalAmount ?? 0) <= _priceRange.end;
+        bool passesPriceFilter =
+            (order.totalAmount ?? 0) >= _priceRange.start &&
+                (order.totalAmount ?? 0) <= _priceRange.end;
 
         bool passesSearchFilter = _searchQuery.isEmpty ||
-            order.items.any((item) =>
-                item.productName.toLowerCase().contains(_searchQuery.toLowerCase()));
+            order.items.any((item) => item.productName
+                .toLowerCase()
+                .contains(_searchQuery.toLowerCase()));
 
         bool passesCategoryFilter = _selectedCategory == 'All' ||
-            order.items.any((item) => item.productName.contains(_selectedCategory));
+            order.items.any(
+                    (item) => item.productName.contains(_selectedCategory));
 
         bool passesBrandFilter = _selectedBrand == 'All' ||
-            order.items.any((item) => item.productName.contains(_selectedBrand));
+            order.items.any(
+                    (item) => item.productName.contains(_selectedBrand));
 
         return passesDateFilter &&
             passesPriceFilter &&
@@ -112,12 +124,26 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
         'all': orders,
         'pending': orders
             .where((order) =>
-        order.status == 'Đặt hàng' || order.status == 'Đang chờ xử lý')
+        order.status == 'Đặt hàng' ||
+            order.status == 'Đang chờ xử lý' ||
+            order.status == 'pending' ||
+            order.status == 'Chờ xác nhận')
             .toList(),
-        'shipped': orders.where((order) => order.status == 'Đang giao').toList(),
-        'delivered':
-        orders.where((order) => order.status == 'Đã giao').toList(),
-        'canceled': orders.where((order) => order.status == 'Đã hủy').toList(),
+        'shipped': orders
+            .where((order) =>
+        order.status == 'Đang giao' ||
+            order.status == 'shipped')
+            .toList(),
+        'delivered': orders
+            .where((order) =>
+        order.status == 'Đã giao' ||
+            order.status == 'delivered')
+            .toList(),
+        'canceled': orders
+            .where((order) =>
+        order.status == 'Đã hủy' ||
+            order.status == 'canceled')
+            .toList(),
       };
 
       orderCounts = {
@@ -237,20 +263,12 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Color(0xFF3B82F6)),
           onPressed: () {
-            print('Attempting to pop two routes from MyOrdersScreen');
-            print(
-                'Current GoRouter stack: ${GoRouter.of(context).routerDelegate.currentConfiguration.routes}');
             if (context.canPop()) {
-              print('Popping first route');
               context.pop();
               if (context.canPop()) {
-                print('Popping second route');
                 context.pop();
-              } else {
-                print('Only one route in stack, no second pop');
               }
             } else {
-              print('No routes in stack, navigating to /homepage');
               context.go('/homepage');
             }
           },
@@ -272,10 +290,11 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
                 return Center(
                   child: Container(
                     width: contentWidth,
-                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8), // Reduced padding
+                    padding:
+                    EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                     child: TabBar(
                       controller: _tabController,
-                      isScrollable: true, // Make TabBar scrollable
+                      isScrollable: true,
                       labelColor: Colors.white,
                       unselectedLabelColor: Color(0xFF64748B),
                       indicator: BoxDecoration(
@@ -286,20 +305,26 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
                       ),
                       indicatorSize: TabBarIndicatorSize.tab,
                       labelStyle: TextStyle(
-                        fontSize: 14, // Reduced font size
+                        fontSize: 14,
                         fontWeight: FontWeight.w700,
                       ),
                       unselectedLabelStyle: TextStyle(
-                        fontSize: 13, // Slightly smaller for unselected
+                        fontSize: 13,
                         fontWeight: FontWeight.w500,
                       ),
-                      labelPadding: EdgeInsets.symmetric(horizontal: 12), // Reduced tab padding
+                      labelPadding:
+                      EdgeInsets.symmetric(horizontal: 12),
                       tabs: [
-                        _buildTab('Tất cả', orderCounts['all']!, Icons.all_inclusive),
-                        _buildTab('Chờ xác nhận', orderCounts['pending']!, Icons.hourglass_empty),
-                        _buildTab('Đang giao', orderCounts['shipped']!, Icons.local_shipping),
-                        _buildTab('Đã giao', orderCounts['delivered']!, Icons.check_circle),
-                        _buildTab('Đã hủy', orderCounts['canceled']!, Icons.cancel),
+                        _buildTab('Tất cả', orderCounts['all'] ?? 0,
+                            Icons.all_inclusive),
+                        _buildTab('Chờ xác nhận', orderCounts['pending'] ?? 0,
+                            Icons.hourglass_empty),
+                        _buildTab('Đang giao', orderCounts['shipped'] ?? 0,
+                            Icons.local_shipping),
+                        _buildTab('Đã giao', orderCounts['delivered'] ?? 0,
+                            Icons.check_circle),
+                        _buildTab('Đã hủy', orderCounts['canceled'] ?? 0,
+                            Icons.cancel),
                       ],
                     ),
                   ),
@@ -341,7 +366,11 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
         ),
       )
           : null,
-      body: LayoutBuilder(
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : _error != null
+          ? Center(child: Text(_error!, style: TextStyle(color: Colors.red)))
+          : LayoutBuilder(
         builder: (context, constraints) {
           final isWeb = constraints.maxWidth > 800;
           final contentWidth =
@@ -411,11 +440,11 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
                     child: TabBarView(
                       controller: _tabController,
                       children: [
-                        _buildOrderList(filteredOrders['all']!),
-                        _buildOrderList(filteredOrders['pending']!),
-                        _buildOrderList(filteredOrders['shipped']!),
-                        _buildOrderList(filteredOrders['delivered']!),
-                        _buildOrderList(filteredOrders['canceled']!),
+                        _buildOrderList(filteredOrders['all'] ?? []),
+                        _buildOrderList(filteredOrders['pending'] ?? []),
+                        _buildOrderList(filteredOrders['shipped'] ?? []),
+                        _buildOrderList(filteredOrders['delivered'] ?? []),
+                        _buildOrderList(filteredOrders['canceled'] ?? []),
                       ],
                     ),
                   ),
@@ -431,17 +460,17 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
   Widget _buildTab(String title, int count, IconData icon) {
     return Tab(
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: 120), // Limit tab width
+        constraints: BoxConstraints(maxWidth: 120),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16), // Reduced icon size
-            SizedBox(width: 4), // Reduced spacing
+            Icon(icon, size: 16),
+            SizedBox(width: 4),
             Flexible(
               child: Text(
                 '$title ($count)',
-                overflow: TextOverflow.ellipsis, // Handle long text
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -481,15 +510,18 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
         ],
       ),
     )
-        : ListView.builder(
-      itemCount: orders.length,
-      itemBuilder: (context, index) {
-        final order = orders[index];
-        return Padding(
-          padding: EdgeInsets.symmetric(vertical: 8),
-          child: OrderCard(order: order),
-        );
-      },
+        : RefreshIndicator(
+      onRefresh: _fetchOrders,
+      child: ListView.builder(
+        itemCount: orders.length,
+        itemBuilder: (context, index) {
+          final order = orders[index];
+          return Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: OrderCard(order: order),
+          );
+        },
+      ),
     );
   }
 }
