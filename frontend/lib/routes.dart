@@ -23,6 +23,7 @@ import 'package:danentang/Screens/Customer/Order/ReviewScreen.dart';
 import 'package:danentang/Screens/Customer/Payment/order_success_screen.dart';
 import 'package:danentang/Screens/Customer/Payment/payment_method_screen.dart';
 import 'package:danentang/Screens/Customer/Payment/add_card_screen.dart';
+import 'package:danentang/Screens/Customer/Product/ProductCatalogPage.dart';
 
 // Màn hình quản lý
 import 'package:danentang/Screens/Manager/DashBoard/MobileDashboard.dart';
@@ -178,6 +179,16 @@ final GoRouter router = GoRouter(
           return CartScreenCheckOut();
         },
       ),
+    ),
+
+    // danh mmu
+    GoRoute(
+      name: 'product-list',
+      path: '/products/:categoryId',
+      builder: (context, state) {
+        final categoryId = state.pathParameters['categoryId']!;
+        return ProductCatalogPage(categoryId: categoryId);
+      },
     ),
 
     // Tuyến thanh toán
