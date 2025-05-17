@@ -24,6 +24,15 @@ class Product {
     required this.images,
     required this.variants,
   });
+  double get minPrice {
+    if (variants.isEmpty) return 0;
+    return variants.map((v) => v.additionalPrice).reduce((a, b) => a < b ? a : b);
+  }
+
+  double get maxPrice {
+    if (variants.isEmpty) return 0;
+    return variants.map((v) => v.additionalPrice).reduce((a, b) => a > b ? a : b);
+  }
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,

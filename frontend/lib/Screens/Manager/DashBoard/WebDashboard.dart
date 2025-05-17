@@ -8,7 +8,6 @@ import '../Chart/oderschart.dart';
 import '../Chart/barchart.dart';
 
 import 'package:danentang/Screens/Manager/User/user_list.dart';
-import 'package:danentang/Screens/Manager/Project/projects.dart';
 import 'package:danentang/Screens/Manager/Product/product_management.dart';
 import 'package:danentang/Screens/Manager/Coupon/coupon_management.dart';
 import 'package:danentang/Screens/Manager/Category/categories_management.dart';
@@ -85,7 +84,6 @@ class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMix
             child: Text('Admin Menu', style: TextStyle(color: Colors.white, fontSize: 24)),
           ),
           _drawerItem(context, 'Trang chủ', Icons.dashboard, null),
-          _drawerItem(context, 'Quản lý Dự án', Icons.work, Projects()),
           _drawerItem(context, 'Quản lý Sản phẩm', Icons.shopping_cart, ProductManagementScreen()),
           _drawerItem(context, 'Quản lý Mã giảm giá', Icons.card_giftcard, CouponManagement()),
           _drawerItem(context, 'Quản lý Danh mục', Icons.category, CategoriesManagement()),
@@ -255,7 +253,6 @@ class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMix
 
   Widget _buildManagementLinks(BuildContext context) {
     List<Map<String, dynamic>> managements = [
-      {"title": "Quản lý Dự án", "screen": Projects()},
       {"title": "Quản lý Sản phẩm", "screen": ProductManagementScreen()},
       {"title": "Quản lý Mã giảm giá", "screen": CouponManagement()},
       {"title": "Quản lý Danh mục", "screen": CategoriesManagement()},

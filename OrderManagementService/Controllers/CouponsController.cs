@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using OrderManagementService.Data;
@@ -79,5 +79,18 @@ namespace OrderManagementService.Controllers
             var result = await _coupons.ReplaceOneAsync(c => c.Id == coupon.Id, coupon);
             return result.ModifiedCount > 0 ? Ok(coupon) : StatusCode(500, "Failed to apply coupon.");
         }
+        [HttpGet("validate/{code}")]
+        public async Task<IActionResult> ValidateCoupon(string code)
+        {
+            var coupon = await _coupons.Find(c => c.Code == code).FirstOrDefaultAsync();
+            if (coupon == null)
+                return NotFound("Coupon không tồn tại.");
+
+            if (coupon.UsageCount >= coupon.UsageLimit)
+                return BadRequest("Coupon đã hết lượt sử dụng.");
+
+            return Ok(coupon); // Trả JSON như bạn lưu trên MongoDB
+        }
+
     }
 }

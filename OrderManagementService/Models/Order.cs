@@ -2,6 +2,7 @@
 using MongoDB.Bson.Serialization.Attributes;
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace OrderManagementService.Models
 {
@@ -10,10 +11,10 @@ namespace OrderManagementService.Models
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; }
+        public string? Id { get; set; }
 
         [BsonElement("userId")]
-        public string UserId { get; set; }
+        public string? UserId { get; set; }   // <-- Cho phép null
 
         [BsonElement("orderNumber")]
         public string OrderNumber { get; set; }
@@ -51,7 +52,6 @@ namespace OrderManagementService.Models
         [BsonElement("updatedAt")]
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     }
-
     public class ShippingAddress
     {
         [BsonElement("receiverName")]
@@ -71,7 +71,8 @@ namespace OrderManagementService.Models
 
         [BsonElement("city")]
         public string City { get; set; }
+
+        [BsonElement("email")]
+        public string Email { get; set; }   // Thêm dòng này
     }
-
-
 }

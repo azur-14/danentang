@@ -7,9 +7,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net;            // <- Thêm dòng này
+using System.Net.Mail;       // <- Và dòng này
 using System.Text.Json;
 using System.Threading.Tasks;
-
+using System.Text.Json.Serialization;
 namespace OrderManagementService.Controllers
 {
     [ApiController]
@@ -18,13 +20,17 @@ namespace OrderManagementService.Controllers
     {
         private readonly IMongoCollection<Order> _orders;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IConfiguration _configuration;
 
-        public OrdersController(MongoDbContext context, IHttpClientFactory httpClientFactory)
+        public OrdersController(
+            MongoDbContext context,
+            IHttpClientFactory httpClientFactory,
+            IConfiguration configuration)
         {
             _orders = context.Orders;
             _httpClientFactory = httpClientFactory;
+            _configuration = configuration;
         }
-
         // GET: api/orders
         [HttpGet]
         public async Task<ActionResult<List<Order>>> GetAll() =>
@@ -43,38 +49,117 @@ namespace OrderManagementService.Controllers
         [HttpPost]
         public async Task<ActionResult<Order>> Create([FromBody] Order order)
         {
-            // Ensure server-side ID, timestamps
-            ModelState.Remove(nameof(order.Id)); // Optional
             order.Id = ObjectId.GenerateNewId().ToString();
             order.CreatedAt = order.UpdatedAt = DateTime.UtcNow;
 
-            // Validate inventory with ProductService
-            var client = _httpClientFactory.CreateClient("ProductService");
+            // Cho phép UserId = null (khách vãng lai)
+            if (string.IsNullOrEmpty(order.UserId))
+                order.UserId = null;
 
-            foreach (var item in order.Items)
+            // Kiểm tra thông tin địa chỉ giao hàng (bắt buộc có email)
+            if (order.ShippingAddress == null ||
+                string.IsNullOrEmpty(order.ShippingAddress.ReceiverName) ||
+                string.IsNullOrEmpty(order.ShippingAddress.PhoneNumber) ||
+                string.IsNullOrEmpty(order.ShippingAddress.AddressLine) ||
+                string.IsNullOrEmpty(order.ShippingAddress.Email))
             {
-                var response = await client.GetAsync($"product-items/available/{item.ProductVariantId}");
-                if (!response.IsSuccessStatusCode)
-                    return BadRequest($"Không thể kiểm tra tồn kho của biến thể {item.ProductVariantId}");
-
-                var json = await response.Content.ReadAsStringAsync();
-                var availableItems = JsonSerializer.Deserialize<List<ProductItemDto>>(json);
-
-                if (availableItems == null || availableItems.Count < item.Quantity)
-                    return BadRequest($"Không đủ số lượng hàng tồn kho cho biến thể {item.ProductVariantId}");
-
-                var selectedItems = availableItems.Take(item.Quantity).ToList();
-                item.ProductItemIds = selectedItems.Select(i => i.Id).ToList();
+                return BadRequest("Địa chỉ giao hàng không hợp lệ!");
             }
 
-            // ✅ Tính điểm tích lũy dựa trên tổng tiền sau giảm
-            var totalAfterDiscount = order.TotalAmount - order.DiscountAmount;
-            order.LoyaltyPointsEarned = (int)(totalAfterDiscount / 10000); // ví dụ: 1 điểm / 10k
+            // Kiểm tra tồn kho từng biến thể
+            // Kiểm tra tồn kho từng biến thể
+            var client = _httpClientFactory.CreateClient("ProductService");
+            foreach (var item in order.Items)
+            {
+                var response = await client.GetAsync($"products/variants/{item.ProductVariantId}");
+                if (!response.IsSuccessStatusCode)
+                    return BadRequest($"Không thể kiểm tra tồn kho của biến thể {item.ProductVariantId}");
+                Console.WriteLine($"Gọi tới ProductService: products/variants/{item.ProductVariantId}");
 
-            await _orders.InsertOneAsync(order);
+                var json = await response.Content.ReadAsStringAsync();
+                // Parse object từ JSON
+                var variantDto = JsonSerializer.Deserialize<ProductVariantDto>(json);
+                if (variantDto == null)
+                    return BadRequest($"Không lấy được thông tin biến thể {item.ProductVariantId}");
+
+                // Lấy số lượng tồn kho
+                int availableInventory = variantDto.Inventory;
+                Console.WriteLine($"VariantId: {item.ProductVariantId}, Inventory: {variantDto?.Inventory}, Request: {item.Quantity}");
+
+                if (availableInventory < item.Quantity)
+                    return BadRequest($"Không đủ số lượng hàng tồn kho cho biến thể {item.ProductVariantId}");
+            }
+
+
+            // Tính điểm tích lũy (10k = 1 điểm)
+            var totalAfterDiscount = order.TotalAmount - order.DiscountAmount;
+            order.LoyaltyPointsEarned = (int)(totalAfterDiscount / 10000);
+
+            try
+            {
+                await _orders.InsertOneAsync(order);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Lỗi lưu database: " + ex.Message);
+                return StatusCode(500, "Lỗi lưu vào MongoDB: " + ex.Message);
+            }
+
+            // Gửi email xác nhận đơn hàng
+            try
+            {
+                var receiverEmail = order.ShippingAddress.Email;
+                var mailSubject = $"Xác nhận đơn hàng #{order.OrderNumber}";
+                var mailBody = $@"
+<b>Cảm ơn bạn đã đặt hàng tại Hoalahe!</b><br>
+Người nhận: {order.ShippingAddress.ReceiverName}<br>
+SĐT: {order.ShippingAddress.PhoneNumber}<br>
+Địa chỉ: {order.ShippingAddress.AddressLine}, {order.ShippingAddress.Ward}, {order.ShippingAddress.District}, {order.ShippingAddress.City}<br>
+<b>Danh sách sản phẩm:</b>
+<ul>
+{string.Join("", order.Items.Select(i => $"<li>{i.ProductName} ({i.VariantName}) x{i.Quantity}: {i.Price:N0}đ</li>"))}
+</ul>
+<b>Tổng cộng:</b> {order.TotalAmount:N0}đ<br>
+<b>Giảm giá:</b> {order.DiscountAmount:N0}đ<br>
+<b>Điểm thưởng tích lũy:</b> {order.LoyaltyPointsEarned} điểm<br>
+<b>Trạng thái đơn hàng:</b> {order.Status}
+";
+                await SendEmailAsync(receiverEmail, mailSubject, mailBody);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Lỗi gửi mail xác nhận đơn hàng: " + ex.Message);
+                // Không return lỗi gửi mail để không ảnh hưởng đến lưu đơn hàng
+            }
+
             return CreatedAtAction(nameof(Get), new { id = order.Id }, order);
         }
 
+        /// <summary>
+        /// Gửi mail xác nhận đơn hàng qua SMTP Gmail.
+        /// </summary>
+        private async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
+        {
+            var smtpHost = _configuration["Smtp:Host"]!;
+            var smtpPort = int.Parse(_configuration["Smtp:Port"]!);
+            var smtpUser = _configuration["Smtp:Username"]!;
+            var smtpPass = _configuration["Smtp:Password"]!;
+            var fromEmail = _configuration["Smtp:FromEmail"]!;
+
+            var mail = new MailMessage();
+            mail.From = new MailAddress(fromEmail, "Hoalahe");
+            mail.To.Add(toEmail);
+            mail.Subject = subject;
+            mail.Body = htmlBody;
+            mail.IsBodyHtml = true;
+
+            using var client = new SmtpClient(smtpHost, smtpPort)
+            {
+                Credentials = new NetworkCredential(smtpUser, smtpPass),
+                EnableSsl = true
+            };
+            await client.SendMailAsync(mail);
+        }
 
         // PUT: api/orders/{id}
         [HttpPut("{id:length(24)}")]
@@ -116,7 +201,6 @@ namespace OrderManagementService.Controllers
                 if (order != null)
                 {
                     var client = _httpClientFactory.CreateClient("ProductService");
-
                     foreach (var item in order.Items)
                     {
                         foreach (var productItemId in item.ProductItemIds)
@@ -134,17 +218,21 @@ namespace OrderManagementService.Controllers
                     }
                 }
             }
-
             return NoContent();
         }
     }
-
-    // Tạm dùng để deserialize từ ProductService
-    public class ProductItemDto
+    public class ProductVariantDto
     {
+        [JsonPropertyName("id")]
         public string Id { get; set; }
-        public string ProductId { get; set; }
-        public string VariantId { get; set; }
-        public string Status { get; set; }
+
+        [JsonPropertyName("variantName")]
+        public string VariantName { get; set; }
+
+        [JsonPropertyName("additionalPrice")]
+        public decimal AdditionalPrice { get; set; }
+
+        [JsonPropertyName("inventory")]
+        public int Inventory { get; set; }
     }
 }
