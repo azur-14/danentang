@@ -54,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (role == 'customer') {
         context.go('/homepage');
       } else if (role == 'admin') {
-        context.go('/manager-dashboard');
+        context.go('/manager');
       } else {
         context.go('/homepage');
       }
