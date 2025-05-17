@@ -1,5 +1,3 @@
-// lib/Screens/Manager/Product/product_detail_screen.dart
-
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -30,6 +28,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
   @override
   void initState() {
     super.initState();
+    // Validate productId
+    if (widget.productId.isEmpty || widget.productId.trim().isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ID sản phẩm không hợp lệ')),
+        );
+        Navigator.of(context).pop();
+      });
+    }
     _tabController = TabController(length: 3, vsync: this);
     _futureProduct = ProductService.getById(widget.productId);
     _futureImages = ProductService.fetchImages(widget.productId);
@@ -55,15 +62,40 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        if (snap.hasError) {
+        if (snap.hasError || !snap.hasData) {
           return Scaffold(
-            body: Center(child: Text('Error: ${snap.error}')),
+            appBar: AppBar(
+              title: const Text('Lỗi'),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Lỗi: ${snap.error ?? "Sản phẩm không tồn tại"}'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Quay lại'),
+                  ),
+                ],
+              ),
+            ),
           );
         }
         final product = snap.data!;
+        // Validate product name
+        final productName = product.name.isNotEmpty ? product.name : 'Sản phẩm không tên';
         return Scaffold(
           appBar: AppBar(
-            title: Text(product.name),
+            title: Text(productName),
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
             bottom: TabBar(
               controller: _tabController,
               tabs: const [
@@ -101,21 +133,27 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         if (snap.connectionState != ConnectionState.done) {
           return const Center(child: CircularProgressIndicator());
         }
+        if (snap.hasError) {
+          return Center(child: Text('Lỗi tải hình ảnh: ${snap.error}'));
+        }
         final imgs = snap.data ?? [];
         if (imgs.isEmpty) {
-          return const Center(child: Text('No images'));
+          return const Center(child: Text('Không có hình ảnh'));
         }
-        final crossCount = MediaQuery.of(context).size.width ~/ 120;
+        final crossCount = (MediaQuery.of(context).size.width ~/ 120).clamp(2, 6);
         return GridView.builder(
           padding: const EdgeInsets.all(12),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossCount >= 2 ? crossCount : 2,
+            crossAxisCount: crossCount,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
+            childAspectRatio: 1,
           ),
           itemCount: imgs.length,
           itemBuilder: (ctx, i) {
             final img = imgs[i];
+            // Validate sortOrder
+            final sortOrder = img.sortOrder >= 0 ? img.sortOrder : 0;
             return Stack(
               children: [
                 ClipRRect(
@@ -137,7 +175,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      'Order ${img.sortOrder}',
+                      'Order $sortOrder',
                       style: const TextStyle(color: Colors.white, fontSize: 12),
                     ),
                   ),
@@ -157,9 +195,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         if (snap.connectionState != ConnectionState.done) {
           return const Center(child: CircularProgressIndicator());
         }
+        if (snap.hasError) {
+          return Center(child: Text('Lỗi tải biến thể: ${snap.error}'));
+        }
         final vars = snap.data ?? [];
         if (vars.isEmpty) {
-          return const Center(child: Text('No variants'));
+          return const Center(child: Text('Không có biến thể'));
         }
         return ListView.separated(
           padding: const EdgeInsets.all(12),
@@ -167,11 +208,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
           separatorBuilder: (_, __) => const Divider(),
           itemBuilder: (ctx, i) {
             final v = vars[i];
+            // Validate variant data
+            final variantName = v.variantName.isNotEmpty ? v.variantName : 'Biến thể không tên';
+            final additionalPrice = v.additionalPrice >= 0 ? v.additionalPrice : 0.0;
+            final inventory = v.inventory >= 0 ? v.inventory : 0;
             return ListTile(
               leading: const Icon(Icons.settings_input_component),
-              title: Text(v.variantName),
+              title: Text(variantName),
               subtitle: Text(
-                'Additional \$${v.additionalPrice.toStringAsFixed(2)} • Stock: ${v.inventory}',
+                'Thêm \$${additionalPrice.toStringAsFixed(2)} • Tồn kho: $inventory',
               ),
             );
           },
@@ -187,9 +232,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         if (snap.connectionState != ConnectionState.done) {
           return const Center(child: CircularProgressIndicator());
         }
+        if (snap.hasError) {
+          return Center(child: Text('Lỗi tải thẻ: ${snap.error}'));
+        }
         final tags = snap.data ?? [];
         if (tags.isEmpty) {
-          return const Center(child: Text('No tags assigned'));
+          return const Center(child: Text('Chưa có thẻ nào được gán'));
         }
         return Padding(
           padding: const EdgeInsets.all(12),
@@ -197,8 +245,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
             spacing: 8,
             runSpacing: 8,
             children: tags.map((t) {
+              // Validate tag name
+              final tagName = t.name.isNotEmpty ? t.name : 'Thẻ không tên';
               return Chip(
-                label: Text(t.name),
+                label: Text(tagName),
                 backgroundColor: Colors.purple.shade50,
                 avatar: const Icon(Icons.label, size: 18, color: Colors.purple),
               );
@@ -215,7 +265,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         double? height,
         BoxFit? fit,
       }) {
+    // Validate base64 string
+    if (base64String.isEmpty || base64String.trim().isEmpty) {
+      return _fallbackImage(width, height);
+    }
     try {
+      // Check if the string is a valid base64
+      final regex = RegExp(r'^[A-Za-z0-9+/=]+$');
+      if (!regex.hasMatch(base64String)) {
+        return _fallbackImage(width, height);
+      }
       final bytes = base64Decode(base64String);
       return Image.memory(
         bytes,
@@ -224,7 +283,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         fit: fit,
         errorBuilder: (context, error, stackTrace) => _fallbackImage(width, height),
       );
-    } catch (_) {
+    } catch (e) {
       return _fallbackImage(width, height);
     }
   }

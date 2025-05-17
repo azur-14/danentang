@@ -47,24 +47,75 @@ class _ResponsiveCouponScreenState extends State<ResponsiveCouponScreen> {
   Future<bool> _onWillPop() async => true;
 
   Future<void> _createCoupon() async {
+    // Validate inputs
+    final code = _codeCtrl.text.trim();
+    final discount = int.tryParse(_discountCtrl.text.trim());
+    final usageLimit = int.tryParse(_limitCtrl.text.trim());
+
+    // Validation checks
+    if (code.isEmpty || code.length < 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Mã giảm giá phải có ít nhất 5 ký tự')),
+      );
+      return;
+    }
+
+    if (discount == null || discount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Giá trị giảm phải là số nguyên dương')),
+      );
+      return;
+    }
+
+    if (usageLimit == null || usageLimit <= 0 || usageLimit > 1000) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Số lần sử dụng phải từ 1 đến 1000')),
+      );
+      return;
+    }
+
+    if (_expiresAt != null && _expiresAt!.isBefore(DateTime.now())) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ngày hết hạn phải là trong tương lai')),
+      );
+      return;
+    }
+
+    // Check if code is unique
     try {
+      final existingCoupons = await _couponFuture;
+      if (existingCoupons.any((c) => c.code.toLowerCase() == code.toLowerCase())) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Mã giảm giá đã tồn tại')),
+        );
+        return;
+      }
+
+      // Create coupon
       final coupon = Coupon(
-        code: _codeCtrl.text.trim(),
-        discountValue: int.tryParse(_discountCtrl.text) ?? 0,
-        usageLimit: int.tryParse(_limitCtrl.text) ?? 10,
+        code: code,
+        discountValue: discount,
+        usageLimit: usageLimit,
         usageCount: 0,
         createdAt: DateTime.now(),
         orderIds: [],
       );
+
       await _couponService.createCoupon(coupon);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tạo mã giảm giá thành công')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tạo mã giảm giá thành công')),
+      );
+
+      // Clear inputs
       _codeCtrl.clear();
       _discountCtrl.clear();
       _limitCtrl.clear();
       _expiresAt = null;
       _refreshCoupons();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi: $e')),
+      );
     }
   }
 
@@ -97,7 +148,7 @@ class _ResponsiveCouponScreenState extends State<ResponsiveCouponScreen> {
             expiresAt: _expiresAt,
             onCreateCoupon: _createCoupon,
             onPickDate: _pickDate,
-           )
+          )
               : WebCouponScreen(
             couponFuture: _couponFuture,
             codeCtrl: _codeCtrl,
@@ -112,6 +163,7 @@ class _ResponsiveCouponScreenState extends State<ResponsiveCouponScreen> {
     );
   }
 }
+
 class MobileCouponScreen extends StatelessWidget {
   final VoidCallback onBackPressed;
   final int selectedIndex;
@@ -122,7 +174,6 @@ class MobileCouponScreen extends StatelessWidget {
   final DateTime? expiresAt;
   final VoidCallback onCreateCoupon;
   final VoidCallback onPickDate;
-
 
   const MobileCouponScreen({
     super.key,
@@ -157,7 +208,6 @@ class MobileCouponScreen extends StatelessWidget {
         actions: const [
           SizedBox(width: 10),
         ],
-
       ),
       backgroundColor: Colors.white,
       body: CouponContent(
@@ -178,6 +228,7 @@ class MobileCouponScreen extends StatelessWidget {
     );
   }
 }
+
 class WebCouponScreen extends StatelessWidget {
   final Future<List<Coupon>> couponFuture;
   final TextEditingController codeCtrl, discountCtrl, limitCtrl;
@@ -231,12 +282,14 @@ class WebCouponScreen extends StatelessWidget {
     );
   }
 }
+
 class CouponContent extends StatelessWidget {
   final Future<List<Coupon>> couponFuture;
   final TextEditingController codeCtrl, discountCtrl, limitCtrl;
   final DateTime? expiresAt;
   final VoidCallback onCreateCoupon;
   final VoidCallback onPickDate;
+
   const CouponContent({
     super.key,
     required this.couponFuture,
@@ -246,7 +299,6 @@ class CouponContent extends StatelessWidget {
     required this.expiresAt,
     required this.onCreateCoupon,
     required this.onPickDate,
-
   });
 
   @override
@@ -264,7 +316,7 @@ class CouponContent extends StatelessWidget {
             final coupons = snapshot.data!;
             if (coupons.isEmpty) return const Text("Chưa có mã giảm giá.");
             return Column(
-              children: coupons.map((c) => _buildCouponItem(context,c)).toList(),
+              children: coupons.map((c) => _buildCouponItem(context, c)).toList(),
             );
           },
         ),
@@ -274,17 +326,22 @@ class CouponContent extends StatelessWidget {
         TextField(
           controller: codeCtrl,
           decoration: const InputDecoration(
-            labelText: 'Mã giảm giá (5 ký tự)',
+            labelText: 'Mã giảm giá (ít nhất 5 ký tự)',
             border: OutlineInputBorder(),
+            errorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
+            focusedErrorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
           ),
+          maxLength: 20, // Giới hạn độ dài mã
         ),
         const SizedBox(height: 10),
         TextField(
           controller: discountCtrl,
           keyboardType: TextInputType.number,
           decoration: const InputDecoration(
-            labelText: 'Giá trị giảm (VND)',
+            labelText: 'Giá trị giảm (VND, số nguyên dương)',
             border: OutlineInputBorder(),
+            errorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
+            focusedErrorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
           ),
         ),
         const SizedBox(height: 10),
@@ -292,8 +349,10 @@ class CouponContent extends StatelessWidget {
           controller: limitCtrl,
           keyboardType: TextInputType.number,
           decoration: const InputDecoration(
-            labelText: 'Số lần sử dụng',
+            labelText: 'Số lần sử dụng (1-1000)',
             border: OutlineInputBorder(),
+            errorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
+            focusedErrorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
           ),
         ),
         const SizedBox(height: 10),
@@ -306,6 +365,10 @@ class CouponContent extends StatelessWidget {
                     : 'Không giới hạn ngày',
               ),
             ),
+            ElevatedButton(
+              onPressed: onPickDate,
+              child: const Text('Chọn ngày'),
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -317,9 +380,8 @@ class CouponContent extends StatelessWidget {
     );
   }
 
-  Widget _buildCouponItem(BuildContext context,Coupon c) {
+  Widget _buildCouponItem(BuildContext context, Coupon c) {
     final percentUsed = (c.usageCount / c.usageLimit * 100).clamp(0, 100).round();
-
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -362,7 +424,8 @@ class CouponContent extends StatelessWidget {
               if (confirmed == true) {
                 await OrderService.instance.deleteCoupon(c.id!);
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Đã xóa mã")));
-                // TODO: gọi callback từ cha để refresh danh sách
+                // Refresh coupons after deletion
+                context.findAncestorStateOfType<_ResponsiveCouponScreenState>()?._refreshCoupons();
               }
             },
           ),

@@ -135,7 +135,7 @@ class _MobileCategoriesScreenState extends State<MobileCategoriesScreen> {
     );
 
     if (updated != null) {
-      await ProductService.updateCategory(updated.id!, updated); // ✅ đúng
+      await ProductService.updateCategory(updated.id!, updated);
       widget.onRefresh();
     }
 

@@ -1,5 +1,3 @@
-// lib/Screens/Manager/Product/product_management.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -29,9 +27,9 @@ class _ProductManagementScreenState extends State<ProductManagementScreen>
   late final AnimationController _controller;
   late final Animation<double> _fadeAnim, _scaleAnim;
 
-  late Future<List<Product>>  _fProducts;
+  late Future<List<Product>> _fProducts;
   late Future<List<Category>> _fCategories;
-  late Future<List<Tag>>      _fTags;
+  late Future<List<Tag>> _fTags;
   int _currentIndex = 0;
 
   @override
@@ -45,9 +43,9 @@ class _ProductManagementScreenState extends State<ProductManagementScreen>
   }
 
   void _loadData() {
-    _fProducts   = ProductService.fetchAllProducts();
+    _fProducts = ProductService.fetchAllProducts();
     _fCategories = ProductService.fetchAllCategories();
-    _fTags       = ProductService.fetchAllTags();
+    _fTags = ProductService.fetchAllTags();
   }
 
   @override
@@ -69,10 +67,10 @@ class _ProductManagementScreenState extends State<ProductManagementScreen>
           leading: isMobile
               ? IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context))
               : null,
-          title: const Text('Manage Products', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+          title: const Text('Quản lý sản phẩm', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
           backgroundColor: Colors.white,
           bottom: const TabBar(
-            tabs: [Tab(text: 'By Category'), Tab(text: 'By Tag')],
+            tabs: [Tab(text: 'Theo danh mục'), Tab(text: 'Theo thẻ')],
             labelColor: Colors.black,
             indicatorColor: Colors.purple,
           ),
@@ -84,41 +82,66 @@ class _ProductManagementScreenState extends State<ProductManagementScreen>
             child: FutureBuilder<List<dynamic>>(
               future: Future.wait([_fProducts, _fCategories, _fTags]),
               builder: (ctx, snap) {
-                if (snap.connectionState != ConnectionState.done) return const Center(child: CircularProgressIndicator());
-                if (snap.hasError) return Center(child: Text('Error: ${snap.error}'));
-                final products = snap.data![0] as List<Product>;
-                final cats     = snap.data![1] as List<Category>;
-                final tags     = snap.data![2] as List<Tag>;
+                if (snap.connectionState != ConnectionState.done) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snap.hasError || !snap.hasData) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('Lỗi tải dữ liệu: ${snap.error ?? "Không có dữ liệu"}'),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () => setState(_loadData),
+                          child: const Text('Thử lại'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                final products = (snap.data![0] as List<Product>).where((p) => p.id.isNotEmpty && p.name.isNotEmpty && p.price >= 0).toList();
+                final cats = (snap.data![1] as List<Category>).where((c) => c.id!.isNotEmpty && c.name.isNotEmpty).toList();
+                final tags = (snap.data![2] as List<Tag>).where((t) => t.id.isNotEmpty && t.name.isNotEmpty).toList();
+
+                if (products.isEmpty && cats.isEmpty && tags.isEmpty) {
+                  return const Center(child: Text('Không có dữ liệu để hiển thị'));
+                }
 
                 return TabBarView(
                   children: [
-                    // by category
+                    // Theo danh mục
                     RefreshIndicator(
                       onRefresh: () async => setState(_loadData),
-                      child: ListView.builder(
+                      child: cats.isEmpty
+                          ? const Center(child: Text('Không có danh mục'))
+                          : ListView.builder(
                         itemCount: cats.length,
-                        itemBuilder: (ctx,i) {
+                        itemBuilder: (ctx, i) {
                           final cat = cats[i];
-                          final prods = products.where((p)=>p.categoryId==cat.id).toList();
+                          final prods = products.where((p) => p.categoryId == cat.id).toList();
                           return ExpansionTile(
                             title: Text(cat.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                             children: prods.isEmpty
-                                ? [const Padding(
-                              padding: EdgeInsets.all(16),
-                              child: Text('— No products —', textAlign: TextAlign.center),
-                            )]
+                                ? [
+                              const Padding(
+                                padding: EdgeInsets.all(16),
+                                child: Text('— Không có sản phẩm —', textAlign: TextAlign.center),
+                              )
+                            ]
                                 : prods.map(_buildProductTile).toList(),
                           );
                         },
                       ),
                     ),
-
-                    // by tag
+                    // Theo thẻ
                     RefreshIndicator(
                       onRefresh: () async => setState(_loadData),
-                      child: ListView.builder(
+                      child: tags.isEmpty
+                          ? const Center(child: Text('Không có thẻ'))
+                          : ListView.builder(
                         itemCount: tags.length,
-                        itemBuilder: (ctx,i) {
+                        itemBuilder: (ctx, i) {
                           final tag = tags[i];
                           return ExpansionTile(
                             title: Text(tag.name, style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -126,12 +149,22 @@ class _ProductManagementScreenState extends State<ProductManagementScreen>
                               FutureBuilder<List<Product>>(
                                 future: ProductService.fetchProductsByTag(tag.id),
                                 builder: (c2, psnap) {
-                                  if (psnap.connectionState!=ConnectionState.done) return const Center(child: CircularProgressIndicator());
-                                  final list = psnap.data!;
+                                  if (psnap.connectionState != ConnectionState.done) {
+                                    return const Center(child: CircularProgressIndicator());
+                                  }
+                                  if (psnap.hasError) {
+                                    return const Padding(
+                                      padding: EdgeInsets.all(16),
+                                      child: Text('Lỗi tải sản phẩm', textAlign: TextAlign.center),
+                                    );
+                                  }
+                                  final list = (psnap.data ?? [])
+                                      .where((p) => p.id.isNotEmpty && p.name.isNotEmpty && p.price >= 0)
+                                      .toList();
                                   if (list.isEmpty) {
                                     return const Padding(
                                       padding: EdgeInsets.all(16),
-                                      child: Text('— No products —', textAlign: TextAlign.center),
+                                      child: Text('— Không có sản phẩm —', textAlign: TextAlign.center),
                                     );
                                   }
                                   return Column(children: list.map(_buildProductTile).toList());
@@ -155,14 +188,15 @@ class _ProductManagementScreenState extends State<ProductManagementScreen>
               context,
               MaterialPageRoute(builder: (_) => const Add_Product()),
             );
-            if (created==true) setState(_loadData);
+            if (created == true) setState(_loadData);
           },
         ),
         bottomNavigationBar: isMobile
             ? MobileNavigationBar(
           selectedIndex: _currentIndex,
-          onItemTapped: (i) => setState(() => _currentIndex=i),
-          isLoggedIn: true, role: 'manager',
+          onItemTapped: (i) => setState(() => _currentIndex = i),
+          isLoggedIn: true,
+          role: 'manager',
         )
             : null,
       ),
@@ -170,6 +204,11 @@ class _ProductManagementScreenState extends State<ProductManagementScreen>
   }
 
   Widget _buildProductTile(Product p) {
+    // Validate product data
+    final productName = p.name.isNotEmpty ? p.name : 'Sản phẩm không tên';
+    final productPrice = p.price >= 0 ? p.price : 0.0;
+    final imageUrl = p.images.isNotEmpty && _isValidUrl(p.images.first.url) ? p.images.first.url : null;
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -177,33 +216,47 @@ class _ProductManagementScreenState extends State<ProductManagementScreen>
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
-          Navigator.push(context, MaterialPageRoute(
-            builder: (_) => ProductDetailScreen(productId: p.id),
-          ));
+          if (p.id.isNotEmpty) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ProductDetailScreen(productId: p.id),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('ID sản phẩm không hợp lệ')),
+            );
+          }
         },
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
               Container(
-                width: 64, height: 64,
+                width: 64,
+                height: 64,
                 decoration: BoxDecoration(
                   color: Colors.grey.shade300,
                   borderRadius: BorderRadius.circular(8),
-                  image: p.images.isNotEmpty
+                  image: imageUrl != null
                       ? DecorationImage(
-                      image: NetworkImage(p.images.first.url), fit: BoxFit.cover)
+                    image: NetworkImage(imageUrl),
+                    fit: BoxFit.cover,
+                    onError: (exception, stackTrace) => const Icon(Icons.broken_image),
+                  )
                       : null,
                 ),
+                child: imageUrl == null ? const Icon(Icons.image_not_supported, color: Colors.grey) : null,
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(p.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(productName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 4),
-                    Text('\$${p.price.toStringAsFixed(2)}', style: TextStyle(color: Colors.green.shade700)),
+                    Text('\$${productPrice.toStringAsFixed(2)}', style: TextStyle(color: Colors.green.shade700)),
                   ],
                 ),
               ),
@@ -214,7 +267,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen>
                     context,
                     MaterialPageRoute(builder: (_) => Add_Product(product: p)),
                   );
-                  if (edited==true) setState(_loadData);
+                  if (edited == true) setState(_loadData);
                 },
               ),
               IconButton(
@@ -224,7 +277,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen>
                     context,
                     MaterialPageRoute(builder: (_) => Delete_Product(product: p)),
                   );
-                  if (deleted==true) setState(_loadData);
+                  if (deleted == true) setState(_loadData);
                 },
               ),
             ],
@@ -232,5 +285,11 @@ class _ProductManagementScreenState extends State<ProductManagementScreen>
         ),
       ),
     );
+  }
+
+  bool _isValidUrl(String? url) {
+    if (url == null || url.isEmpty) return false;
+    final uri = Uri.tryParse(url);
+    return uri != null && (uri.isScheme('http') || uri.isScheme('https'));
   }
 }
