@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import '../../../models/category.dart';
+import 'package:danentang/models/Category.dart'; // Use uppercase Category.dart
 
 class FilterPanel extends StatelessWidget {
   final List<Category> categories;
@@ -39,82 +38,82 @@ class FilterPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Filter', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        const SizedBox(height: 16),
-        const Text('Product Category'),
-        DropdownButton<String>(
-          isExpanded: true,
-          hint: const Text('All'),
-          value: selectedCategoryId,
-          items: [
-            const DropdownMenuItem(value: null, child: Text('All')),
-            ...categories.map((category) {
-              return DropdownMenuItem(
-                value: category.id,
-                child: Text(category.name),
-              );
-            }).toList(),
-          ],
-          onChanged: onCategoryChanged,
+        const Text(
+          'Filter Products',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-        const Text('Brand'),
+        const Text('Category', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          children: [
+            ChoiceChip(
+              label: const Text('All'),
+              selected: selectedCategoryId == null,
+              onSelected: (selected) {
+                if (selected) onCategoryChanged(null);
+              },
+            ),
+            ...categories.map((category) => ChoiceChip(
+              label: Text(category.name),
+              selected: selectedCategoryId == category.id,
+              onSelected: (selected) {
+                if (selected) onCategoryChanged(category.id);
+              },
+            )),
+          ],
+        ),
+        const SizedBox(height: 16),
+        const Text('Brand', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
         DropdownButton<String>(
-          isExpanded: true,
-          hint: const Text('All'),
           value: selectedBrand,
-          items: brands.map((brand) {
-            return DropdownMenuItem(
-              value: brand,
-              child: Text(brand),
-            );
-          }).toList(),
+          hint: const Text('Select Brand'),
+          isExpanded: true,
+          items: brands.map((brand) => DropdownMenuItem<String>(
+            value: brand,
+            child: Text(brand),
+          )).toList(),
           onChanged: onBrandChanged,
         ),
         const SizedBox(height: 16),
-        const Text('Price'),
+        const Text('Price Range', style: TextStyle(fontWeight: FontWeight.bold)),
         Slider(
           value: priceRange,
           min: 0,
           max: 100000000,
           divisions: 100,
-          activeColor: Colors.blue[700],
-          label: '${priceRange.toStringAsFixed(0)} VND',
+          label: '₫${priceRange.round()}',
           onChanged: onPriceChanged,
           onChangeEnd: onPriceChangeEnd,
         ),
-        Row(
-          children: const [
-            Expanded(child: Text('0 VND')),
-            Expanded(child: Text('100,000,000 VND', textAlign: TextAlign.right)),
-          ],
-        ),
         const SizedBox(height: 16),
-        const Text('Rating'),
-        Column(
-          children: [
-            for (int i = 5; i >= 1; i--)
-              Row(
-                children: [
-                  Radio<int>(
-                    value: i,
-                    groupValue: selectedRating,
-                    activeColor: Colors.blue[700],
-                    onChanged: onRatingChanged,
-                  ),
-                  Text('$i ★'),
-                ],
+        const Text('Rating', style: TextStyle(fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: List.generate(5, (index) {
+            final rating = 5 - index;
+            return GestureDetector(
+              onTap: () => onRatingChanged(rating),
+              child: Icon(
+                Icons.star,
+                color: selectedRating != null && rating <= selectedRating!
+                    ? Colors.yellow
+                    : Colors.grey,
               ),
-          ],
+            );
+          }),
         ),
         const SizedBox(height: 16),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             ElevatedButton(
               onPressed: onReset,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue[700],
+                backgroundColor: Colors.grey,
                 foregroundColor: Colors.white,
               ),
               child: const Text('Reset'),

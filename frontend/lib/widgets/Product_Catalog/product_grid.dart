@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-
-import '../../../models/product.dart';
-import 'product_card.dart';
+import 'package:danentang/models/product.dart';
+import 'package:danentang/widgets/Product_Catalog/product_card.dart';
 
 class ProductGrid extends StatelessWidget {
   final List<Product> products;
@@ -17,56 +16,34 @@ class ProductGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Product List', style: TextStyle(fontSize: 18)),
-              Row(
-                children: [
-                  const Text('Sort by:'),
-                  DropdownButton<String>(
-                    value: 'All Products',
-                    items: const [
-                      DropdownMenuItem(value: 'All Products', child: Text('All Products')),
-                      DropdownMenuItem(value: 'Price: Low to High', child: Text('Price: Low to High')),
-                      DropdownMenuItem(value: 'Price: High to Low', child: Text('Price: High to Low')),
-                    ],
-                    onChanged: (_) {},
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: products.isEmpty && !isLoading
-              ? const Center(child: Text('No products to display'))
-              : GridView.builder(
-            controller: scrollController,
-            padding: const EdgeInsets.all(16),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: isMobile ? 2 : 4,
-              childAspectRatio: isMobile ? 0.65 : 0.75,
+    return CustomScrollView(
+      controller: scrollController,
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.all(16),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 300,
+              childAspectRatio: 0.7,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
             ),
-            itemCount: products.length + (isLoading ? 1 : 0),
-            itemBuilder: (context, index) {
-              if (index >= products.length) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              return ProductCard(
-                product: products[index],
-                index: index,
-              );
-            },
+            delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                if (index >= products.length) return null;
+                return ProductCard(product: products[index], index: index);
+              },
+              childCount: products.length,
+            ),
           ),
         ),
+        if (isLoading)
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          ),
       ],
     );
   }
