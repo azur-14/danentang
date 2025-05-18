@@ -59,15 +59,36 @@ namespace ProductManagementService.Controllers
                 GuestName = userId == null ? model.GuestName : null,
                 Comment = model.Comment,
                 Rating = model.Rating,
+                Sentiment = model.Sentiment, // ✅ GÁN SENTIMENT TỪ CLIENT
                 CreatedAt = DateTime.UtcNow
             };
 
+
             await _reviews.InsertOneAsync(review);
+
+            // ✅ Broadcast sau khi insert
+            var ratingAgg = await _reviews.Aggregate()
+                .Match(r => r.ProductId == productId && r.Rating != null)
+                .Group(r => r.ProductId, g => new
+                {
+                    Avg = g.Average(x => x.Rating.Value),
+                    Count = g.Count()
+                })
+                .FirstOrDefaultAsync();
+
+            if (ratingAgg != null)
+            {
+                await ProductManagementService.WebSockets.ReviewWebSocketHandler
+                    .BroadcastNewReview(productId, Math.Round(ratingAgg.Avg, 2), ratingAgg.Count);
+            }
+
+            // ✅ return nằm SAU cùng
             return CreatedAtAction(
                 nameof(GetReviews),
                 new { productId },
                 review
             );
+
         }
 
         // GET  /api/products/{productId}/reviews/rating    ← note the "rating" segment
@@ -108,5 +129,7 @@ namespace ProductManagementService.Controllers
         public string Comment { get; set; } = null!;
         public int? Rating { get; set; }
         public string? GuestName { get; set; }
+        public string? Sentiment { get; set; } // ✅ THÊM DÒNG NÀY
     }
+
 }

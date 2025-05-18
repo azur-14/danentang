@@ -146,7 +146,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                   padding: const EdgeInsets.all(16),
                                   child: ProductInfo(
                                     product: product,
-                                    productRating: productRating,
                                   ),
                                 ),
                               ),
@@ -163,7 +162,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                                 padding: const EdgeInsets.all(16),
                                 child: ProductInfo(
                                   product: product,
-                                  productRating: productRating,
                                 ),
                               ),
                             ],

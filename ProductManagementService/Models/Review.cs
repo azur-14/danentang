@@ -12,7 +12,8 @@ namespace ProductManagementService.Models
         public string? UserId { get; set; }
         public string? GuestName { get; set; }
         public string Comment { get; set; } = null!;
-        public int? Rating { get; set; } 
+        public int? Rating { get; set; }
+        public string? Sentiment { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 

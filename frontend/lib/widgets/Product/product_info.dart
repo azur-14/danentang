@@ -1,36 +1,41 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:go_router/go_router.dart';
-
 import 'package:danentang/models/product.dart';
-import 'package:danentang/models/ProductRating.dart';
+import 'package:danentang/models/Review.dart';
 import 'package:danentang/models/CartItem.dart';
 import 'package:danentang/Service/order_service.dart';
-
+import 'package:danentang/Service/product_service.dart';
 import 'package:danentang/widgets/Product/buy_now_dialog.dart';
 import 'package:danentang/widgets/Product/AddToCartDialog.dart';
 
 class ProductInfo extends StatefulWidget {
   final Product product;
-  final ProductRating productRating;
 
-  const ProductInfo({
-    super.key,
-    required this.product,
-    required this.productRating,
-  });
+  const ProductInfo({super.key, required this.product});
 
   @override
   _ProductInfoState createState() => _ProductInfoState();
 }
 
 class _ProductInfoState extends State<ProductInfo> {
-  late final double _discountedBasePrice;
+  late double _discountedBasePrice;
+  late Future<List<Review>> _futureReviews;
+  double _averageRating = 0;
+  int _reviewCount = 0;
+  WebSocket? _socket;
 
   @override
   void initState() {
     super.initState();
-    // Tính giá base và giá đã giảm
+    _calculateDiscountedPrice();
+    _loadReviews();
+    _connectWebSocket();
+  }
+
+  void _calculateDiscountedPrice() {
     final cheapest = widget.product.variants.isNotEmpty
         ? widget.product.variants.reduce((a, b) =>
     a.additionalPrice < b.additionalPrice ? a : b)
@@ -40,8 +45,39 @@ class _ProductInfoState extends State<ProductInfo> {
         base * (1 - widget.product.discountPercentage / 100);
   }
 
+  void _loadReviews() {
+    _futureReviews = ProductService.getReviews(widget.product.id).then((reviews) {
+      final rated = reviews.where((r) => r.rating != null).toList();
+      _reviewCount = rated.length;
+      _averageRating = rated.isEmpty
+          ? 0
+          : rated.map((e) => e.rating!).reduce((a, b) => a + b) / rated.length;
+      return reviews;
+    });
+  }
+
+  Future<void> _connectWebSocket() async {
+    try {
+      _socket = await WebSocket.connect('ws://localhost:5005/ws/review-stream');
+      _socket!.listen((data) {
+        final decoded = jsonDecode(data);
+        if (decoded['productId'] == widget.product.id) {
+          _loadReviews();
+          setState(() {}); // Trigger FutureBuilder refresh
+        }
+      });
+    } catch (e) {
+      debugPrint("WebSocket error: $e");
+    }
+  }
+
+  @override
+  void dispose() {
+    _socket?.close();
+    super.dispose();
+  }
+
   Future<void> _onAddToCart() async {
-    // Mở dialog chọn variant & quantity, dialog trả về CartItem
     final CartItem? item = await showDialog<CartItem>(
       context: context,
       builder: (_) => AddToCartDialog(
@@ -49,10 +85,9 @@ class _ProductInfoState extends State<ProductInfo> {
         discountedPrice: _discountedBasePrice,
       ),
     );
-    if (item == null) return; // user hủy
+    if (item == null) return;
 
     try {
-      // Gọi service để thêm vào giỏ
       await OrderService.instance.addToCart(item);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -60,17 +95,17 @@ class _ProductInfoState extends State<ProductInfo> {
             'Đã thêm ${item.quantity} x ${widget.product.name} vào giỏ',
             style: const TextStyle(color: Colors.white),
           ),
-          backgroundColor: const Color(0xFF87CEEB), // Xanh dương nhạt cho snackbar thành công
+          backgroundColor: const Color(0xFF87CEEB),
         ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Lỗi thêm giỏ: ${e.toString()}',
+            'Lỗi thêm giỏ: $e',
             style: const TextStyle(color: Colors.white),
           ),
-          backgroundColor: const Color(0xFF1E90FF), // Xanh dương đậm cho snackbar lỗi
+          backgroundColor: const Color(0xFF1E90FF),
         ),
       );
     }
@@ -80,50 +115,46 @@ class _ProductInfoState extends State<ProductInfo> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isDesktop = screenWidth > 800;
-
-    // Define blue tones
-    const primaryColor = Color(0xFF1E90FF); // Xanh dương đậm (Dodger Blue)
-    const lightBlueColor = Color(0xFF87CEEB); // Xanh dương nhạt (Light Sky Blue)
-    const backgroundColor = Colors.white; // Nền trắng
+    const primaryColor = Color(0xFF1E90FF);
+    const lightBlueColor = Color(0xFF87CEEB);
+    const backgroundColor = Colors.white;
 
     return Container(
-      color: backgroundColor, // Nền trắng
+      color: backgroundColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Tên sản phẩm
           Text(
             widget.product.name,
             style: TextStyle(
               fontSize: isDesktop ? 24 : 20,
               fontWeight: FontWeight.bold,
-              color: primaryColor, // Xanh dương đậm cho tên sản phẩm
+              color: primaryColor,
             ),
           ),
           const SizedBox(height: 12),
-
-          // Rating
-          Row(
-            children: [
-              RatingBarIndicator(
-                rating: widget.productRating.averageRating,
-                itemBuilder: (_, __) => const Icon(
-                  Icons.star,
-                  color: Colors.amber,
-                ),
-                itemCount: 5,
-                itemSize: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                "(${widget.productRating.reviewCount} đánh giá)",
-                style: TextStyle(color: primaryColor.withOpacity(0.7)), // Xanh dương đậm nhạt cho đánh giá
-              ),
-            ],
+          FutureBuilder<List<Review>>(
+            future: _futureReviews,
+            builder: (context, snapshot) {
+              return Row(
+                children: [
+                  RatingBarIndicator(
+                    rating: _averageRating,
+                    itemBuilder: (_, __) =>
+                    const Icon(Icons.star, color: Colors.amber),
+                    itemCount: 5,
+                    itemSize: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '($_reviewCount đánh giá)',
+                    style: TextStyle(color: primaryColor.withOpacity(0.7)),
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 12),
-
-          // Giá
           Row(
             children: [
               Text(
@@ -131,7 +162,7 @@ class _ProductInfoState extends State<ProductInfo> {
                 style: TextStyle(
                   fontSize: isDesktop ? 24 : 20,
                   fontWeight: FontWeight.bold,
-                  color: primaryColor, // Xanh dương đậm cho giá đã giảm
+                  color: primaryColor,
                 ),
               ),
               const SizedBox(width: 8),
@@ -150,14 +181,12 @@ class _ProductInfoState extends State<ProductInfo> {
             ],
           ),
           const SizedBox(height: 12),
-
-          // Biến thể
           Text(
             "Biến thể:",
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: primaryColor, // Xanh dương đậm cho nhãn biến thể
+              color: primaryColor,
             ),
           ),
           const SizedBox(height: 8),
@@ -170,7 +199,7 @@ class _ProductInfoState extends State<ProductInfo> {
                 children: [
                   Text(
                     "${variant.variantName}: ",
-                    style: TextStyle(color: primaryColor.withOpacity(0.7)), // Xanh dương đậm nhạt cho tên biến thể
+                    style: TextStyle(color: primaryColor.withOpacity(0.7)),
                   ),
                   Text(
                     "₫${variantPrice.toStringAsFixed(0)} (Kho: ${variant.inventory})",
@@ -180,10 +209,7 @@ class _ProductInfoState extends State<ProductInfo> {
               ),
             );
           }).toList(),
-
           const SizedBox(height: 16),
-
-          // Nút hành động
           Row(
             children: [
               Expanded(
@@ -198,7 +224,7 @@ class _ProductInfoState extends State<ProductInfo> {
                     );
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: lightBlueColor, // Xanh dương nhạt cho nút "Mua ngay"
+                    backgroundColor: lightBlueColor,
                     padding: EdgeInsets.symmetric(
                       horizontal: isDesktop ? 16 : 32,
                       vertical: 12,
@@ -218,32 +244,38 @@ class _ProductInfoState extends State<ProductInfo> {
                 ),
               ),
               const SizedBox(width: 16),
-              // Add to Cart
               Container(
                 decoration: BoxDecoration(
                   color: backgroundColor,
                   shape: BoxShape.circle,
                   boxShadow: const [
-                    BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+                    BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 4,
+                        offset: Offset(0, 2)),
                   ],
                 ),
                 child: IconButton(
-                  icon: Icon(Icons.shopping_bag_outlined, size: 24, color: primaryColor), // Xanh dương đậm cho icon
+                  icon: Icon(Icons.shopping_bag_outlined,
+                      size: 24, color: primaryColor),
                   onPressed: _onAddToCart,
                 ),
               ),
               const SizedBox(width: 8),
-              // Chat
               Container(
                 decoration: BoxDecoration(
                   color: backgroundColor,
                   shape: BoxShape.circle,
                   boxShadow: const [
-                    BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+                    BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 4,
+                        offset: Offset(0, 2)),
                   ],
                 ),
                 child: IconButton(
-                  icon: Icon(Icons.chat_bubble_outline, size: 24, color: primaryColor), // Xanh dương đậm cho icon
+                  icon: Icon(Icons.chat_bubble_outline,
+                      size: 24, color: primaryColor),
                   onPressed: () => GoRouter.of(context).go('/chat'),
                 ),
               ),
