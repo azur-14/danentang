@@ -88,35 +88,7 @@ class WebSearchBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          Material(
-            elevation: 2,
-            shape: CircleBorder(),
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white,
-                border: Border.all(
-                  color: Color(0xFFF6FAFF),
-                  width: 1.0,
-                ),
-              ),
-              child: IconButton(
-                icon: Icon(
-                  Icons.shopping_cart_rounded,
-                  size: 32,
-                  color: Color(0xFF1976D2),
-                ),
-                onPressed: () {
-                  context.go('/checkout');
-                },
-                tooltip: 'Giỏ hàng',
-                hoverColor: Color(0xFF1976D2).withOpacity(0.2),
-                padding: EdgeInsets.zero,
-              ),
-            ),
-          ),
+          
         ],
       ),
     );

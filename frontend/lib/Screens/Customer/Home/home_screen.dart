@@ -253,7 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 8),
             BannerSection(isWeb: true, screenWidth: w),
             const SizedBox(height: 16),
-            _buildPromoIcons(),
+            //_buildPromoIcons(),
             const SizedBox(height: 16),
             categories.isEmpty
                 ? const Padding(
@@ -342,7 +342,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildPromoIcons() {
+  /*Widget _buildPromoIcons() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
       child: Row(
@@ -358,7 +358,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
-  }
+  }*/
 
   Widget _buildPromoItem(IconData icon, String label) {
     return Column(

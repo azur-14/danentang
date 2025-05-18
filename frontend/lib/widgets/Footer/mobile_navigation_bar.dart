@@ -26,7 +26,7 @@ class MobileNavigationBar extends StatelessWidget {
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
         BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Cart'),
         BottomNavigationBarItem(icon: Icon(Icons.account_circle), label: 'Profile'),
-        BottomNavigationBarItem(icon: Icon(Icons.message), label: 'Chat'),
+        BottomNavigationBarItem(icon: Icon(Icons.category), label: 'Order'),
       ];
     }
   }

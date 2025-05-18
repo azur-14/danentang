@@ -1,35 +1,46 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:danentang/models/CartItem.dart';
-import 'package:danentang/models/product.dart'; // Thêm để dùng ProductVariant
+import 'package:danentang/models/product.dart';
 import 'package:danentang/constants/colors.dart';
-class CartItemWidget extends StatelessWidget {
+
+class CartItemWidget extends StatefulWidget {
   final CartItem item;
-  final Product product; // <- Thêm dòng này
+  final Product product;
   final bool isEditing;
   final VoidCallback onDelete;
   final Function(int) onQuantityChanged;
   final bool isMobile;
   final List<ProductVariant> variants;
   final Function(String?)? onVariantChanged;
+  final Function(bool) onSelectionChanged;
 
   const CartItemWidget({
     Key? key,
     required this.item,
-    required this.product, // <- Thêm dòng này
+    required this.product,
     required this.isEditing,
     required this.onDelete,
     required this.onQuantityChanged,
     required this.isMobile,
     required this.variants,
     this.onVariantChanged,
+    required this.onSelectionChanged,
   }) : super(key: key);
 
   @override
+  _CartItemWidgetState createState() => _CartItemWidgetState();
+}
+
+class _CartItemWidgetState extends State<CartItemWidget> {
+  bool isSelected = false;
+
+  @override
   Widget build(BuildContext context) {
-    final currentVariant = variants.firstWhere(
-          (v) => v.id == item.productVariantId,
-      orElse: () => variants.isNotEmpty
-          ? variants.first
+    final currentVariant = widget.variants.firstWhere(
+          (v) => v.id == widget.item.productVariantId,
+      orElse: () => widget.variants.isNotEmpty
+          ? widget.variants.first
           : ProductVariant(
         id: '',
         variantName: 'Không có',
@@ -39,116 +50,188 @@ class CartItemWidget extends StatelessWidget {
         updatedAt: DateTime.now(),
       ),
     );
-    // Lấy ảnh nếu cần
-    final imageUrl = product.images.isNotEmpty ? product.images.first.url : '';
+
+    // Handle image (Base64 or network)
+    final imageUrl = widget.product.images.isNotEmpty ? widget.product.images.first.url : '';
+    Widget imageWidget;
+    if (imageUrl.isEmpty) {
+      imageWidget = const Icon(Icons.image, color: Colors.grey, size: 40);
+    } else {
+      try {
+        // Try decoding as Base64
+        final bytes = base64Decode(imageUrl);
+        imageWidget = Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          width: widget.isMobile ? 50 : 60,
+          height: widget.isMobile ? 50 : 60,
+          errorBuilder: (context, error, stackTrace) {
+            // Fallback to network image if Base64 decoding fails
+            return Image.network(
+              imageUrl,
+              fit: BoxFit.cover,
+              width: widget.isMobile ? 50 : 60,
+              height: widget.isMobile ? 50 : 60,
+              errorBuilder: (context, error, stackTrace) =>
+              const Icon(Icons.image, color: Colors.grey, size: 40),
+            );
+          },
+        );
+      } catch (_) {
+        // Fallback to network image if Base64 decoding fails
+        imageWidget = Image.network(
+          imageUrl,
+          fit: BoxFit.cover,
+          width: widget.isMobile ? 50 : 60,
+          height: widget.isMobile ? 50 : 60,
+          errorBuilder: (context, error, stackTrace) =>
+          const Icon(Icons.image, color: Colors.grey, size: 40),
+        );
+      }
+    }
+
+    // Fallback colors if AppColors is undefined
+    const purpleColor = Color(0xFF2E2E2E);
+    const greyColor = Color(0xFF757575);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Card(
         color: Colors.white,
-        elevation: isMobile ? 0 : 2,
+        elevation: widget.isMobile ? 0 : 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
         child: Padding(
-          padding: EdgeInsets.all(isMobile ? 0 : 12),
+          padding: EdgeInsets.all(widget.isMobile ? 8 : 12),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: isMobile ? 60 : 80,
-                height: isMobile ? 60 : 80,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(8),
-                  image: imageUrl.isNotEmpty
-                      ? DecorationImage(
-                    image: NetworkImage(imageUrl),
-                    fit: BoxFit.cover,
-                  )
-                      : null,
+              Checkbox(
+                value: isSelected,
+                onChanged: (value) {
+                  setState(() {
+                    isSelected = value ?? false;
+                  });
+                  widget.onSelectionChanged(isSelected);
+                },
+                activeColor: purpleColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
                 ),
-                child: imageUrl.isEmpty ? Icon(Icons.image) : null,
+              ),
+              const SizedBox(width: 8),
+              Container(
+                width: widget.isMobile ? 50 : 60,
+                height: widget.isMobile ? 50 : 60,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE0E0E0).withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: imageWidget,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Tên sản phẩm
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
                           child: Text(
-                            product.name, // <- Tên sản phẩm!
+                            widget.product.name,
                             style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF333333),
+                            ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        if (isEditing)
+                        if (widget.isMobile && widget.isEditing || !widget.isMobile)
                           IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: onDelete,
+                            onPressed: widget.onDelete,
+                            hoverColor: Colors.red.withOpacity(0.2),
                           ),
                       ],
                     ),
-                    // Tên biến thể (nếu có)
-                    if (variants.length > 1)
+                    const SizedBox(height: 8),
+                    if (widget.variants.length > 1)
                       DropdownButton<String>(
-                        value: item.productVariantId,
-                        items: variants.map((v) => DropdownMenuItem(
-                          value: v.id,
-                          child: Text('${v.variantName} (+₫${v.additionalPrice.toStringAsFixed(0)})'),
-                        )).toList(),
-                        onChanged: onVariantChanged,
+                        value: widget.item.productVariantId,
+                        items: widget.variants
+                            .map(
+                              (v) => DropdownMenuItem(
+                            value: v.id,
+                            child: Text(
+                              '${v.variantName} (+₫${v.additionalPrice.toStringAsFixed(0)})',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF333333),
+                              ),
+                            ),
+                          ),
+                        )
+                            .toList(),
+                        onChanged: widget.onVariantChanged,
                         isExpanded: true,
-                        underline: Container(height: 1, color: Colors.grey.shade300),
+                        underline: Container(
+                          height: 1,
+                          color: const Color(0xFFE0E0E0),
+                        ),
                       )
                     else
                       Text(
                         currentVariant.variantName,
-                        style: TextStyle(color: AppColors.hexToColor(AppColors.grey)),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: greyColor,
+                        ),
                       ),
                     const SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Giá
                         Text(
-                          "₫${currentVariant.additionalPrice.toStringAsFixed(0)}",
+                          '₫${currentVariant.additionalPrice.toStringAsFixed(0)}',
                           style: const TextStyle(
                             fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF333333),
                           ),
                         ),
-                        // Controls thay đổi số lượng
                         Row(
                           children: [
                             IconButton(
                               icon: Icon(
                                 Icons.remove_circle,
-                                color: AppColors.hexToColor(AppColors.purple),
+                                color: purpleColor,
                               ),
                               onPressed: () {
-                                if (item.quantity > 1) {
-                                  onQuantityChanged(item.quantity - 1);
+                                if (widget.item.quantity > 1) {
+                                  widget.onQuantityChanged(widget.item.quantity - 1);
                                 }
                               },
                             ),
                             Text(
-                              item.quantity.toString().padLeft(2, '0'),
-                              style: const TextStyle(fontSize: 16),
+                              widget.item.quantity.toString().padLeft(2, '0'),
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF333333),
+                              ),
                             ),
                             IconButton(
                               icon: Icon(
                                 Icons.add_circle,
-                                color: AppColors.hexToColor(AppColors.purple),
+                                color: purpleColor,
                               ),
                               onPressed: () {
-                                onQuantityChanged(item.quantity + 1);
+                                widget.onQuantityChanged(widget.item.quantity + 1);
                               },
                             ),
                           ],
