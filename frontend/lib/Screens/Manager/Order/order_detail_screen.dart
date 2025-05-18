@@ -208,7 +208,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreenMn> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white),
                       icon: const Icon(Icons.save),
                       label: const Text("Lưu thay đổi"),
                       onPressed: _isLoading ? null : _updateOrderStatus,
