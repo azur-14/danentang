@@ -1,5 +1,6 @@
 ﻿using UserManagementService.Data;
 using Microsoft.Extensions.Options;
+using UserManagementService.Sockets;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +38,33 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowAll");
+// Add before `app.UseAuthorization();`
+app.UseWebSockets();
+
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path == "/ws/complaint")
+    {
+        if (context.WebSockets.IsWebSocketRequest)
+        {
+            using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+
+            // Lấy service context
+            var mongo = context.RequestServices.GetRequiredService<MongoDbContext>();
+            ComplaintSocketHandler.Configure(mongo.ComplaintMessages);
+
+            await ComplaintSocketHandler.Handle(context, webSocket);
+        }
+        else
+        {
+            context.Response.StatusCode = 400;
+        }
+    }
+    else
+    {
+        await next();
+    }
+});
 
 app.UseAuthorization();
 
