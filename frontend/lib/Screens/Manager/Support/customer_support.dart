@@ -335,7 +335,7 @@ class SupportTicketItem extends StatelessWidget {
           const SizedBox(height: 14),
           GestureDetector(
             onTap: () {
-              context.push('/manager/customer-service/${user.id}', extra: user);
+              context.push('/manager/support/${user.id}', extra: user);
             },
             child: Center(
               child: Container(

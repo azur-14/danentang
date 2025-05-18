@@ -40,6 +40,7 @@ import 'package:danentang/Screens/Manager/Order/order_list.dart';
 import 'package:danentang/Screens/Manager/Report/oders_report.dart';
 import 'package:danentang/Screens/Manager/Report/revenue_report.dart';
 import 'package:danentang/Screens/Manager/Report/user_report.dart';
+import 'package:danentang/Screens/Manager/Order/order_detail_screen.dart';
 
 // Models & Data
 import 'package:danentang/models/product.dart';
@@ -337,12 +338,22 @@ final GoRouter router = GoRouter(
         ),
         GoRoute(
           path: 'support',
-          builder: (context, state) => const CustomerSupport(),
+          builder: (context, state) => const CustomerSupport(), // Manager's support dashboard
+          routes: [
+            GoRoute(
+              path: ':userId',
+              builder: (context, state) {
+                final userId = state.pathParameters['userId'];
+                return CustomerServiceScreen(userId: userId); // Chi tiết hỗ trợ cho user
+              },
+            ),
+          ],
         ),
         GoRoute(
           path: 'profile',
           builder: (context, state) => const ProfileManagementScreen(),
         ),
+        
       ],
     ),
   ],
