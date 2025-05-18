@@ -52,6 +52,7 @@ import 'package:danentang/data/order_data.dart';
 
 import 'Screens/Customer/Product/ProductCatalogPage.dart';
 import 'Screens/Customer/Product/test_product_details.dart';
+import 'Screens/Customer/User/change_password.dart';
 
 final GoRouter router = GoRouter(
   initialLocation: '/homepage',
@@ -182,7 +183,11 @@ final GoRouter router = GoRouter(
       path: '/chat',
       builder: (context, state) => const CustomerServiceScreen(), // customer
     ),
-
+    // Thêm route cho ChangePasswordScreen
+    GoRoute(
+      path: '/password-change',
+      builder: (ctx, state) => const ChangePasswordScreen(),
+    ),
     GoRoute(
       path: '/chat/:userId',
       builder: (context, state) {
@@ -317,6 +322,7 @@ final GoRouter router = GoRouter(
             return OrderDetailsScreen(orderId: orderId);
           },
         ),
+
         GoRoute(
           path: 'orders-report',
           builder: (context, state) => const OrdersReport(),

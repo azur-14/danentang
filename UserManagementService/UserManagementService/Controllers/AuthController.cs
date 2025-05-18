@@ -339,10 +339,42 @@ namespace UserManagementService.Controllers
 
             return Ok(new { message = "Đổi mật khẩu thành công." });
         }
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+        {
+            // 1. Tìm user theo email
+            var filter = Builders<User>.Filter.Eq(u => u.Email, dto.Email);
+            var user = await _context.Users.Find(filter).FirstOrDefaultAsync();
+            if (user == null)
+                return NotFound("Không tìm thấy user với email này.");
+
+            // 2. Kiểm tra mật khẩu hiện tại
+            if (string.IsNullOrEmpty(dto.CurrentPassword))
+                return BadRequest("Phải cung cấp mật khẩu hiện tại.");
+            if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.PasswordHash))
+                return BadRequest("Mật khẩu hiện tại không đúng.");
+
+            // 3. Hash mật khẩu mới và cập nhật
+            var newHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            var update = Builders<User>.Update
+                .Set(u => u.PasswordHash, newHash)
+                .Set(u => u.UpdatedAt, DateTime.UtcNow);
+
+            await _context.Users.UpdateOneAsync(filter, update);
+
+            return Ok(new { message = "Đổi mật khẩu thành công." });
+        }
     }
 
-    // --- DTO cho đổi mật khẩu ---
-    public class ResetPasswordDto
+
+public class ChangePasswordDto
+{
+    public string Email { get; set; } = null!;
+    public string CurrentPassword { get; set; } = null!;
+    public string NewPassword { get; set; } = null!;
+}
+// --- DTO cho đổi mật khẩu ---
+public class ResetPasswordDto
     {
         public string Email { get; set; } = null!;
         public string NewPassword { get; set; } = null!;

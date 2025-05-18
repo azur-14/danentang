@@ -25,10 +25,7 @@ class AccountSettingsScreen extends StatelessWidget {
               title: const Text('Change Password'),
               trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
-                // TODO: Implement change password logic
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Change Password feature coming soon!')),
-                );
+                context.go('/account/change-password');
               },
             ),
 

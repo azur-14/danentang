@@ -38,7 +38,7 @@ class ProfileDrawer extends StatelessWidget {
           ),
           _buildDrawerItem(context, 'Hồ sơ của bạn', Icons.person, '/personal-info'),
           _buildDrawerItem(context, 'Đơn hàng của tui', Icons.receipt, '/my-orders'),
-          _buildDrawerItem(context, 'Đổi mật khẩu', Icons.lock, '/change_password'),
+          _buildDrawerItem(context, 'Đổi mật khẩu', Icons.lock, '/password-change'),
           _buildDrawerItem(context, 'Đăng xuất', Icons.logout, '/login', isLogout: true),
         ],
       ),

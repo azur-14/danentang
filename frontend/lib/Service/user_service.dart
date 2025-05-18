@@ -362,5 +362,28 @@ class UserService {
       throw Exception('Failed to load complaining users');
     }
   }
+  Future<void> changePassword({
+    required String email,
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final uri = Uri.parse('$_authBase/change-password');
+    final resp = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+      }),
+    );
+
+    if (resp.statusCode != 200) {
+      // Nếu server trả về plain-text, resp.body sẽ là chuỗi lỗi bạn muốn show
+      throw Exception(resp.body);
+    }
+    // nếu cần parse JSON thành object thì mới gọi jsonDecode ở đây
+  }
+
 }
 
