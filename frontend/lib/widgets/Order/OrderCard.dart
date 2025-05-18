@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:danentang/data/order_data.dart';
 import '../../Service/order_service.dart';
+import '../../Service/product_service.dart';
 import '../../models/Order.dart';
 import '../../models/OrderItem.dart';
 import '../../models/OrderStatusHistory.dart';
@@ -27,6 +27,17 @@ class _OrderListScreenState extends State<OrderListScreen> {
     // Sắp xếp theo createdAt giảm dần (mới nhất lên đầu)
     return orders..sort((a, b) => b.createdAt.compareTo(a.createdAt));
   }
+  Future<List<Product>> _fetchAllProducts() async {
+    return await ProductService.fetchAllProducts(); // Đảm bảo bạn đã import đúng ProductService
+  }
+  Future<Map<String, dynamic>> _fetchData() async {
+    final orders = await _fetchSortedOrders();
+    final products = await _fetchAllProducts();
+    return {
+      'orders': orders,
+      'products': products,
+    };
+  }
 
   // Lấy danh sách đơn hàng cho trang hiện tại
   List<Order> _getPagedOrders(List<Order> orders) {
@@ -49,8 +60,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
         backgroundColor: Colors.blue[700],
         foregroundColor: Colors.white,
       ),
-      body: FutureBuilder<List<Order>>(
-        future: _fetchSortedOrders(),
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: _fetchData(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -58,7 +69,11 @@ class _OrderListScreenState extends State<OrderListScreen> {
           if (snapshot.hasError) {
             return Center(child: Text('Lỗi: ${snapshot.error}'));
           }
-          final orders = snapshot.data ?? [];
+
+          final data = snapshot.data!;
+          final orders = data['orders'] as List<Order>;
+          final products = data['products'] as List<Product>;
+
           if (orders.isEmpty) {
             return const Center(child: Text('Không có đơn hàng nào'));
           }
@@ -68,14 +83,15 @@ class _OrderListScreenState extends State<OrderListScreen> {
 
           return Column(
             children: [
-              // Danh sách đơn hàng
               Expanded(
                 child: ListView.builder(
                   itemCount: pagedOrders.length,
-                  itemBuilder: (context, index) => OrderCard(order: pagedOrders[index]),
+                  itemBuilder: (context, index) => OrderCard(
+                    order: pagedOrders[index],
+                    products: products, // ✅ Truyền products vào đây
+                  ),
                 ),
               ),
-              // Thanh phân trang
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
@@ -117,8 +133,9 @@ class _OrderListScreenState extends State<OrderListScreen> {
 // OrderCard (giữ nguyên từ mã gốc)
 class OrderCard extends StatefulWidget {
   final Order order;
+  final List<Product> products;
 
-  const OrderCard({super.key, required this.order});
+  const OrderCard({super.key, required this.order, required this.products});
 
   @override
   _OrderCardState createState() => _OrderCardState();
@@ -316,7 +333,7 @@ class _OrderCardState extends State<OrderCard> {
   }
 
   Widget _buildOrderItem(OrderItem item) {
-    final Product product = products.firstWhere(
+    final Product product = widget.products.firstWhere(
           (p) => p.variants.any((v) => v.id == item.productVariantId),
       orElse: () => Product(
         id: '',

@@ -112,8 +112,9 @@ class ProductImage {
 }
 
 class ProductVariant {
-  final String id;      // cho phép null
+  final String id;
   final String variantName;
+  final double originalPrice; // ✅ Thêm giá gốc
   final double additionalPrice;
   final int inventory;
   final DateTime createdAt;
@@ -122,27 +123,33 @@ class ProductVariant {
   ProductVariant({
     required this.id,
     required this.variantName,
+    required this.originalPrice,
     required this.additionalPrice,
     required this.inventory,
     required this.createdAt,
     required this.updatedAt,
   });
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'variantName': variantName,
+    'originalPrice': originalPrice,        // ✅ serialize giá gốc
     'additionalPrice': additionalPrice,
     'inventory': inventory,
     'createdAt': createdAt.toIso8601String(),
     'updatedAt': updatedAt.toIso8601String(),
   };
+
   factory ProductVariant.fromJson(Map<String, dynamic> json) =>
       ProductVariant(
         id: json['id'] as String,
         variantName: json['variantName'] as String,
+        originalPrice: (json['originalPrice'] ?? 0).toDouble(),  // ✅ parse giá gốc
         additionalPrice: (json['additionalPrice'] as num).toDouble(),
         inventory: json['inventory'] as int,
         createdAt: DateTime.parse(json['createdAt'] as String),
         updatedAt: DateTime.parse(json['updatedAt'] as String),
       );
 }
+
 

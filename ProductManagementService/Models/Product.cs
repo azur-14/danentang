@@ -67,7 +67,9 @@ namespace ProductManagementService.Models
         [BsonElement("variantName")]
         public string VariantName { get; set; } = null!;
 
-        // ⭐ Giữ nguyên AdditionalPrice để tránh lỗi
+        [BsonElement("originalPrice")]
+        public decimal OriginalPrice { get; set; }  // ⭐ Thêm giá gốc để tính doanh thu
+
         [BsonElement("additionalPrice")]
         public decimal AdditionalPrice { get; set; }
 
@@ -80,4 +82,5 @@ namespace ProductManagementService.Models
         [BsonElement("updatedAt")]
         public DateTime UpdatedAt { get; set; }
     }
+
 }

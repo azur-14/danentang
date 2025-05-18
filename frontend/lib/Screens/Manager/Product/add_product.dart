@@ -35,6 +35,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   final List<String?> _imageBase64 = [];
   final List<TextEditingController> _variantNameCtrls = [];
+  final List<TextEditingController> _variantOriginalPriceCtrls = [];
   final List<TextEditingController> _variantPriceCtrls = [];
   final List<TextEditingController> _variantInvCtrls = [];
 
@@ -55,23 +56,21 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
     _selectedCategoryId = widget.product?.categoryId;
 
-    // Images
     if (widget.product != null && widget.product!.images.isNotEmpty) {
       for (var img in widget.product!.images) _imageBase64.add(img.url);
     }
     if (_imageBase64.isEmpty) _addImageField();
 
-    // Variants
     if (widget.product != null && widget.product!.variants.isNotEmpty) {
       for (var v in widget.product!.variants) {
         _variantNameCtrls.add(TextEditingController(text: v.variantName));
+        _variantOriginalPriceCtrls.add(TextEditingController(text: v.originalPrice.toString()));
         _variantPriceCtrls.add(TextEditingController(text: v.additionalPrice.toString()));
         _variantInvCtrls.add(TextEditingController(text: v.inventory.toString()));
       }
     }
     if (_variantNameCtrls.isEmpty) _addVariantField();
 
-    // Load categories and tags with error handling
     ProductService.fetchAllCategories().then((cats) {
       setState(() {
         _categories = cats;
@@ -106,8 +105,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   void _addImageField() => _imageBase64.add(null);
+
   void _addVariantField() {
     _variantNameCtrls.add(TextEditingController());
+    _variantOriginalPriceCtrls.add(TextEditingController(text: '0'));
     _variantPriceCtrls.add(TextEditingController(text: '0'));
     _variantInvCtrls.add(TextEditingController(text: '0'));
   }
@@ -119,6 +120,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _descCtl.dispose();
     _discountCtl.dispose();
     for (var c in _variantNameCtrls) c.dispose();
+    for (var c in _variantOriginalPriceCtrls) c.dispose();
     for (var c in _variantPriceCtrls) c.dispose();
     for (var c in _variantInvCtrls) c.dispose();
     super.dispose();
@@ -145,6 +147,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         sortOrder: i,
       ),
     );
+
     final variants = List<ProductVariant>.generate(
       _variantNameCtrls.length,
           (i) => ProductVariant(
@@ -155,6 +158,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
             ? widget.product!.variants[i].createdAt
             : DateTime.now(),
         variantName: _variantNameCtrls[i].text.trim(),
+        originalPrice: double.tryParse(_variantOriginalPriceCtrls[i].text) ?? 0,
         additionalPrice: double.tryParse(_variantPriceCtrls[i].text) ?? 0,
         inventory: int.tryParse(_variantInvCtrls[i].text) ?? 0,
         updatedAt: DateTime.now(),
@@ -180,11 +184,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
       } else {
         await ProductService.updateProduct(p);
       }
-      // bulk upsert tags
       await ProductService.upsertTagsForProduct(p.id, _selectedTagIds);
       Navigator.pop(context, true);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e'))); // Sửa cú pháp lỗi
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
     } finally {
       setState(() => _loading = false);
     }

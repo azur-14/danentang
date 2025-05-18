@@ -104,7 +104,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreenMn> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Đã cập nhật trạng thái đơn hàng')),
       );
-      context.go('/manager/orders');
+      context.go('/manager/orders?refresh=true');
+
     } catch (e) {
       setState(() => _errorMessage = 'Lỗi: $e');
       ScaffoldMessenger.of(context).showSnackBar(

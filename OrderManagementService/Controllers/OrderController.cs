@@ -227,7 +227,6 @@ Trạng thái: {order.Status}
             return NoContent();
         }
 
-        // PATCH: api/orders/{id}/status
         [HttpPatch("{id:length(24)}/status")]
         public async Task<IActionResult> UpdateStatus(string id, [FromBody] OrderStatusHistory history)
         {
@@ -238,33 +237,9 @@ Trạng thái: {order.Status}
 
             var result = await _orders.UpdateOneAsync(o => o.Id == id, update);
             if (result.MatchedCount == 0) return NotFound();
-
-            // Nếu đơn hàng được xác nhận (ví dụ: status == "confirmed")
-            if (history.Status.ToLower() == "confirmed")
-            {
-                var order = await _orders.Find(o => o.Id == id).FirstOrDefaultAsync();
-                if (order != null)
-                {
-                    var client = _httpClientFactory.CreateClient("ProductService");
-                    foreach (var item in order.Items)
-                    {
-                        foreach (var productItemId in item.ProductItemIds)
-                        {
-                            var patchResp = await client.PatchAsync(
-                                $"product-items/{productItemId}/status",
-                                new StringContent("\"sold\"", System.Text.Encoding.UTF8, "application/json")
-                            );
-
-                            if (!patchResp.IsSuccessStatusCode)
-                            {
-                                return BadRequest($"Không thể cập nhật trạng thái sản phẩm {productItemId}");
-                            }
-                        }
-                    }
-                }
-            }
             return NoContent();
         }
+
     }
 
     // Dùng cho kiểm tra tồn kho variant
