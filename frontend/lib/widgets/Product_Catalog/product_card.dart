@@ -1,6 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-
-import '../../../models/product.dart';
+import 'package:danentang/models/product.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
@@ -26,14 +26,10 @@ class ProductCard extends StatelessWidget {
           Flexible(
             child: AspectRatio(
               aspectRatio: 1, // Square image to prevent overflow
-              child: Image.network(
+              child: _safeBase64Image(
                 product.images.isNotEmpty ? product.images[0].url : '',
                 fit: BoxFit.cover,
                 width: double.infinity,
-                errorBuilder: (context, error, stackTrace) => const Icon(
-                  Icons.image_not_supported,
-                  size: 40,
-                ),
               ),
             ),
           ),
@@ -93,9 +89,19 @@ class ProductCard extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 2), // Reduced spacing
+                const Text(
+                  'Last updated: 11:26 AM +07 on Sunday, May 18, 2025',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.grey,
+                  ),
+                ),
                 const SizedBox(height: 4), // Reduced spacing
                 ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    debugPrint('Add to Cart clicked for ${product.name}');
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue[700],
                     foregroundColor: Colors.white,
@@ -109,6 +115,48 @@ class ProductCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _safeBase64Image(
+      String base64String, {
+        double? width,
+        double? height,
+        BoxFit? fit,
+      }) {
+    try {
+      if (base64String.isEmpty || !base64String.startsWith('data:image')) {
+        return _fallbackImage(width, height);
+      }
+      final base64Data = base64String.split(',').last; // Extract Base64 part
+      final bytes = base64Decode(base64Data);
+      return Image.memory(
+        bytes,
+        width: width,
+        height: height,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) {
+          debugPrint('Image error: $error');
+          return _fallbackImage(width, height);
+        },
+      );
+    } catch (e) {
+      debugPrint('Image decode error: $e');
+      return _fallbackImage(width, height);
+    }
+  }
+
+  Widget _fallbackImage(double? width, double? height) {
+    return Container(
+      width: width,
+      height: height,
+      color: Colors.grey.shade300,
+      alignment: Alignment.center,
+      child: const Icon(
+        Icons.image_not_supported,
+        size: 40,
+        color: Colors.grey,
       ),
     );
   }

@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:danentang/models/product.dart';
 import 'package:danentang/models/tag.dart';
 import 'package:danentang/Service/product_service.dart';
@@ -9,9 +8,9 @@ import '../../../widgets/Footer/mobile_navigation_bar.dart';
 import 'add_product.dart';
 import 'delete_product.dart';
 
-class ProductDetailScreenManager extends StatefulWidget {
+class ProductDetailScreene extends StatefulWidget {
   final String productId;
-  const ProductDetailScreenManager({
+  const ProductDetailScreene({
     required this.productId,
     Key? key,
   }) : super(key: key);
@@ -20,60 +19,20 @@ class ProductDetailScreenManager extends StatefulWidget {
   _ProductDetailScreenState createState() => _ProductDetailScreenState();
 }
 
-class _ProductDetailScreenState extends State<ProductDetailScreenManager>
+class _ProductDetailScreenState extends State<ProductDetailScreene>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+
   late Future<Product> _futureProduct;
   late Future<List<ProductImage>> _futureImages;
   late Future<List<ProductVariant>> _futureVariants;
   late Future<List<Tag>> _futureTags;
-  int _selectedTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    if (widget.productId.isEmpty || widget.productId.trim().isEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ID sản phẩm không hợp lệ')),
-        );
-        context.go('/manager/products');
-      });
-    }
     _tabController = TabController(length: 3, vsync: this);
-    _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) {
-        setState(() {
-          _selectedTabIndex = _tabController.index;
-        });
-        _saveTabIndex(_selectedTabIndex);
-      }
-    });
-    _loadTabIndex();
     _loadAll();
-    _checkLoginStatus();
-  }
-
-  Future<void> _checkLoginStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-    final role = prefs.getString('role');
-    if (token == null || role != 'admin') {
-      context.go('/login');
-    }
-  }
-
-  Future<void> _loadTabIndex() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _selectedTabIndex = prefs.getInt('product_detail_tab_${widget.productId}') ?? 0;
-      _tabController.index = _selectedTabIndex;
-    });
-  }
-
-  Future<void> _saveTabIndex(int index) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('product_detail_tab_${widget.productId}', index);
   }
 
   void _loadAll() {
@@ -92,6 +51,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreenManager>
   Future<void> _onEditedOrDeleted(bool? result) async {
     if (result == true) {
       setState(_loadAll);
+      context.go('/manager/products');
     }
   }
 
@@ -99,113 +59,85 @@ class _ProductDetailScreenState extends State<ProductDetailScreenManager>
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) async {
-        if (!didPop) {
-          context.go('/manager/products'); // Quay lại danh sách sản phẩm
-        }
-      },
-      child: FutureBuilder<Product>(
-        future: _futureProduct,
-        builder: (ctx, snap) {
-          if (snap.connectionState != ConnectionState.done) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-          if (snap.hasError || !snap.hasData) {
-            return Scaffold(
-              appBar: AppBar(
-                title: const Text('Lỗi'),
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => context.go('/manager/products'),
-                ),
-              ),
-              body: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Lỗi: ${snap.error ?? "Sản phẩm không tồn tại"}'),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(_loadAll); // Thử lại
-                      },
-                      child: const Text('Thử lại'),
-                    ),
-                    const SizedBox(height: 8),
-                    ElevatedButton(
-                      onPressed: () => context.go('/manager/products'),
-                      child: const Text('Quay lại'),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-          final product = snap.data!;
-          final productName = product.name.isNotEmpty ? product.name : 'Sản phẩm không tên';
-          return Scaffold(
-            appBar: AppBar(
-              title: Text(productName),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.white),
-                  onPressed: () async {
-                    final edited = await context.push<bool>(
-                      '/manager/products/edit',
-                      extra: {'product': product},
-                    );
-                    await _onEditedOrDeleted(edited);
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.white),
-                  onPressed: () async {
-                    final deleted = await context.push<bool>(
-                      '/manager/products/delete',
-                      extra: {'product': product},
-                    );
-                    if (deleted == true) {
-                      context.go('/manager/products', extra: {'refresh': true});
-                    }
-                  },
-                ),
-              ],
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: () => context.go('/manager/products'),
-              ),
-              bottom: TabBar(
-                controller: _tabController,
-                tabs: const [
-                  Tab(text: 'Images'),
-                  Tab(text: 'Variants'),
-                  Tab(text: 'Tags'),
-                ],
-              ),
-            ),
-            body: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildImagesTab(),
-                _buildVariantsTab(),
-                _buildTagsTab(),
-              ],
-            ),
-            bottomNavigationBar: isMobile
-                ? MobileNavigationBar(
-              selectedIndex: 0,
-              onItemTapped: (_) {},
-              isLoggedIn: true,
-              role: 'admin', // Đồng bộ với vai trò admin
-            )
-                : null,
+    return FutureBuilder<Product>(
+      future: _futureProduct,
+      builder: (ctx, snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
           );
-        },
-      ),
+        }
+        if (snap.hasError) {
+          return Scaffold(
+            body: Center(child: Text('Error: ${snap.error}')),
+          );
+        }
+        final product = snap.data!;
+
+        return Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => context.go('/manager/products'),
+            ),
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(product.name),
+                const SizedBox(height: 4),
+                const Text(
+                  'Last updated: 10:52 AM +07 on Sunday, May 18, 2025',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.edit, color: Colors.white),
+                onPressed: () async {
+                  final edited = await context.pushNamed<bool>('add-product',
+                      extra: product);
+                  await _onEditedOrDeleted(edited);
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete, color: Colors.white),
+                onPressed: () async {
+                  final deleted = await context.pushNamed<bool>('delete-product',
+                      pathParameters: {'id': product.id}, extra: product);
+                  if (deleted == true) {
+                    context.pop(true);
+                  }
+                },
+              ),
+            ],
+            bottom: TabBar(
+              controller: _tabController,
+              tabs: const [
+                Tab(text: 'Images'),
+                Tab(text: 'Variants'),
+                Tab(text: 'Tags'),
+              ],
+            ),
+          ),
+          body: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildImagesTab(),
+              _buildVariantsTab(),
+              _buildTagsTab(),
+            ],
+          ),
+          bottomNavigationBar: isMobile
+              ? MobileNavigationBar(
+            selectedIndex: 0,
+            onItemTapped: (_) {},
+            isLoggedIn: true,
+            role: 'manager',
+          )
+              : null,
+        );
+      },
     );
   }
 
@@ -216,33 +148,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreenManager>
         if (snap.connectionState != ConnectionState.done) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (snap.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('Lỗi tải hình ảnh: ${snap.error}'),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: () => setState(_loadAll),
-                  child: const Text('Thử lại'),
-                ),
-              ],
-            ),
-          );
-        }
         final imgs = snap.data ?? [];
         if (imgs.isEmpty) {
-          return const Center(child: Text('Không có hình ảnh'));
+          return const Center(child: Text('No images'));
         }
-        final crossCount = (MediaQuery.of(context).size.width ~/ 120).clamp(2, 6);
+        final crossCount = MediaQuery.of(context).size.width ~/ 120;
         return GridView.builder(
           padding: const EdgeInsets.all(12),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossCount,
+            crossAxisCount: crossCount >= 2 ? crossCount : 2,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            childAspectRatio: 1,
           ),
           itemCount: imgs.length,
           itemBuilder: (ctx, i) {
@@ -251,20 +167,27 @@ class _ProductDetailScreenState extends State<ProductDetailScreenManager>
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: _smartImage(img.url),
+                  child: _safeBase64Image(
+                    img.url,
+                    width: double.infinity,
+                    height: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
                 ),
                 Positioned(
                   top: 4,
                   right: 4,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: Colors.black45,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       'Order ${img.sortOrder}',
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      style:
+                      const TextStyle(color: Colors.white, fontSize: 12),
                     ),
                   ),
                 ),
@@ -283,24 +206,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreenManager>
         if (snap.connectionState != ConnectionState.done) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (snap.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('Lỗi tải biến thể: ${snap.error}'),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: () => setState(_loadAll),
-                  child: const Text('Thử lại'),
-                ),
-              ],
-            ),
-          );
-        }
         final vars = snap.data ?? [];
         if (vars.isEmpty) {
-          return const Center(child: Text('Không có biến thể'));
+          return const Center(child: Text('No variants'));
         }
         return ListView.separated(
           padding: const EdgeInsets.all(12),
@@ -312,8 +220,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreenManager>
               leading: const Icon(Icons.settings_input_component),
               title: Text(v.variantName),
               subtitle: Text(
-                'Giá: \$${v.additionalPrice.toStringAsFixed(2)} • Tồn kho: ${v.inventory}',
-                style: const TextStyle(fontWeight: FontWeight.w500),
+                'Additional ₫${v.additionalPrice.toStringAsFixed(0)} • Stock: ${v.inventory}',
               ),
             );
           },
@@ -329,24 +236,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreenManager>
         if (snap.connectionState != ConnectionState.done) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (snap.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('Lỗi tải thẻ: ${snap.error}'),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: () => setState(_loadAll),
-                  child: const Text('Thử lại'),
-                ),
-              ],
-            ),
-          );
-        }
         final tags = snap.data ?? [];
         if (tags.isEmpty) {
-          return const Center(child: Text('Chưa có thẻ nào được gán'));
+          return const Center(child: Text('No tags assigned'));
         }
         return Padding(
           padding: const EdgeInsets.all(12),
@@ -354,11 +246,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreenManager>
             spacing: 8,
             runSpacing: 8,
             children: tags.map((t) {
-              final tagName = t.name.isNotEmpty ? t.name : 'Thẻ không tên';
               return Chip(
-                label: Text(tagName),
+                label: Text(t.name),
                 backgroundColor: Colors.purple.shade50,
-                avatar: const Icon(Icons.label, size: 18, color: Colors.purple),
+                avatar: const Icon(Icons.label,
+                    size: 18, color: Colors.purple),
               );
             }).toList(),
           ),
@@ -367,33 +259,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreenManager>
     );
   }
 
-  Widget _smartImage(String urlOrBase64, {double? width, double? height, BoxFit? fit}) {
-    if (urlOrBase64.isEmpty || urlOrBase64.trim().isEmpty) {
-      return _fallbackImage(width, height);
-    }
-    if (urlOrBase64.startsWith('http')) {
-      return Image.network(
-        urlOrBase64,
-        width: width,
-        height: height,
-        fit: fit ?? BoxFit.cover,
-        errorBuilder: (_, __, ___) => _fallbackImage(width, height),
-      );
-    }
+  Widget _safeBase64Image(
+      String base64String, {
+        double? width,
+        double? height,
+        BoxFit? fit,
+      }) {
     try {
-      final bytes = base64Decode(urlOrBase64);
+      final bytes = base64Decode(base64String);
       return Image.memory(
         bytes,
         width: width,
         height: height,
-        fit: fit ?? BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          print('Lỗi giải mã base64: $error'); // Ghi log lỗi
-          return _fallbackImage(width, height);
-        },
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) =>
+            _fallbackImage(width, height),
       );
-    } catch (e) {
-      print('Lỗi xử lý ảnh: $e'); // Ghi log lỗi
+    } catch (_) {
       return _fallbackImage(width, height);
     }
   }
@@ -404,7 +286,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreenManager>
       height: height,
       color: Colors.grey.shade300,
       alignment: Alignment.center,
-      child: const Icon(Icons.broken_image, size: 40, color: Colors.grey),
+      child:
+      const Icon(Icons.broken_image, size: 40, color: Colors.grey),
     );
   }
 }
