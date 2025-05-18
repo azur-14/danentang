@@ -15,9 +15,9 @@ class UserService {
 
   UserService({
     // use 10.0.2.2 on Android emulator, localhost on web/desktop
-    String authBase = kIsWeb ? 'http://localhost:5012/api/auth' : 'http://10.0.2.2:5012/api/auth',
-    String userBase = kIsWeb ? 'http://localhost:5012/api/user' : 'http://10.0.2.2:5012/api/user',
-    String chatBase =  kIsWeb ? 'http://localhost:5012/api/complaint' : 'http://10.0.2.2:5012/api/complaints',
+    String authBase = kIsWeb ? 'https://usermanagementservice-production-697c.up.railway.app/api/auth' : 'http://10.0.2.2:5012/api/auth',
+    String userBase = kIsWeb ? 'https://usermanagementservice-production-697c.up.railway.app/api/user' : 'http://10.0.2.2:5012/api/user',
+    String chatBase =  kIsWeb ? 'https://usermanagementservice-production-697c.up.railway.app/api/complaint' : 'http://10.0.2.2:5012/api/complaints',
 
   })  : _authBase = authBase,
         _userBase = userBase,
