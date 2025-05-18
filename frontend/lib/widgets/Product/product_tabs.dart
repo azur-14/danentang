@@ -61,13 +61,25 @@ class _ProductTabsState extends State<ProductTabs> {
       _loadReviews();
       setState(() {}); // refresh UI
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gửi thành công!')),
+        SnackBar(
+          content: const Text(
+            'Gửi thành công!',
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: const Color(0xFF87CEEB), // Xanh dương nhạt cho snackbar thành công
+        ),
       );
       _formKey.currentState!.reset();
       setState(() => _rating = 5);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi: $e')),
+        SnackBar(
+          content: Text(
+            'Lỗi: $e',
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: const Color(0xFF2E2E2E), // Xám đậm cho snackbar lỗi
+        ),
       );
     } finally {
       setState(() => _submitting = false);
@@ -76,18 +88,24 @@ class _ProductTabsState extends State<ProductTabs> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+    // Define color scheme
+    const primaryColor = Color(0xFF1E90FF); // Xanh dương đậm (Dodger Blue) cho văn bản chính
+    const lightBlueColor = Color(0xFF87CEEB); // Xanh dương nhạt (Light Sky Blue) cho nền và phụ
+    const accentColor = Color(0xFF2E2E2E); // Xám đậm làm điểm nhấn
+    const backgroundColor = Colors.white; // Nền trắng
+
+    return Container(
+      color: backgroundColor, // Nền trắng cho toàn bộ tab
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            color: Colors.grey[200],
+            color: lightBlueColor.withOpacity(0.1), // Xanh nhạt rất nhẹ cho tab bar
             child: TabBar(
               controller: widget.tabController,
-              labelColor: Colors.black,
+              labelColor: primaryColor, // Xanh dương đậm cho tab được chọn
               unselectedLabelColor: Colors.grey,
-              indicatorColor: Colors.purple,
+              indicatorColor: primaryColor, // Xanh dương đậm cho indicator
               tabs: const [
                 Tab(text: "Chi tiết sản phẩm"),
                 Tab(text: "Đánh giá người dùng"),
@@ -104,7 +122,7 @@ class _ProductTabsState extends State<ProductTabs> {
                   padding: const EdgeInsets.all(16),
                   child: Text(
                     widget.product.description ?? "Không có mô tả.",
-                    style: const TextStyle(fontSize: 14),
+                    style: TextStyle(fontSize: 14, color: primaryColor.withOpacity(0.8)), // Xanh dương đậm nhạt cho mô tả
                   ),
                 ),
 
@@ -114,20 +132,27 @@ class _ProductTabsState extends State<ProductTabs> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Danh sách đánh giá',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: accentColor, // Xám đậm làm điểm nhấn cho tiêu đề
+                        ),
                       ),
                       const SizedBox(height: 8),
                       FutureBuilder<List<Review>>(
                         future: _futureReviews,
                         builder: (context, snap) {
                           if (snap.connectionState != ConnectionState.done) {
-                            return const Center(child: CircularProgressIndicator());
+                            return Center(child: CircularProgressIndicator(color: primaryColor));
                           }
                           final reviews = snap.data ?? [];
                           if (reviews.isEmpty) {
-                            return const Text('Chưa có đánh giá.');
+                            return Text(
+                              'Chưa có đánh giá.',
+                              style: TextStyle(color: primaryColor.withOpacity(0.7)), // Xanh dương nhạt cho thông báo
+                            );
                           }
                           return Column(
                             children: reviews.map((r) {
@@ -135,10 +160,14 @@ class _ProductTabsState extends State<ProductTabs> {
                                   ? 'Người dùng'
                                   : (r.guestName ?? 'Khách vãng lai');
                               return ListTile(
-                                leading: const CircleAvatar(
-                                  child: Icon(Icons.person, size: 20),
+                                leading: CircleAvatar(
+                                  backgroundColor: lightBlueColor.withOpacity(0.1), // Xanh nhạt rất nhẹ cho avatar
+                                  child: Icon(Icons.person, size: 20, color: primaryColor),
                                 ),
-                                title: Text(username),
+                                title: Text(
+                                  username,
+                                  style: TextStyle(color: primaryColor), // Xanh dương đậm cho tên
+                                ),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -153,7 +182,10 @@ class _ProductTabsState extends State<ProductTabs> {
                                         itemSize: 16,
                                       ),
                                     const SizedBox(height: 4),
-                                    Text(r.comment),
+                                    Text(
+                                      r.comment,
+                                      style: TextStyle(color: primaryColor.withOpacity(0.7)), // Xanh dương nhạt cho bình luận
+                                    ),
                                     const SizedBox(height: 12),
                                   ],
                                 ),
@@ -162,10 +194,14 @@ class _ProductTabsState extends State<ProductTabs> {
                           );
                         },
                       ),
-                      const Divider(height: 32),
-                      const Text(
+                      Divider(height: 32, color: lightBlueColor.withOpacity(0.2)), // Xanh nhạt rất nhẹ cho divider
+                      Text(
                         'Gửi đánh giá của bạn',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: accentColor, // Xám đậm làm điểm nhấn cho tiêu đề
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Form(
@@ -175,14 +211,29 @@ class _ProductTabsState extends State<ProductTabs> {
                           children: [
                             if (!_isLoggedIn) ...[
                               TextFormField(
-                                decoration: const InputDecoration(labelText: 'Tên của bạn'),
+                                decoration: InputDecoration(
+                                  labelText: 'Tên của bạn',
+                                  labelStyle: TextStyle(color: primaryColor.withOpacity(0.7)), // Xanh dương nhạt cho nhãn
+                                  focusedBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(color: primaryColor),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderSide: BorderSide(color: lightBlueColor.withOpacity(0.3)),
+                                  ),
+                                ),
                                 validator: (v) => v == null || v.isEmpty ? 'Bắt buộc' : null,
                                 onSaved: (v) => _guestName = v,
                               ),
                               const SizedBox(height: 12),
                             ],
                             if (_isLoggedIn) ...[
-                              const Text('Đánh giá', style: TextStyle(fontWeight: FontWeight.bold)),
+                              Text(
+                                'Đánh giá',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: accentColor, // Xám đậm làm điểm nhấn
+                                ),
+                              ),
                               RatingBar.builder(
                                 initialRating: _rating.toDouble(),
                                 minRating: 1,
@@ -198,7 +249,16 @@ class _ProductTabsState extends State<ProductTabs> {
                               const SizedBox(height: 12),
                             ],
                             TextFormField(
-                              decoration: const InputDecoration(labelText: 'Bình luận'),
+                              decoration: InputDecoration(
+                                labelText: 'Bình luận',
+                                labelStyle: TextStyle(color: primaryColor.withOpacity(0.7)), // Xanh dương nhạt cho nhãn
+                                focusedBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(color: primaryColor),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(color: lightBlueColor.withOpacity(0.3)),
+                                ),
+                              ),
                               maxLines: 3,
                               validator: (v) => v == null || v.isEmpty ? 'Bắt buộc' : null,
                               onSaved: (v) => _comment = v ?? '',
@@ -207,6 +267,14 @@ class _ProductTabsState extends State<ProductTabs> {
                             Center(
                               child: ElevatedButton(
                                 onPressed: _submitting ? null : _submitReview,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: accentColor, // Xám đậm làm điểm nhấn cho nút
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                ),
                                 child: _submitting
                                     ? const SizedBox(
                                   width: 24,
@@ -216,7 +284,10 @@ class _ProductTabsState extends State<ProductTabs> {
                                     strokeWidth: 2,
                                   ),
                                 )
-                                    : Text(_isLoggedIn ? 'Gửi đánh giá' : 'Gửi bình luận'),
+                                    : Text(
+                                  _isLoggedIn ? 'Gửi đánh giá' : 'Gửi bình luận',
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                ),
                               ),
                             ),
                           ],

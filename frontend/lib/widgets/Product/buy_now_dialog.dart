@@ -26,7 +26,7 @@ class _BuyNowDialogState extends State<BuyNowDialog> {
       if (screenWidth <= 800) {
         showModalBottomSheet(
           context: context,
-          isScrollControlled: true, // Cho phép cuộn toàn màn hình
+          isScrollControlled: true,
           backgroundColor: Colors.transparent,
           builder: (context) => _buildDialogContent(isMobile: true),
         ).then((_) => Navigator.pop(context));
@@ -41,121 +41,151 @@ class _BuyNowDialogState extends State<BuyNowDialog> {
         int localQuantity = quantity;
         int maxQuantity = _getMaxQuantity(localSelectedColor);
 
+        // Define color scheme
+        const primaryColor = Color(0xFF333333); // Dark gray for text and accents
+        const accentColor = Color(0xFF1E90FF); // Warm orange for buttons
+        const backgroundColor = Color(0xFFF9F9F9); // Soft white background
+        const secondaryColor = Color(0xFFE0E0E0); // Light gray for borders
+
         return Container(
           width: double.infinity,
-          height: isMobile ? MediaQuery.of(context).size.height * 0.9 : null, // Tăng chiều cao để tránh overflow
+          height: isMobile ? MediaQuery.of(context).size.height * 0.85 : null,
           decoration: isMobile
               ? const BoxDecoration(
-            color: Colors.white,
+            color: backgroundColor,
             borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
           )
               : null,
           child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(), // Đảm bảo luôn cuộn được
+            physics: const AlwaysScrollableScrollPhysics(),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min, // Chỉ chiếm không gian cần thiết
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   if (isMobile)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.close),
+                          icon: Icon(Icons.close, color: primaryColor.withOpacity(0.6), size: 24),
                           onPressed: () => Navigator.pop(context),
                         ),
                       ],
                     ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   Container(
-                    height: 100,
+                    height: 120,
                     width: double.infinity,
-                    color: Colors.grey[300],
-                    child: const Center(child: Icon(Icons.image, size: 50)),
+                    decoration: BoxDecoration(
+                      color: secondaryColor.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Center(child: Icon(Icons.image, size: 50, color: Colors.grey)),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     '₫${widget.discountedPrice.toStringAsFixed(0)}',
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.red),
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: primaryColor,
+                    ),
                   ),
+                  const SizedBox(height: 8),
                   Text(
                     'Mã sản phẩm: ${widget.product.id}',
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Tên sản phẩm',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(widget.product.name, style: const TextStyle(fontSize: 14)),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Biến thể',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: widget.product.variants.map((variant) {
-                        bool isSelected = localSelectedColor == variant.variantName;
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              localSelectedColor = variant.variantName;
-                              maxQuantity = _getMaxQuantity(localSelectedColor);
-                              if (localQuantity > maxQuantity) {
-                                localQuantity = maxQuantity;
-                              }
-                              selectedColor = localSelectedColor;
-                              quantity = localQuantity;
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: isSelected ? Colors.purple[100] : Colors.grey[300],
-                              border: Border.all(
-                                color: isSelected ? Colors.purple[700]! : Colors.grey,
-                                width: isSelected ? 2 : 1,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              variant.variantName,
-                              style: TextStyle(
-                                color: isSelected ? Colors.purple[700] : Colors.black,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: primaryColor.withOpacity(0.6),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Số lượng',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  Text(
+                    'Tên sản phẩm',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: primaryColor,
+                    ),
                   ),
                   const SizedBox(height: 8),
+                  Text(
+                    widget.product.name,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Biến thể',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: widget.product.variants.map((variant) {
+                      bool isSelected = localSelectedColor == variant.variantName;
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            localSelectedColor = variant.variantName;
+                            maxQuantity = _getMaxQuantity(localSelectedColor);
+                            if (localQuantity > maxQuantity) {
+                              localQuantity = maxQuantity;
+                            }
+                            selectedColor = localSelectedColor;
+                            quantity = localQuantity;
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: isSelected ? accentColor : Colors.white,
+                            border: Border.all(color: secondaryColor),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            variant.variantName,
+                            style: TextStyle(
+                              color: isSelected ? Colors.white : primaryColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Số lượng',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.start,
                     children: [
                       Container(
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
+                          border: Border.all(color: secondaryColor),
                           borderRadius: BorderRadius.circular(8),
+                          color: Colors.white,
                         ),
                         child: Row(
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.remove),
+                              icon: Icon(Icons.remove, color: primaryColor, size: 24),
                               onPressed: localQuantity > 1
                                   ? () {
                                 setState(() {
@@ -168,14 +198,20 @@ class _BuyNowDialogState extends State<BuyNowDialog> {
                               constraints: const BoxConstraints(),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              width: 50,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
                               child: Text(
                                 '$localQuantity',
-                                style: const TextStyle(fontSize: 16),
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: primaryColor,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.add),
+                              icon: Icon(Icons.add, color: primaryColor, size: 24),
                               onPressed: localQuantity < maxQuantity
                                   ? () {
                                 setState(() {
@@ -190,14 +226,17 @@ class _BuyNowDialogState extends State<BuyNowDialog> {
                           ],
                         ),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 24),
                       Text(
                         'Tồn kho: $maxQuantity',
-                        style: const TextStyle(fontSize: 14, color: Colors.grey),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: primaryColor.withOpacity(0.6),
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
                   Center(
                     child: ElevatedButton(
                       onPressed: () {
@@ -217,17 +256,22 @@ class _BuyNowDialogState extends State<BuyNowDialog> {
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.purple[700],
+                        backgroundColor: accentColor,
+                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        elevation: 0,
                       ),
                       child: const Text(
                         'Mua ngay',
-                        style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    )
+                    ),
                   ),
-                  const SizedBox(height: 16), // Thêm khoảng trống cuối để tránh nội dung bị che
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
@@ -255,9 +299,13 @@ class _BuyNowDialogState extends State<BuyNowDialog> {
     return isDesktop
         ? AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      contentPadding: EdgeInsets.zero, // Loại bỏ padding mặc định của AlertDialog
-      content: SingleChildScrollView(
-        child: _buildDialogContent(isMobile: false),
+      backgroundColor: const Color(0xFFF9F9F9),
+      contentPadding: EdgeInsets.zero,
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 450),
+        child: SingleChildScrollView(
+          child: _buildDialogContent(isMobile: false),
+        ),
       ),
     )
         : const SizedBox();
