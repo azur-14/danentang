@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import '../models/EmailCheckResult.dart';
 import '../models/User.dart';
 import '../models/Address.dart';
 
@@ -25,14 +26,19 @@ class UserService {
 
   // ─── AuthController ─────────────────────────────────────────────────────────
 
-  /// 1. Check if an email exists
-  Future<bool> checkEmailExists(String email) async {
-    final res = await http.get(Uri.parse('$_authBase/check-email?email=$email'));
+  /// 1. Check if an email exists and whether it's verified
+  Future<EmailCheckResult> checkEmailExists(String email) async {
+    final uri = Uri.parse('$_authBase/check-email?email=$email');
+    final res = await http.get(uri);
+
     if (res.statusCode == 200) {
-      return (jsonDecode(res.body) as Map<String, dynamic>)['exists'] as bool;
+      final body = jsonDecode(res.body) as Map<String, dynamic>;
+      return EmailCheckResult.fromJson(body);
     }
+
     throw Exception('checkEmailExists failed: ${res.statusCode}');
   }
+
 
   /// 2. Register a new user (with initial address)
   Future<void> register({
@@ -81,6 +87,7 @@ class UserService {
     final body = {
       'email': email,
       'fullName': fullName,
+      'password': 'guest123',
       'isVerifiedMail': false,   // xác định là guest
       'receiverName': receiverName,
       'phone': phone,
@@ -91,7 +98,7 @@ class UserService {
     }..removeWhere((_, v) => v == null);
 
     final res = await http.post(
-      Uri.parse('$_authBase/register'),
+      Uri.parse('$_authBase/register-guest'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(body),
     );

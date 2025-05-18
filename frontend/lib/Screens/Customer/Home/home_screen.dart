@@ -94,18 +94,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onNavTapped(int idx) {
-    if (!_isLoggedIn && idx != 0) {
-      context.go('/login-signup');
-      return;
-    }
     setState(() => selectedIndex = idx);
-    final extraData = {'isLoggedIn': _isLoggedIn, 'userData': userData};
     switch (idx) {
       case 0:
         context.go('/');
         break;
       case 1:
-        context.go('/cart', extra: extraData);
+        context.go('/checkout');
         break;
       case 2:
         context.go('/profile');
@@ -238,6 +233,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildWebLayout(BuildContext context, double w) {
+    final bool isLoggedIn = _isLoggedIn;
+    final promoProducts = allProducts
+        .where((p) => p.discountPercentage != null && p.discountPercentage! > 0)
+        .toList();
+
     const iconSize = 80.0, iconSpacing = 16.0, iconPadding = 32.0;
     final maxCats = _calculateItemsPerRow(w, iconSize, iconSpacing, iconPadding);
     final visibleCats = showAllCategories ? categories : categories.take(maxCats).toList();

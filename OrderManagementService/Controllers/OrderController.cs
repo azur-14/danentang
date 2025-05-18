@@ -12,6 +12,7 @@ using System.Net.Mail;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using System.Text;
 
 namespace OrderManagementService.Controllers
 {
@@ -22,16 +23,19 @@ namespace OrderManagementService.Controllers
         private readonly IMongoCollection<Order> _orders;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
+        private readonly IMongoCollection<Coupon> _coupons;
 
         public OrdersController(
-            MongoDbContext context,
-            IHttpClientFactory httpClientFactory,
-            IConfiguration configuration)
+    MongoDbContext context,
+    IHttpClientFactory httpClientFactory,
+    IConfiguration configuration)
         {
             _orders = context.Orders;
+            _coupons = context.Coupons;  // THÊM DÒNG NÀY
             _httpClientFactory = httpClientFactory;
             _configuration = configuration;
         }
+
 
         // GET: api/orders
         [HttpGet]
@@ -51,14 +55,25 @@ namespace OrderManagementService.Controllers
         [HttpPost]
         public async Task<ActionResult<Order>> Create([FromBody] Order order)
         {
+            // 1. Chuẩn bị ID, timestamps
             order.Id = ObjectId.GenerateNewId().ToString();
             order.CreatedAt = order.UpdatedAt = DateTime.UtcNow;
 
-            // Cho phép UserId = null (khách vãng lai)
+            // 2. Khởi tạo luôn statusHistory với trạng thái ban đầu (pending)
+            order.StatusHistory = new List<OrderStatusHistory>
+    {
+        new OrderStatusHistory
+        {
+            Status = order.Status,         // mặc định "pending"
+            Timestamp = DateTime.UtcNow
+        }
+    };
+
+            // 3. Cho phép UserId = null (khách vãng lai)
             if (string.IsNullOrEmpty(order.UserId))
                 order.UserId = null;
 
-            // Kiểm tra thông tin địa chỉ giao hàng (bắt buộc có email)
+            // 4. Kiểm tra địa chỉ giao hàng hợp lệ
             if (order.ShippingAddress == null ||
                 string.IsNullOrEmpty(order.ShippingAddress.ReceiverName) ||
                 string.IsNullOrEmpty(order.ShippingAddress.PhoneNumber) ||
@@ -68,37 +83,59 @@ namespace OrderManagementService.Controllers
                 return BadRequest("Địa chỉ giao hàng không hợp lệ!");
             }
 
-            // Đảm bảo luôn có shippingFee (nếu không gửi lên thì mặc định 30000)
+            // 5. Đảm bảo luôn có shippingFee (mặc định 30000 nếu không gửi)
             if (order.ShippingFee <= 0) order.ShippingFee = 30000;
 
-            // Kiểm tra tồn kho từng biến thể
+            // 6. Kiểm tra tồn kho từng biến thể
             var client = _httpClientFactory.CreateClient("ProductService");
             foreach (var item in order.Items)
             {
                 var response = await client.GetAsync($"products/variants/{item.ProductVariantId}");
                 if (!response.IsSuccessStatusCode)
                     return BadRequest($"Không thể kiểm tra tồn kho của biến thể {item.ProductVariantId}");
-                Console.WriteLine($"Gọi tới ProductService: products/variants/{item.ProductVariantId}");
-
                 var json = await response.Content.ReadAsStringAsync();
                 var variantDto = JsonSerializer.Deserialize<ProductVariantDto>(json);
                 if (variantDto == null)
                     return BadRequest($"Không lấy được thông tin biến thể {item.ProductVariantId}");
-
-                int availableInventory = variantDto.Inventory;
-                Console.WriteLine($"VariantId: {item.ProductVariantId}, Inventory: {variantDto.Inventory}, Request: {item.Quantity}");
-
-                if (availableInventory < item.Quantity)
-                    return BadRequest($"Không đủ số lượng hàng tồn kho cho biến thể {item.ProductVariantId}");
+                if (variantDto.Inventory < item.Quantity)
+                    return BadRequest($"Không đủ tồn kho cho biến thể {item.ProductVariantId}");
             }
 
-            // Tính điểm tích lũy (10k = 1 điểm)
+            // 7. Tính điểm tích lũy
             var totalAfterDiscount = order.TotalAmount - order.DiscountAmount;
             order.LoyaltyPointsEarned = (int)(totalAfterDiscount / 10000);
 
             try
             {
+                // 8. Lưu order vào MongoDB (đã có StatusHistory)
                 await _orders.InsertOneAsync(order);
+
+                // 9. Cập nhật coupon nếu có
+                if (!string.IsNullOrEmpty(order.CouponCode))
+                {
+                    var filter = Builders<Coupon>.Filter.Eq(c => c.Code, order.CouponCode);
+                    var update = Builders<Coupon>.Update
+                        .Inc(c => c.UsageCount, 1)
+                        .AddToSet(c => c.OrderIds, order.Id);
+                    await _coupons.UpdateOneAsync(filter, update);
+                }
+
+                // 10. Trừ điểm loyalty nếu có
+                if (!string.IsNullOrEmpty(order.UserId) && order.LoyaltyPointsUsed > 0)
+                {
+                    var userClient = _httpClientFactory.CreateClient();
+                    userClient.BaseAddress = new Uri(_configuration["UserServiceUrl"]!);
+                    var patchBody = new { LoyaltyPointsDelta = -order.LoyaltyPointsUsed };
+                    var content = new StringContent(JsonSerializer.Serialize(patchBody), Encoding.UTF8, "application/json");
+                    await userClient.PatchAsync($"/api/user/{order.UserId}/loyalty", content);
+                }
+
+                // 11. Giảm tồn kho ở ProductService
+                foreach (var item in order.Items)
+                {
+                    var content = new StringContent(item.Quantity.ToString(), Encoding.UTF8, "application/json");
+                    await client.PatchAsync($"products/variants/{item.ProductVariantId}/decrease", content);
+                }
             }
             catch (Exception ex)
             {
@@ -106,37 +143,30 @@ namespace OrderManagementService.Controllers
                 return StatusCode(500, "Lỗi lưu vào MongoDB: " + ex.Message);
             }
 
-            // Gửi email xác nhận đơn hàng
-            try
+            // 12. Gửi email xác nhận (nếu cần, không bắt buộc thành công)
+            _ = Task.Run(async () =>
             {
-                var receiverEmail = order.ShippingAddress.Email;
-                var mailSubject = $"Xác nhận đơn hàng #{order.OrderNumber}";
-                var mailBody = $@"
-<b>Cảm ơn bạn đã đặt hàng tại Hoalahe!</b><br>
-Người nhận: {order.ShippingAddress.ReceiverName}<br>
-SĐT: {order.ShippingAddress.PhoneNumber}<br>
-Địa chỉ: {order.ShippingAddress.AddressLine}, {order.ShippingAddress.Ward}, {order.ShippingAddress.District}, {order.ShippingAddress.City}<br>
-<b>Danh sách sản phẩm:</b>
-<ul>
-{string.Join("", order.Items.Select(i => $"<li>{i.ProductName} ({i.VariantName}) x{i.Quantity}: {i.Price:N0}đ</li>"))}
-</ul>
-<b>Phí vận chuyển:</b> {order.ShippingFee:N0}đ<br>
-<b>Tổng cộng:</b> {order.TotalAmount:N0}đ<br>
-<b>Giảm giá:</b> {order.DiscountAmount:N0}đ<br>
-<b>Điểm thưởng tích lũy:</b> {order.LoyaltyPointsEarned} điểm<br>
-<b>Trạng thái đơn hàng:</b> {order.Status}
+                try
+                {
+                    var receiverEmail = order.ShippingAddress.Email;
+                    var mailSubject = $"Xác nhận đơn hàng #{order.OrderNumber}";
+                    var mailBody = $@"
+<b>Cảm ơn bạn đã đặt hàng!</b><br>
+Đơn hàng: {order.OrderNumber}<br>
+Tổng cộng: {order.TotalAmount:N0}đ<br>
+Trạng thái: {order.Status}
 ";
-                await SendEmailAsync(receiverEmail, mailSubject, mailBody);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Lỗi gửi mail xác nhận đơn hàng: " + ex.Message);
-                // Không return lỗi gửi mail để không ảnh hưởng đến lưu đơn hàng
-            }
+                    await SendEmailAsync(receiverEmail, mailSubject, mailBody);
+                }
+                catch (Exception mailEx)
+                {
+                    Console.WriteLine("Lỗi gửi mail: " + mailEx.Message);
+                }
+            });
 
+            // 13. Trả về 201 Created kèm order
             return CreatedAtAction(nameof(Get), new { id = order.Id }, order);
         }
-
         /// <summary>
         /// Gửi mail xác nhận đơn hàng qua SMTP Gmail.
         /// </summary>
@@ -161,6 +191,19 @@ SĐT: {order.ShippingAddress.PhoneNumber}<br>
                 EnableSsl = true
             };
             await client.SendMailAsync(mail);
+        }
+        // GET: api/orders/user/{userId}
+        [HttpGet("user/{userId}")]
+        public async Task<ActionResult<List<Order>>> GetOrdersByUserId(string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+                return BadRequest("userId is required.");
+
+            var orders = await _orders.Find(o => o.UserId == userId)
+                                      .SortByDescending(o => o.CreatedAt)
+                                      .ToListAsync();
+
+            return Ok(orders);
         }
 
         // PUT: api/orders/{id}

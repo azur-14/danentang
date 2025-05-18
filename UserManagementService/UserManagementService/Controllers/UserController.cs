@@ -198,7 +198,26 @@ namespace UserManagementService.Controllers
 
             return Ok(user);
         }
-     
+        // PATCH: api/users/{id}/loyalty
+        [HttpPatch("{id:length(24)}/loyalty")]
+        public async Task<IActionResult> UpdateLoyalty(string id, [FromBody] LoyaltyPointDto dto)
+        {
+            // dto.LoyaltyPointsDelta là số điểm muốn cộng (+) hoặc trừ (-)
+            var update = Builders<User>.Update
+                .Inc(u => u.LoyaltyPoints, dto.LoyaltyPointsDelta)
+                .Set(u => u.UpdatedAt, DateTime.UtcNow);
+
+            var result = await _context.Users.UpdateOneAsync(u => u.Id == id, update);
+
+            if (result.MatchedCount == 0)
+                return NotFound("User not found.");
+
+            return NoContent();
+        }
+    }
+    public class LoyaltyPointDto
+    {
+        public int LoyaltyPointsDelta { get; set; }
     }
     public class StatusDto
     {

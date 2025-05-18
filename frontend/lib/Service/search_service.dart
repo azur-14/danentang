@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show debugPrint;
 import '../models/product.dart';
 import '../models/category.dart';
+import '../models/review.dart';
 
 class SearchService {
   // Danh sách sản phẩm mẫu (tĩnh)
@@ -124,6 +125,58 @@ class SearchService {
     ),
   ];
 
+  // Danh sách đánh giá mẫu (tĩnh)
+  final List<Review> _reviews = [
+    Review(
+      id: 'r1',
+      productId: '1',
+      userId: 'user1',
+      comment: 'Hiệu năng tuyệt vời, pin lâu.',
+      rating: 5,
+      createdAt: DateTime(2025, 5, 1),
+    ),
+    Review(
+      id: 'r2',
+      productId: '1',
+      guestName: 'Khách',
+      comment: 'Màn hình đẹp, nhưng giá hơi cao.',
+      rating: 4,
+      createdAt: DateTime(2025, 5, 2),
+    ),
+    Review(
+      id: 'r3',
+      productId: '2',
+      userId: 'user2',
+      comment: 'Thiết kế mỏng nhẹ, rất tiện dụng.',
+      rating: 4,
+      createdAt: DateTime(2025, 5, 5),
+    ),
+    Review(
+      id: 'r4',
+      productId: '2',
+      guestName: 'Khách',
+      comment: 'Hiệu năng ổn, nhưng loa hơi nhỏ.',
+      rating: 3,
+      createdAt: DateTime(2025, 5, 6),
+    ),
+    Review(
+      id: 'r5',
+      productId: '3',
+      userId: 'user3',
+      comment: 'Bền bỉ, phù hợp công việc văn phòng.',
+      rating: 4,
+      createdAt: DateTime(2025, 5, 10),
+    ),
+    Review(
+      id: 'r6',
+      productId: '4',
+      guestName: 'Khách',
+      comment: 'Máy đẹp, cảm ứng mượt.',
+      rating: 5,
+      createdAt: DateTime(2025, 5, 12),
+    ),
+  ];
+
   // Danh mục mẫu
   final List<Category> _categories = [
     Category(id: 'high-end-laptop', name: 'Laptop Cao Cấp', createdAt: DateTime.now()),
@@ -152,6 +205,24 @@ class SearchService {
 
   void removeFromSearchHistory(String query) => _searchHistory.remove(query);
 
+  /// Lấy danh sách đánh giá theo productId
+  Future<List<Review>> getReviewsByProductId(String productId) async {
+    try {
+      return _reviews.where((review) => review.productId == productId).toList();
+    } catch (e) {
+      debugPrint('Lỗi lấy đánh giá: $e');
+      return [];
+    }
+  }
+
+  /// Tính rating trung bình của sản phẩm
+  Future<double> _getAverageRating(String productId) async {
+    final reviews = await getReviewsByProductId(productId);
+    final validReviews = reviews.where((r) => r.rating != null).toList();
+    if (validReviews.isEmpty) return 0.0;
+    return validReviews.map((r) => r.rating!.toDouble()).reduce((a, b) => a + b) / validReviews.length;
+  }
+
   /// Tìm kiếm sản phẩm
   Future<List<Product>> searchProducts(
       String query, {
@@ -159,6 +230,7 @@ class SearchService {
         double? minPrice,
         double? maxPrice,
         String? category,
+        double? minRating,
       }) async {
     try {
       List<Product> results = _products;
@@ -200,6 +272,14 @@ class SearchService {
       // Lọc theo danh mục
       if (category != null && category.isNotEmpty) {
         results = results.where((product) => product.categoryId == category).toList();
+      }
+
+      // Lọc theo rating trung bình
+      if (minRating != null) {
+        results = (await Future.wait(results.map((product) async {
+          final avgRating = await _getAverageRating(product.id);
+          return avgRating >= minRating ? product : null;
+        }))).whereType<Product>().toList();
       }
 
       debugPrint('Kết quả lọc: ${results.length} sản phẩm');
@@ -257,6 +337,21 @@ class SearchService {
     } catch (e) {
       debugPrint('Lỗi lấy tên danh mục: $e');
       return 'Không xác định';
+    }
+  }
+
+  /// Lấy sản phẩm có rating cao
+  Future<List<Product>> getHighRatedProducts({required double minRating}) async {
+    try {
+      final results = (await Future.wait(_products.map((product) async {
+        final avgRating = await _getAverageRating(product.id);
+        return avgRating >= minRating ? product : null;
+      }))).whereType<Product>().toList();
+      debugPrint('Sản phẩm rating cao: ${results.length} sản phẩm');
+      return results;
+    } catch (e) {
+      debugPrint('Lỗi lấy sản phẩm rating cao: $e');
+      return [];
     }
   }
 }

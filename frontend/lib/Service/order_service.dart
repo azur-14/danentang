@@ -416,6 +416,15 @@ class OrderService {
       throw Exception('deleteOrder failed (${resp.statusCode})');
     }
   }
+  static Future<List<Order>> fetchOrdersByUserId(String userId) async {
+    final uri = Uri.parse('http://localhost:5005/api/orders/user/$userId');
+    final resp = await http.get(uri);
+    if (resp.statusCode == 200) {
+      final data = json.decode(resp.body) as List<dynamic>;
+      return data.map((e) => Order.fromJson(e)).toList();
+    }
+    throw Exception('fetchOrdersByUserId failed: ${resp.statusCode}');
+  }
 
   Future<void> updateOrderStatus(String id, OrderStatusHistory history) async {
     final uri = Uri.parse('$_baseUrl/orders/$id/status');

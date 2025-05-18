@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:convert'; // Import for base64Decode
 import 'dart:typed_data'; // Explicitly import typed_data to resolve Uint8List
+import 'package:intl/intl.dart'; // For number formatting
 
 import '../models/product.dart';
 
@@ -31,6 +32,11 @@ class _ProductCardState extends State<ProductCard> {
 
     // 2. Tính giá sau khi giảm
     final discountedPrice = basePrice * (1 - widget.product.discountPercentage / 100);
+
+    // 3. Định dạng giá với dấu phẩy và ký hiệu tiền tệ
+    final numberFormat = NumberFormat.decimalPattern('vi_VN'); // Dùng định dạng tiếng Việt
+    final formattedBasePrice = numberFormat.format(basePrice);
+    final formattedDiscountedPrice = numberFormat.format(discountedPrice);
 
     // Decode base64 image if available, fallback to placeholder
     Uint8List? imageBytes;
@@ -160,7 +166,7 @@ class _ProductCardState extends State<ProductCard> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            '₫${discountedPrice.toStringAsFixed(0)}',
+                            '$formattedDiscountedPriceđ',
                             style: const TextStyle(
                               color: Colors.redAccent,
                               fontSize: 15,
@@ -169,7 +175,7 @@ class _ProductCardState extends State<ProductCard> {
                           ),
                           if (widget.product.discountPercentage > 0)
                             Text(
-                              '₫${basePrice.toStringAsFixed(0)}',
+                              '$formattedBasePriceđ',
                               style: const TextStyle(
                                 color: Colors.grey,
                                 fontSize: 12,

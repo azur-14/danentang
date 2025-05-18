@@ -1,94 +1,158 @@
+// lib/Screens/Manager/WebDashboard.dart
+
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:danentang/Screens/Manager/User/user_list.dart';
-import 'package:danentang/Screens/Manager/Product/product_management.dart';
-import 'package:danentang/Screens/Manager/Coupon/coupon_management.dart';
-import 'package:danentang/Screens/Manager/Category/categories_management.dart';
-import 'package:danentang/Screens/Manager/Support/customer_support.dart';
-import 'package:danentang/Screens/Manager/Order/order_list.dart';
-import '../Chart/piechart.dart';
-import '../Chart/linechartuser.dart';
-import '../Chart/revenuechart.dart';
-import '../Chart/oderschart.dart';
-import '../Chart/barchart.dart';
+
+import '../../../Service/user_service.dart';
+import '../../../Service/order_service.dart';
+import '../../../Service/product_service.dart';
+import '../../../models/Order.dart';
+import '../../../models/User.dart';
+import '../../../models/Category.dart';
+
+enum IntervalType { yearly, quarterly, monthly, weekly, custom }
 
 class WebDashboard extends StatefulWidget {
-  const WebDashboard({super.key});
+  const WebDashboard({Key? key}) : super(key: key);
 
   @override
   State<WebDashboard> createState() => _WebDashboardState();
 }
+class _WebDashboardState extends State<WebDashboard>
+    with SingleTickerProviderStateMixin {
+  bool _isAdmin = false;
+  int _selectedDrawerIndex = 0;
 
-class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMixin {
-  late final AnimationController _controller;
+  // dữ liệu
+  List<User> _allUsers = [];
+  List<Order> _allOrders = [];
+  Map<String, String> _productCategory = {};
+
+  // stats
+  int _userCount = 0;
+  int _newUserCount = 0;
+  int _orderCount = 0;
+  double _totalRevenue = 0;
+
+  bool _loading = true;
+  String? _error;
+
+  // filter chung cho advanced
+  IntervalType _ordersInterval = IntervalType.yearly;
+  IntervalType _revenueInterval = IntervalType.yearly;
+  IntervalType _regInterval = IntervalType.yearly;
+  DateTime? _customStart;
+  DateTime? _customEnd;
+  late final AnimationController _opacityController;
   late final Animation<double> _opacityAnimation;
-
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    _opacityController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 800),
     );
-    _opacityAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
-    _controller.forward();
-    _checkLoginStatus();
+    _opacityAnimation = CurvedAnimation(
+      parent: _opacityController,
+      curve: Curves.easeIn,
+    );
+
+    _opacityController.forward();
+
+    _checkAuth();
+    _loadStats();
   }
 
-  Future<void> _checkLoginStatus() async {
+  @override
+  void dispose() {
+    _opacityController.dispose();
+    super.dispose();
+  }
+  Future<void> _checkAuth() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     final role = prefs.getString('role');
     if (token == null || role != 'admin') {
       context.go('/login');
+    } else {
+      setState(() => _isAdmin = true);
+    }
+  }
+
+  Future<void> _loadStats() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final users = await UserService().fetchUsers();
+      final now = DateTime.now();
+      final cutoff = now.subtract(const Duration(days: 30));
+      final orders = await OrderService.fetchAllOrders();
+      final revenue = orders.fold<double>(0, (sum, o) => sum + (o.totalAmount ?? 0));
+
+      final productIds = orders.expand((o) => o.items.map((i) => i.productId)).toSet().toList();
+      final products = await Future.wait(productIds.map((id) => ProductService.getById(id)));
+      final categories = await ProductService.fetchAllCategories();
+      final lookup = { for (var p in products)
+        p.id: categories.firstWhere(
+                (c) => c.id == p.categoryId,
+            orElse: () => Category(id: p.categoryId, name: 'Unknown', createdAt: now)
+        ).name
+      };
+
+      setState(() {
+        _allUsers = users;
+        _userCount = users.length;
+        _newUserCount = users.where((u) => u.createdAt.isAfter(cutoff)).length;
+        _allOrders = orders;
+        _orderCount = orders.length;
+        _totalRevenue = revenue;
+        _productCategory = lookup;
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
     }
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) async {
-        if (!didPop) {
-          context.go('/manager'); // Giữ người dùng ở dashboard
-        }
-      },
-      child: Scaffold(
-        drawer: _buildDrawer(context),
-        appBar: AppBar(
-          title: const Text(
-            'Trang chủ',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-          ),
-          backgroundColor: Colors.deepPurple,
+    if (!_isAdmin) return const Scaffold(body: SizedBox.shrink());
+    return Scaffold(
+      appBar: AppBar(title: const Text('Admin Dashboard'), backgroundColor: Colors.deepPurple),
+      drawer: _buildDrawer(context),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : (_error != null
+          ? Center(child: Text('Error: $_error', style: const TextStyle(color: Colors.red)))
+          : SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- Overview ---
+            _sectionTitle('Overview'),
+            _buildStatCards(),
+            const SizedBox(height: 24),
+            _buildChartsGrid(),
+
+            // --- Advanced ---
+            const Divider(height: 40),
+            _sectionTitle('Advanced Filters & Charts'),
+            _buildAdvancedCharts(),
+            const SizedBox(height: 24),
+            // <-- chèn ở đây:
+            _buildManagementLinks(context),
+          ],
         ),
-        body: FadeTransition(
-          opacity: _opacityAnimation,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildStatCards(context),
-                  const SizedBox(height: 20),
-                  _buildChartsGrid(),
-                  const SizedBox(height: 20),
-                  _buildManagementLinks(context),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
+      )),
     );
   }
 
@@ -137,139 +201,420 @@ class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMix
     );
   }
 
-  Widget _buildStatCards(BuildContext context) {
-    List<Map<String, dynamic>> stats = [
-      {"title": "Người dùng", "value": "7,625", "color": Colors.red, "percent": "+11.01%"},
-      {"title": "Đơn hàng", "value": "10,000", "color": Colors.blue, "percent": "+12.5%"},
-      {"title": "Người dùng mới", "value": "300", "color": Colors.purpleAccent, "percent": "+3.5%"},
-      {"title": "Doanh thu", "value": "\$100,000", "color": Colors.green, "percent": "+8.9%"},
+  Widget _buildStatCards() {
+    final stats = [
+      {'title': 'Users', 'value': '$_userCount', 'icon': Icons.people},
+      {'title': 'New Users (30d)', 'value': '$_newUserCount', 'icon': Icons.person_add},
+      {'title': 'Orders', 'value': '$_orderCount', 'icon': Icons.shopping_cart},
+      {'title': 'Revenue', 'value': '₫${_totalRevenue.toStringAsFixed(0)}', 'icon': Icons.attach_money},
     ];
+    return LayoutBuilder(builder: (ctx, cons) {
+      final itemW = (cons.maxWidth - 48) / 4;
+      return Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children: stats.map((s) {
+          return SizedBox(
+            width: itemW,
+            child: Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    Icon(s['icon'] as IconData, size: 32, color: Colors.deepPurple),
+                    const SizedBox(height: 8),
+                    Text(s['title'] as String, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 4),
+                    Text(s['value'] as String, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      );
+    });
+  }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        double itemWidth = constraints.maxWidth < 600 ? constraints.maxWidth / 2 - 10 : constraints.maxWidth / 4 - 12;
+  Widget _buildChartsGrid() {
+    final ordersByMonth = _aggOrdersByMonth();
+    final revenueByMonth = _aggRevenueByMonth();
+    final catShares = _aggCategoryShares();
+    final top5Cats = catShares.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    return LayoutBuilder(builder: (ctx, cons) {
+      final cross = cons.maxWidth > 1200 ? 3 : (cons.maxWidth > 800 ? 2 : 1);
+      return GridView.count(
+        crossAxisCount: cross,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 1.2,
+        children: [
+          _chartCard(
+            title: 'Orders (12m)',
+            child: LineChart(
+              LineChartData(
+                titlesData: FlTitlesData(
+                  bottomTitles: AxisTitles(sideTitles: SideTitles(
+                    showTitles: true,
+                    getTitlesWidget: (x, _) {
+                      final key = ordersByMonth.keys.elementAt(x.toInt().clamp(0, ordersByMonth.length - 1));
+                      return Text(key, style: const TextStyle(fontSize: 10));
+                    },
+                  )),
+                ),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: List.generate(ordersByMonth.length,
+                            (i) => FlSpot(i.toDouble(), ordersByMonth.values.elementAt(i))),
+                    isCurved: true,
+                  )
+                ],
+              ),
+            ),
+          ),
+          _chartCard(
+            title: 'Revenue (12m)',
+            child: BarChart(
+              BarChartData(
+                titlesData: FlTitlesData(
+                  bottomTitles: AxisTitles(sideTitles: SideTitles(
+                    showTitles: true,
+                    getTitlesWidget: (x, _) {
+                      final key = revenueByMonth.keys.elementAt(x.toInt().clamp(0, revenueByMonth.length - 1));
+                      return Text(key, style: const TextStyle(fontSize: 10));
+                    },
+                  )),
+                ),
+                barGroups: List.generate(revenueByMonth.length, (i) => BarChartGroupData(x: i, barRods: [
+                  BarChartRodData(toY: revenueByMonth.values.elementAt(i))
+                ])),
+              ),
+            ),
+          ),
+          _chartCard(
+            title: 'Category Share',
+            child: PieChart(PieChartData(
+              sections: catShares.entries.map((e) => PieChartSectionData(
+                value: e.value.toDouble(),
+                title: e.key,
+                radius: 40,
+                titleStyle: const TextStyle(fontSize: 12),
+              )).toList(),
+              centerSpaceRadius: 40,
+            )),
+          ),
+          _chartCard(
+            title: 'Top 5 Categories',
+            child: BarChart(BarChartData(
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true,
+                  getTitlesWidget: (x, _) {
+                    final key = top5Cats[x.toInt().clamp(0, top5Cats.length - 1)].key;
+                    return Text(key, style: const TextStyle(fontSize: 10));
+                  },
+                )),
+              ),
+              barGroups: List.generate(top5Cats.length, (i) => BarChartGroupData(x: i, barRods: [
+                BarChartRodData(toY: top5Cats[i].value.toDouble())
+              ])),
+            )),
+          ),
+        ],
+      );
+    });
+  }
 
-        return Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: stats.map((stat) {
-            return AnimatedBuilder(
-              animation: _opacityAnimation,
-              builder: (context, child) {
-                return Opacity(
-                  opacity: _opacityAnimation.value,
-                  child: SizedBox(
-                    width: itemWidth,
-                    child: _statCard(stat),
-                  ),
-                );
+  Widget _buildAdvancedCharts() {
+    return Column(
+      children: [
+        // Orders over interval
+        _filterableChart(
+          title: 'Orders over Interval',
+          dropdownValue: _ordersInterval,
+          onIntervalChanged: (v) {
+            if (v != null) setState(() => _ordersInterval = v);
+          },
+          chart: LineChart(LineChartData(
+            titlesData: FlTitlesData(
+              bottomTitles: AxisTitles(sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (x, _) {
+                  final map = _aggByInterval(_ordersInterval, onlyRevenue: false);
+                  final key = map.keys.elementAt(x.toInt().clamp(0, map.length - 1));
+                  return Text(key, style: const TextStyle(fontSize: 10));
+                },
+              )),
+            ),
+            lineBarsData: [
+              LineChartBarData(
+                spots: List.generate(
+                    _aggByInterval(_ordersInterval, onlyRevenue: false).length,
+                        (i) => FlSpot(i.toDouble(),
+                        _aggByInterval(_ordersInterval, onlyRevenue: false).values.elementAt(i))),
+                isCurved: true,
+              )
+            ],
+          )),
+        ),
+        const SizedBox(height: 16),
+        // Revenue vs Profit
+        _filterableChart(
+          title: 'Revenue vs Profit',
+          dropdownValue: _revenueInterval,
+          onIntervalChanged: (v) {
+            if (v != null) setState(() => _revenueInterval = v);
+          },
+          chart: BarChart(BarChartData(
+            titlesData: FlTitlesData(
+              bottomTitles: AxisTitles(sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (x, _) {
+                  final map = _aggregateRevenueByInterval(_revenueInterval);
+                  final key = map.keys.elementAt(x.toInt().clamp(0, map.length - 1));
+                  return Text(key, style: const TextStyle(fontSize: 10));
+                },
+              )),
+            ),
+            barGroups: List.generate(
+              _aggregateRevenueByInterval(_revenueInterval).length,
+                  (i) {
+                final key = _aggregateRevenueByInterval(_revenueInterval).keys.elementAt(i);
+                final rev = _aggregateRevenueByInterval(_revenueInterval)[key]!;
+                final prof = rev * 0.2;
+                return BarChartGroupData(x: i, barsSpace: 4, barRods: [
+                  BarChartRodData(toY: rev, width: 8, color: Colors.blue),
+                  BarChartRodData(toY: prof, width: 8, color: Colors.red),
+                ]);
               },
-            );
-          }).toList(),
-        );
-      },
+            ),
+          )),
+        ),
+        const SizedBox(height: 16),
+        // Registrations over interval
+        _filterableChart(
+          title: 'User Registrations',
+          dropdownValue: _regInterval,
+          onIntervalChanged: (v) {
+            if (v != null) setState(() => _regInterval = v);
+          },
+          chart: LineChart(LineChartData(
+            titlesData: FlTitlesData(
+              bottomTitles: AxisTitles(sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (x, _) {
+                  final map = _aggRegistrationsByInterval(_regInterval);
+                  final key = map.keys.elementAt(x.toInt().clamp(0, map.length - 1));
+                  return Text(key, style: const TextStyle(fontSize: 10));
+                },
+              )),
+            ),
+            lineBarsData: [
+              LineChartBarData(
+                spots: List.generate(
+                    _aggRegistrationsByInterval(_regInterval).length,
+                        (i) => FlSpot(i.toDouble(),
+                        _aggRegistrationsByInterval(_regInterval).values.elementAt(i))),
+                isCurved: true,
+              )
+            ],
+          )),
+        ),
+      ],
     );
   }
 
-  Widget _statCard(Map<String, dynamic> stat) {
-    final Color bgColor = Color.alphaBlend(stat['color'].withOpacity(0.15), Colors.white);
-    final Color textColor = Colors.black87;
-
+  Widget _filterableChart({
+    required String title,
+    required IntervalType dropdownValue,
+    required ValueChanged<IntervalType?> onIntervalChanged,
+    required Widget chart,
+  }) {
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: bgColor,
-      shadowColor: stat['color'].withOpacity(0.4),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(12),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              stat['title'],
-              style: TextStyle(
-                color: stat['color'],
-                fontWeight: FontWeight.w600,
-                fontSize: 16,
-              ),
+            Row(
+              children: [
+                Text(title,
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                const Spacer(),
+                DropdownButton<IntervalType>(
+                  value: dropdownValue,
+                  items: IntervalType.values.map((i) {
+                    return DropdownMenuItem(
+                      value: i,
+                      child: Text(i.toString().split('.').last),
+                    );
+                  }).toList(),
+                  onChanged: onIntervalChanged,
+                ),
+              ],
             ),
             const SizedBox(height: 8),
-            Text(
-              stat['value'],
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: textColor,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              stat['percent'],
-              style: TextStyle(
-                color: stat['percent'].contains('+') ? Colors.green[700] : Colors.red[700],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            SizedBox(height: 200, child: chart),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildChartsGrid() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        int crossAxisCount = constraints.maxWidth < 600 ? 1 : 2;
-
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.0,
-          ),
-          itemCount: 5,
-          itemBuilder: (context, index) {
-            Widget child;
-            switch (index) {
-              case 0:
-                child = const LineChartUser(
-                  spots: [FlSpot(0, 1), FlSpot(1, 3), FlSpot(2, 2), FlSpot(3, 5)],
-                  lineColor: Colors.purple,
-                );
-                break;
-              case 1:
-                child = const RevenueChartWidget(
-                  spots: [FlSpot(0, 50), FlSpot(1, 55), FlSpot(2, 60), FlSpot(3, 62)],
-                  lineColor: Colors.red,
-                );
-                break;
-              case 2:
-                child = const OrdersChartWidget(
-                  spots: [FlSpot(0, 30), FlSpot(1, 35), FlSpot(2, 50), FlSpot(3, 40)],
-                  lineColor: Colors.blue,
-                );
-                break;
-              case 3:
-                child = const BarChartWidget();
-                break;
-              case 4:
-              default:
-                child = const PieChartCard();
-            }
-            return AnimatedBuilder(
-              animation: _opacityAnimation,
-              builder: (context, _) => Opacity(
-                opacity: _opacityAnimation.value,
-                child: child,
-              ),
-            );
-          },
-        );
-      },
+  Widget _sectionTitle(String txt) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(txt, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
     );
+  }
+
+  // --- helpers ---
+
+  Map<String, double> _aggOrdersByMonth() {
+    final now = DateTime.now();
+    final m = <String, double>{};
+    for (int i = 11; i >= 0; i--) {
+      final dt = DateTime(now.year, now.month - i);
+      final key = '${dt.year}-${dt.month.toString().padLeft(2, '0')}';
+      m[key] = 0;
+    }
+    for (var o in _allOrders) {
+      final key = '${o.createdAt.year}-${o.createdAt.month.toString().padLeft(2, '0')}';
+      if (m.containsKey(key)) m[key] = m[key]! + 1;
+    }
+    return m;
+  }
+
+  Map<String, double> _aggRevenueByMonth() {
+    final now = DateTime.now();
+    final m = <String, double>{};
+    for (int i = 11; i >= 0; i--) {
+      final dt = DateTime(now.year, now.month - i);
+      final key = '${dt.year}-${dt.month.toString().padLeft(2, '0')}';
+      m[key] = 0;
+    }
+    for (var o in _allOrders) {
+      final key = '${o.createdAt.year}-${o.createdAt.month.toString().padLeft(2, '0')}';
+      if (m.containsKey(key)) m[key] = m[key]! + (o.totalAmount ?? 0);
+    }
+    return m;
+  }
+
+  Map<String, int> _aggCategoryShares() {
+    final cnt = <String, int>{};
+    for (var o in _allOrders) {
+      for (var i in o.items) {
+        final cat = _productCategory[i.productId] ?? 'Unknown';
+        cnt[cat] = (cnt[cat] ?? 0) + i.quantity;
+      }
+    }
+    return cnt;
+  }
+
+  Map<String, double> _aggRegistrationsByMonth(IntervalType t) {
+    final now = DateTime.now();
+    final m = <String, double>{};
+    for (int i = 11; i >= 0; i--) {
+      final dt = DateTime(now.year, now.month - i);
+      final key = '${dt.year}-${dt.month.toString().padLeft(2, '0')}';
+      m[key] = 0;
+    }
+    for (var u in _allUsers) {
+      final key = '${u.createdAt.year}-${u.createdAt.month.toString().padLeft(2, '0')}';
+      if (m.containsKey(key)) m[key] = m[key]! + 1;
+    }
+    return m;
+  }
+
+  Map<String, double> _aggByInterval(IntervalType t, {required bool onlyRevenue}) {
+    final out = <String, double>{};
+    for (var o in _allOrders) {
+      final dt = o.createdAt;
+      String key;
+      switch (t) {
+        case IntervalType.yearly:
+          key = '${dt.year}';
+          break;
+        case IntervalType.quarterly:
+          final q = ((dt.month - 1) ~/ 3) + 1;
+          key = '${dt.year}-Q$q';
+          break;
+        case IntervalType.monthly:
+          key = '${dt.year}-${dt.month.toString().padLeft(2, '0')}';
+          break;
+        case IntervalType.weekly:
+          final w = ((dt.day - 1) ~/ 7) + 1;
+          key = '${dt.year}-W$w';
+          break;
+        case IntervalType.custom:
+          key = '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+          break;
+      }
+      final value = onlyRevenue ? (o.totalAmount ?? 0) : 1;
+      out[key] = (out[key] ?? 0) + value;
+    }
+    return out;
+  }
+
+  Map<String, double> _aggregateRevenueByInterval(IntervalType t) {
+    final map = _aggByInterval(t, onlyRevenue: true);
+    return map;
+  }
+  Widget _chartCard({required String title, required Widget child}) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 3,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Text(title, style: const TextStyle(fontSize:16,fontWeight:FontWeight.w600)),
+            const SizedBox(height:8),
+            Expanded(child: child),
+          ],
+        ),
+      ),
+    );
+  }
+  /// Gộp số lượt đăng ký user theo interval (yearly, quarterly, monthly, weekly, custom)
+  Map<String, double> _aggRegistrationsByInterval(IntervalType t) {
+    final now = DateTime.now();
+    final out = <String, double>{};
+    // Khởi tạo keys cho 12 tháng (nếu muốn last 12) hoặc theo interval
+    if (t == IntervalType.monthly) {
+      for (int i = 11; i >= 0; i--) {
+        final dt = DateTime(now.year, now.month - i);
+        final key = '${dt.year}-${dt.month.toString().padLeft(2, '0')}';
+        out[key] = 0;
+      }
+    }
+    // Với các interval khác, bạn có thể khởi tạo tương tự hoặc để out rỗng và nó tự sinh keys khi gặp
+    for (var u in _allUsers) {
+      final dt = u.createdAt;
+      String key;
+      switch (t) {
+        case IntervalType.yearly:
+          key = '${dt.year}'; break;
+        case IntervalType.quarterly:
+          final q = ((dt.month - 1) ~/ 3) + 1;
+          key = '${dt.year}-Q$q'; break;
+        case IntervalType.monthly:
+          key = '${dt.year}-${dt.month.toString().padLeft(2, '0')}'; break;
+        case IntervalType.weekly:
+          final w = ((dt.day - 1) ~/ 7) + 1;
+          key = '${dt.year}-W$w'; break;
+        case IntervalType.custom:
+          key = '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}'; break;
+      }
+      out[key] = (out[key] ?? 0) + 1;
+    }
+    return out;
   }
 
   Widget _buildManagementLinks(BuildContext context) {
@@ -309,18 +654,4 @@ class _WebDashboardState extends State<WebDashboard> with TickerProviderStateMix
   }
 }
 
-class PieChartCard extends StatelessWidget {
-  const PieChartCard({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: const [
-        SizedBox(height: 10),
-        Expanded(
-          child: AnimatedPieChart(),
-        ),
-      ],
-    );
-  }
-}
