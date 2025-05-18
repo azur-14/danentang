@@ -371,22 +371,25 @@ class ProductService {
     String? guestName,
     int? rating,
     required String comment,
+    String? sentiment, // ✅ Thêm vào đây
   }) async {
-    final uri  = Uri.parse('$_productsPath/$productId/reviews');
+    final uri = Uri.parse('$_productsPath/$productId/reviews');
     final body = {
       'comment': comment,
-      if (rating != null)    'rating': rating,
+      if (rating != null) 'rating': rating,
       if (guestName != null) 'guestName': guestName,
+      if (sentiment != null) 'sentiment': sentiment, // ✅ Gửi sentiment nếu có
     };
     final resp = await http.post(
       uri,
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(body),
     );
-    if (resp.statusCode != 201 && resp.statusCode != 200) {
+    if (resp.statusCode != 200 && resp.statusCode != 201) {
       throw Exception('submitReview failed (${resp.statusCode})');
     }
   }
+
   /// GET /api/products/{id}
   Future<Product> getProductById(String id) async {
     final uri = Uri.parse('$_productsPath/$id');

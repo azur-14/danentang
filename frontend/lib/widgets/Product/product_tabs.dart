@@ -1,9 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:danentang/models/product.dart';
 import 'package:danentang/models/Review.dart';
+import 'package:danentang/models/user.dart';
 import 'package:danentang/Service/product_service.dart';
+import 'package:danentang/Service/user_service.dart';
 
 class ProductTabs extends StatefulWidget {
   final TabController tabController;
@@ -25,6 +29,7 @@ class _ProductTabsState extends State<ProductTabs> {
   int _rating = 5;
   String _comment = '';
   String? _guestName;
+  String? _userName;
   bool _isLoggedIn = false;
   bool _submitting = false;
 
@@ -41,9 +46,57 @@ class _ProductTabsState extends State<ProductTabs> {
 
   Future<void> _checkLogin() async {
     final prefs = await SharedPreferences.getInstance();
+    final email = prefs.getString('email');
+    final token = prefs.getString('token');
+
     setState(() {
-      _isLoggedIn = prefs.getString('token') != null;
+      _isLoggedIn = token != null;
     });
+
+    if (_isLoggedIn && email != null) {
+      try {
+        final user = await UserService().fetchUserByEmail(email);
+        setState(() {
+          _userName = user.fullName;
+        });
+      } catch (e) {
+        debugPrint('Lỗi lấy thông tin user: $e');
+      }
+    }
+  }
+
+  Future<String?> analyzeSentiment(String comment) async {
+    const apiKey = 'YOUR_API_KEY';
+    const model = 'gemini-1.5-flash';
+    final url = 'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey';
+
+    final prompt = '''
+Analyze the sentiment of the following review and classify it into one of five levels: Very Negative, Negative, Neutral, Positive, or Very Positive.
+
+Review: $comment
+
+Respond in the format:
+**Sentiment**: [Very Negative/Negative/Neutral/Positive/Very Positive]
+''';
+
+    final response = await http.post(
+      Uri.parse(url),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        "contents": [
+          {
+            "parts": [{"text": prompt}]
+          }
+        ],
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final raw = jsonDecode(response.body)['candidates'][0]['content']['parts'][0]['text'];
+      final match = RegExp(r'\*\*Sentiment\*\*:\s*(Very Negative|Negative|Neutral|Positive|Very Positive)').firstMatch(raw);
+      return match?.group(1);
+    }
+    return null;
   }
 
   Future<void> _submitReview() async {
@@ -52,21 +105,26 @@ class _ProductTabsState extends State<ProductTabs> {
     setState(() => _submitting = true);
 
     try {
+      String? sentiment;
+
+      if (!_isLoggedIn) {
+        sentiment = await analyzeSentiment(_comment);
+      }
+
       await ProductService.submitReview(
         productId: widget.product.id,
-        guestName: _isLoggedIn ? null : _guestName,
+        guestName: !_isLoggedIn ? _guestName : _userName,
         rating: _isLoggedIn ? _rating : null,
         comment: _comment,
+        sentiment: !_isLoggedIn ? sentiment : null,
       );
+
       _loadReviews();
-      setState(() {}); // refresh UI
+      setState(() {});
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            'Gửi thành công!',
-            style: TextStyle(color: Colors.white),
-          ),
-          backgroundColor: const Color(0xFF87CEEB), // Xanh dương nhạt cho snackbar thành công
+        const SnackBar(
+          content: Text('Gửi thành công!', style: TextStyle(color: Colors.white)),
+          backgroundColor: Color(0xFF87CEEB),
         ),
       );
       _formKey.currentState!.reset();
@@ -74,11 +132,8 @@ class _ProductTabsState extends State<ProductTabs> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Lỗi: $e',
-            style: const TextStyle(color: Colors.white),
-          ),
-          backgroundColor: const Color(0xFF2E2E2E), // Xám đậm cho snackbar lỗi
+          content: Text('Lỗi: $e', style: const TextStyle(color: Colors.white)),
+          backgroundColor: const Color(0xFF2E2E2E),
         ),
       );
     } finally {
@@ -86,6 +141,22 @@ class _ProductTabsState extends State<ProductTabs> {
     }
   }
 
+  Color _sentimentColor(String sentiment) {
+    switch (sentiment.toLowerCase()) {
+      case 'very positive':
+        return Colors.green.shade700;
+      case 'positive':
+        return Colors.green.shade400;
+      case 'neutral':
+        return Colors.grey.shade600;
+      case 'negative':
+        return Colors.red.shade400;
+      case 'very negative':
+        return Colors.red.shade700;
+      default:
+        return Colors.grey;
+    }
+  }
   @override
   Widget build(BuildContext context) {
     // Define color scheme
@@ -161,12 +232,12 @@ class _ProductTabsState extends State<ProductTabs> {
                                   : (r.guestName ?? 'Khách vãng lai');
                               return ListTile(
                                 leading: CircleAvatar(
-                                  backgroundColor: lightBlueColor.withOpacity(0.1), // Xanh nhạt rất nhẹ cho avatar
+                                  backgroundColor: lightBlueColor.withOpacity(0.1),
                                   child: Icon(Icons.person, size: 20, color: primaryColor),
                                 ),
                                 title: Text(
                                   username,
-                                  style: TextStyle(color: primaryColor), // Xanh dương đậm cho tên
+                                  style: TextStyle(color: primaryColor),
                                 ),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -174,22 +245,30 @@ class _ProductTabsState extends State<ProductTabs> {
                                     if (r.rating != null)
                                       RatingBarIndicator(
                                         rating: r.rating!.toDouble(),
-                                        itemBuilder: (_, __) => const Icon(
-                                          Icons.star,
-                                          color: Colors.amber,
-                                        ),
+                                        itemBuilder: (_, __) => const Icon(Icons.star, color: Colors.amber),
                                         itemCount: 5,
                                         itemSize: 16,
                                       ),
                                     const SizedBox(height: 4),
                                     Text(
                                       r.comment,
-                                      style: TextStyle(color: primaryColor.withOpacity(0.7)), // Xanh dương nhạt cho bình luận
+                                      style: TextStyle(color: primaryColor.withOpacity(0.7)),
                                     ),
+                                    if (r.sentiment != null) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Cảm xúc: ${r.sentiment}',
+                                        style: TextStyle(
+                                          fontStyle: FontStyle.italic,
+                                          color: Colors.grey.shade600,
+                                        ),
+                                      ),
+                                    ],
                                     const SizedBox(height: 12),
                                   ],
                                 ),
                               );
+
                             }).toList(),
                           );
                         },
