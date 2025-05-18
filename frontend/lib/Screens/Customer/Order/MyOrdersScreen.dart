@@ -3,7 +3,6 @@ import 'package:danentang/models/Order.dart';
 import 'package:danentang/Service/order_service.dart';
 import 'package:danentang/widgets/Order/OrderCard.dart';
 import 'package:danentang/widgets/Order/order_filter_widget.dart';
-import 'package:danentang/models/product.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../Service/user_service.dart';
@@ -27,7 +26,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
   DateTime? _endDate;
   RangeValues _priceRange = const RangeValues(0, 10000000);
   String _searchQuery = '';
-  double _maxPrice = 10000000;
+  final double _maxPrice = 10000000;
   late TabController _tabController;
   String _selectedCategory = 'All';
   String _selectedBrand = 'All';
@@ -45,7 +44,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
   }
 
   Future<void> _initAndFetch() async {
-    if (mounted) setState(() { _isLoading = true; });
+    setState(() => _isLoading = true);
     try {
       final prefs = await SharedPreferences.getInstance();
       final email = prefs.getString('email') ?? '';
@@ -55,11 +54,12 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
       userId = user.id;
 
       userOrders = await OrderService.fetchOrdersByUserId(userId!);
+      debugPrint('💡 fetched userOrders.length = ${userOrders.length} for userId=$userId');
 
       _applyFilters();
-      if (mounted) setState(() { _isLoading = false; });
+      setState(() => _isLoading = false);
     } catch (e) {
-      if (mounted) setState(() {
+      setState(() {
         _isLoading = false;
         _error = e.toString();
       });
@@ -68,16 +68,16 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
 
   Future<void> _fetchOrders() async {
     if (userId == null) return;
-    if (mounted) setState(() {
+    setState(() {
       _isLoading = true;
       _error = null;
     });
     try {
       userOrders = await OrderService.fetchOrdersByUserId(userId!);
       _applyFilters();
-      if (mounted) setState(() { _isLoading = false; });
+      setState(() => _isLoading = false);
     } catch (e) {
-      if (mounted) setState(() {
+      setState(() {
         _isLoading = false;
         _error = e.toString();
       });
@@ -85,73 +85,63 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
   }
 
   void _applyFilters() {
-    List<Order> orders = userOrders.where((order) {
-      bool passesDateFilter = true;
+    // Kiểm tra xem có đang bật filter nào không
+    final bool hasFilters =
+        _startDate != null ||
+            _endDate   != null ||
+            _searchQuery.isNotEmpty ||
+            _selectedCategory != 'All' ||
+            _selectedBrand   != 'All' ||
+            _priceRange.start > 0 ||
+            _priceRange.end   < _maxPrice;
+
+    // Danh sách đã lọc hoặc toàn bộ
+    final List<Order> filteredList = hasFilters
+        ? userOrders.where((order) {
+      // DATE
+      bool passesDate = true;
       if (_startDate != null) {
-        passesDateFilter = order.createdAt.isAfter(_startDate!);
+        passesDate = order.createdAt.isAfter(_startDate!);
       }
       if (_endDate != null) {
-        passesDateFilter = passesDateFilter && order.createdAt.isBefore(_endDate!);
+        passesDate = passesDate && order.createdAt.isBefore(_endDate!);
       }
+      // PRICE
+      final price = order.totalAmount ?? 0;
+      final passesPrice = price >= _priceRange.start && price <= _priceRange.end;
+      // SEARCH
+      final passesSearch = _searchQuery.isEmpty ||
+          order.items.any((item) => item.productName.toLowerCase().contains(_searchQuery.toLowerCase()));
+      // CATEGORY
+      final passesCategory = _selectedCategory == 'All' ||
+          order.items.any((item) => item.productName.contains(_selectedCategory));
+      // BRAND
+      final passesBrand = _selectedBrand == 'All' ||
+          order.items.any((item) => item.productName.contains(_selectedBrand));
 
-      bool passesPriceFilter =
-          (order.totalAmount ?? 0) >= _priceRange.start &&
-              (order.totalAmount ?? 0) <= _priceRange.end;
+      return passesDate && passesPrice && passesSearch && passesCategory && passesBrand;
+    }).toList()
+        : List<Order>.from(userOrders);
 
-      bool passesSearchFilter = _searchQuery.isEmpty ||
-          order.items.any((item) => item.productName
-              .toLowerCase()
-              .contains(_searchQuery.toLowerCase()));
-
-      bool passesCategoryFilter = _selectedCategory == 'All' ||
-          order.items.any(
-                  (item) => item.productName.contains(_selectedCategory));
-
-      bool passesBrandFilter = _selectedBrand == 'All' ||
-          order.items.any(
-                  (item) => item.productName.contains(_selectedBrand));
-
-      return passesDateFilter &&
-          passesPriceFilter &&
-          passesSearchFilter &&
-          passesCategoryFilter &&
-          passesBrandFilter;
-    }).toList();
-
+    // Tạo map filteredOrders cho từng tab, dựa trên filteredList
     filteredOrders = {
-      'all': orders,
-      'pending': orders
-          .where((order) =>
-      order.status == 'Đặt hàng' ||
-          order.status == 'Đang chờ xử lý' ||
-          order.status == 'pending' ||
-          order.status == 'Chờ xác nhận')
-          .toList(),
-      'shipped': orders
-          .where((order) =>
-      order.status == 'Đang giao' ||
-          order.status == 'shipped')
-          .toList(),
-      'delivered': orders
-          .where((order) =>
-      order.status == 'Đã giao' ||
-          order.status == 'delivered')
-          .toList(),
-      'canceled': orders
-          .where((order) =>
-      order.status == 'Đã hủy' ||
-          order.status == 'canceled')
-          .toList(),
+      'all'      : filteredList,
+      'pending'  : filteredList.where((o) => ['pending','Chờ xác nhận','Đặt hàng','Đang chờ xử lý'].contains(o.status)).toList(),
+      'shipped'  : filteredList.where((o) => ['shipped','Đang giao'].contains(o.status)).toList(),
+      'delivered': filteredList.where((o) => ['delivered','Đã giao'].contains(o.status)).toList(),
+      'canceled' : filteredList.where((o) => ['canceled','Đã hủy'].contains(o.status)).toList(),
     };
 
+    // Cập nhật số lượng trên mỗi tab
     orderCounts = {
-      'all': filteredOrders['all']!.length,
-      'pending': filteredOrders['pending']!.length,
-      'shipped': filteredOrders['shipped']!.length,
+      'all'      : filteredOrders['all']!.length,
+      'pending'  : filteredOrders['pending']!.length,
+      'shipped'  : filteredOrders['shipped']!.length,
       'delivered': filteredOrders['delivered']!.length,
-      'canceled': filteredOrders['canceled']!.length,
+      'canceled' : filteredOrders['canceled']!.length,
     };
-    if (mounted) setState(() {});
+
+    setState(() {});
   }
 
   void _clearFilters() {
@@ -186,17 +176,11 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
           isDialog: true,
           onPriceRangeChanged: (v) => setState(() => _priceRange = v),
           onStartDateChanged: (d) => setState(() => _startDate = d),
-          onEndDateChanged: (d) => setState(() => _endDate = d),
-          onCategoryChanged: (c) => setState(() => _selectedCategory = c),
-          onBrandChanged: (b) => setState(() => _selectedBrand = b),
-          onApply: () {
-            _applyFilters();
-            Navigator.pop(ctx);
-          },
-          onReset: () {
-            _clearFilters();
-            Navigator.pop(ctx);
-          },
+          onEndDateChanged:   (d) => setState(() => _endDate = d),
+          onCategoryChanged:  (c) => setState(() => _selectedCategory = c),
+          onBrandChanged:     (b) => setState(() => _selectedBrand = b),
+          onApply:            _applyFilters,
+          onReset:            _clearFilters,
         );
       },
     );
@@ -221,80 +205,51 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text(
-          'Đơn hàng của tôi',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
-        ),
+        title: const Text('Đơn hàng của tôi',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
         backgroundColor: const Color(0xFF4B5EFC),
         elevation: 2,
         shadowColor: Colors.grey.withOpacity(0.2),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF3B82F6)),
           onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              context.go('/homepage');
-            }
+            if (context.canPop()) context.pop();
+            else context.go('/homepage');
           },
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Container(
             decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFFEFF6FF), Color(0xFFFFFFFF)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
+              gradient: LinearGradient(colors: [Color(0xFFEFF6FF), Color(0xFFFFFFFF)],
+                  begin: Alignment.topCenter, end: Alignment.bottomCenter),
             ),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final contentWidth = constraints.maxWidth < 900
-                    ? constraints.maxWidth
-                    : 900.0;
+                final contentWidth = constraints.maxWidth < 900 ? constraints.maxWidth : 900.0;
                 return Center(
                   child: Container(
                     width: contentWidth,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                     child: TabBar(
                       controller: _tabController,
                       isScrollable: true,
                       labelColor: Colors.white,
                       unselectedLabelColor: const Color(0xFF64748B),
                       indicator: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF2563EB), Color(0xFF3B82F6)],
-                        ),
+                        gradient: const LinearGradient(colors: [Color(0xFF2563EB), Color(0xFF3B82F6)]),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       indicatorSize: TabBarIndicatorSize.tab,
-                      labelStyle: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                      ),
-                      unselectedLabelStyle: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      labelPadding:
-                      const EdgeInsets.symmetric(horizontal: 12),
+                      labelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                      unselectedLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                      labelPadding: const EdgeInsets.symmetric(horizontal: 12),
                       tabs: [
-                        _buildTab('Tất cả', orderCounts['all'] ?? 0, Icons
-                            .all_inclusive),
-                        _buildTab('Chờ xác nhận', orderCounts['pending'] ?? 0,
-                            Icons.hourglass_empty),
-                        _buildTab('Đang giao', orderCounts['shipped'] ?? 0,
-                            Icons.local_shipping),
-                        _buildTab('Đã giao', orderCounts['delivered'] ?? 0,
-                            Icons.check_circle),
-                        _buildTab('Đã hủy', orderCounts['canceled'] ?? 0, Icons
-                            .cancel),
+                        _buildTab('Tất cả', orderCounts['all'] ?? 0, Icons.all_inclusive),
+                        _buildTab('Chờ xác nhận', orderCounts['pending'] ?? 0, Icons.hourglass_empty),
+                        _buildTab('Đang giao', orderCounts['shipped'] ?? 0, Icons.local_shipping),
+                        _buildTab('Đã giao', orderCounts['delivered'] ?? 0, Icons.check_circle),
+                        _buildTab('Đã hủy', orderCounts['canceled'] ?? 0, Icons.cancel),
                       ],
                     ),
                   ),
@@ -304,10 +259,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
           ),
         ),
       ),
-      floatingActionButton: MediaQuery
-          .of(context)
-          .size
-          .width <= 800
+      floatingActionButton: MediaQuery.of(context).size.width <= 800
           ? FloatingActionButton(
         onPressed: _showFilterDialog,
         backgroundColor: const Color(0xFF3B82F6),
@@ -321,18 +273,8 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
                 top: 0,
                 child: Container(
                   padding: const EdgeInsets.all(2),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFEF4444),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Text(
-                    '!',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  decoration: const BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
+                  child: const Text('!', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
                 ),
               ),
           ],
@@ -342,14 +284,11 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
-          ? Center(
-          child: Text(_error!, style: const TextStyle(color: Colors.red)))
+          ? Center(child: Text(_error!, style: const TextStyle(color: Colors.red)))
           : LayoutBuilder(
         builder: (context, constraints) {
           final isWeb = constraints.maxWidth > 800;
-          final contentWidth = constraints.maxWidth < 900
-              ? constraints.maxWidth
-              : 900.0;
+          final contentWidth = constraints.maxWidth < 900 ? constraints.maxWidth : 900.0;
           return Row(
             children: [
               if (isWeb)
@@ -359,14 +298,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.15),
-                        spreadRadius: 2,
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.15), spreadRadius: 2, blurRadius: 8, offset: const Offset(0,2))],
                   ),
                   child: OrderFilterWidget(
                     maxPrice: _maxPrice,
@@ -378,17 +310,13 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
                     categories: _categories,
                     brands: _brands,
                     isDialog: false,
-                    onPriceRangeChanged: (values) =>
-                        setState(() => _priceRange = values),
-                    onStartDateChanged: (date) =>
-                        setState(() => _startDate = date),
-                    onEndDateChanged: (date) => setState(() => _endDate = date),
-                    onCategoryChanged: (value) =>
-                        setState(() => _selectedCategory = value),
-                    onBrandChanged: (value) =>
-                        setState(() => _selectedBrand = value),
-                    onApply: _applyFilters,
-                    onReset: _clearFilters,
+                    onPriceRangeChanged: (v) => setState(() => _priceRange = v),
+                    onStartDateChanged: (d) => setState(() => _startDate = d),
+                    onEndDateChanged:   (d) => setState(() => _endDate = d),
+                    onCategoryChanged:  (c) => setState(() => _selectedCategory = c),
+                    onBrandChanged:     (b) => setState(() => _selectedBrand = b),
+                    onApply:            _applyFilters,
+                    onReset:            _clearFilters,
                   ),
                 ),
               Expanded(
@@ -416,22 +344,17 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
     );
   }
 
-    Widget _buildTab(String title, int count, IconData icon) {
+  Widget _buildTab(String title, int count, IconData icon) {
     return Tab(
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: 120),
+        constraints: const BoxConstraints(maxWidth: 120),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 16),
-            SizedBox(width: 4),
-            Flexible(
-              child: Text(
-                '$title ($count)',
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
+            const SizedBox(width: 4),
+            Flexible(child: Text('$title ($count)', overflow: TextOverflow.ellipsis)),
           ],
         ),
       ),
@@ -440,32 +363,15 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
 
   Widget _buildOrderList(List<Order> orders) {
     return orders.isEmpty
-        ? Center(
+        ? const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.shopping_cart_outlined,
-            size: 100,
-            color: Color(0xFF94A3B8),
-          ),
+          Icon(Icons.shopping_cart_outlined, size: 100, color: Color(0xFF94A3B8)),
           SizedBox(height: 16),
-          Text(
-            'Không có đơn hàng nào',
-            style: TextStyle(
-              fontSize: 18,
-              color: Color(0xFF1E293B),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          Text('Không có đơn hàng nào', style: TextStyle(fontSize: 18, color: Color(0xFF1E293B), fontWeight: FontWeight.w600)),
           SizedBox(height: 8),
-          Text(
-            'Hãy đặt hàng để bắt đầu!',
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFF64748B),
-            ),
-          ),
+          Text('Hãy đặt hàng để bắt đầu!', style: TextStyle(fontSize: 14, color: Color(0xFF64748B))),
         ],
       ),
     )
@@ -476,7 +382,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
         itemBuilder: (context, index) {
           final order = orders[index];
           return Padding(
-            padding: EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: 8),
             child: OrderCard(order: order),
           );
         },
