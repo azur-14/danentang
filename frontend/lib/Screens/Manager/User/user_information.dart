@@ -322,7 +322,27 @@ class _UserInformationState extends State<UserInformation> {
       canPop: false,
       onPopInvoked: (didPop) async {
         if (!didPop && mounted) {
-          context.go('/manager/users');
+          // Hiển thị dialog xác nhận trước khi quay lại
+          final shouldPop = await showDialog<bool>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Xác nhận'),
+              content: const Text('Bạn có muốn quay lại danh sách người dùng?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Hủy'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Đồng ý'),
+                ),
+              ],
+            ),
+          );
+          if (shouldPop == true && mounted) {
+            context.go('/manager/users');
+          }
         }
       },
       child: Scaffold(
@@ -332,7 +352,29 @@ class _UserInformationState extends State<UserInformation> {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: () => context.go('/manager/users'),
+            onPressed: () async {
+              // Xác nhận khi nhấn nút back
+              final shouldPop = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Xác nhận'),
+                  content: const Text('Bạn có muốn quay lại danh sách người dùng?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Hủy'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Đồng ý'),
+                    ),
+                  ],
+                ),
+              );
+              if (shouldPop == true && mounted) {
+                context.go('/manager/users');
+              }
+            },
           ),
           actions: [
             IconButton(

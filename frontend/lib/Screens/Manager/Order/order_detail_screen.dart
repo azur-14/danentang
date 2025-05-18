@@ -7,16 +7,17 @@ import '../../../Service/order_service.dart';
 import '../../../models/Order.dart';
 import '../../../models/OrderStatusHistory.dart';
 
-class OrderDetailScreen extends StatefulWidget {
+class OrderDetailScreenMn extends StatefulWidget {
   final String orderId;
+  final Order? order; // Thêm tham số tùy chọn để nhận từ extra
 
-  const OrderDetailScreen({super.key, required this.orderId});
+  const OrderDetailScreenMn({super.key, required this.orderId, this.order});
 
   @override
-  State<OrderDetailScreen> createState() => _OrderDetailScreenState();
+  State<OrderDetailScreenMn> createState() => _OrderDetailScreenState();
 }
 
-class _OrderDetailScreenState extends State<OrderDetailScreen> {
+class _OrderDetailScreenState extends State<OrderDetailScreenMn> {
   Order? _order;
   late String _selectedStatus;
   bool _isLoading = true;
@@ -47,12 +48,21 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   Future<void> _fetchOrder() async {
     try {
-      final order = await OrderService.instance.getOrderById(widget.orderId);
-      setState(() {
-        _order = order;
-        _selectedStatus = order.status;
-        _isLoading = false;
-      });
+      // Nếu order được truyền từ extra, sử dụng nó để tối ưu hóa
+      if (widget.order != null) {
+        setState(() {
+          _order = widget.order;
+          _selectedStatus = _order!.status;
+          _isLoading = false;
+        });
+      } else {
+        final order = await OrderService.instance.getOrderById(widget.orderId);
+        setState(() {
+          _order = order;
+          _selectedStatus = order.status;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       setState(() {
         _errorMessage = 'Lỗi khi tải đơn hàng: $e';
@@ -77,7 +87,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         content: Text('Bạn có chắc muốn cập nhật trạng thái thành "$_selectedStatus"?'),
         actions: [
           TextButton(onPressed: () => ctx.pop(false), child: const Text('Hủy')),
-          TextButton(onPressed: () => ctx.pop(true),  child: const Text('Xác nhận')),
+          TextButton(onPressed: () => ctx.pop(true), child: const Text('Xác nhận')),
         ],
       ),
     );
@@ -120,7 +130,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     }
 
     final order = _order!;
-    final addr  = order.shippingAddress;
+    final addr = order.shippingAddress;
 
     return PopScope(
       canPop: false,
@@ -143,17 +153,16 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               padding: const EdgeInsets.all(16),
               children: [
                 _buildSectionTitle("Thông tin người nhận"),
-                _buildInfoRow("Họ tên",     addr.receiverName),
-                _buildInfoRow("SĐT",        addr.phoneNumber),
+                _buildInfoRow("Họ tên", addr.receiverName),
+                _buildInfoRow("SĐT", addr.phoneNumber),
                 _buildInfoRow("Địa chỉ",
-                    "${addr.addressLine}, ${addr.ward}, ${addr.district}, ${addr.city}"
-                ),
+                    "${addr.addressLine}, ${addr.ward}, ${addr.district}, ${addr.city}"),
                 const SizedBox(height: 16),
                 _buildSectionTitle("Thông tin đơn hàng"),
-                _buildInfoRow("Mã đơn hàng",    order.orderNumber),
-                _buildInfoRow("Tổng tiền",      "${order.totalAmount.toStringAsFixed(0)} ₫"),
+                _buildInfoRow("Mã đơn hàng", order.orderNumber),
+                _buildInfoRow("Tổng tiền", "${order.totalAmount.toStringAsFixed(0)} ₫"),
                 if (order.discountAmount > 0)
-                  _buildInfoRow("Giảm giá",   "-${order.discountAmount.toStringAsFixed(0)} ₫"),
+                  _buildInfoRow("Giảm giá", "-${order.discountAmount.toStringAsFixed(0)} ₫"),
                 if (order.couponCode != null)
                   _buildInfoRow("Mã giảm giá", order.couponCode!),
                 _buildInfoRow("Điểm thưởng dùng", "${order.loyaltyPointsUsed}"),
@@ -214,8 +223,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 const SizedBox(height: 16),
               ],
             ),
-            if (_isLoading)
-              const Center(child: CircularProgressIndicator()),
+            if (_isLoading) const Center(child: CircularProgressIndicator()),
           ],
         ),
       ),
