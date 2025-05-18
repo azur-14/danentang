@@ -29,6 +29,20 @@ class OrderService {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('cartId');
   }
+  Future<Cart> fetchCartByUserId(String userId) async {
+    final uri = Uri.parse('$_baseUrl/carts/user/$userId');
+    debugPrint('→ GET $uri');
+    final resp = await _http.get(uri);
+    debugPrint('← ${resp.statusCode} ${resp.body}');
+
+    if (resp.statusCode == 200) {
+      return Cart.fromJson(json.decode(resp.body));
+    }
+    if (resp.statusCode == 404) {
+      return await createCart(userId); // nếu chưa có cart thì tạo mới
+    }
+    throw Exception('fetchCartByUserId failed (${resp.statusCode})');
+  }
 
   /// Lưu cartId (sau khi create hoặc lần đầu add)
   Future<void> _saveCartId(String cartId) async {
@@ -69,8 +83,8 @@ class OrderService {
   }
 
 
-  Future<Cart> fetchCart(String userId) async {
-    final uri = Uri.parse('$_baseUrl/carts/$userId');
+  Future<Cart> fetchCart(String cartId) async {
+    final uri = Uri.parse('$_baseUrl/carts/$cartId');
     debugPrint('→ GET $uri');
     final resp = await _http.get(uri);
     debugPrint('← ${resp.statusCode} ${resp.body}');
@@ -79,7 +93,7 @@ class OrderService {
       return Cart.fromJson(json.decode(resp.body));
     }
     if (resp.statusCode == 404) {
-      return createCart(userId);
+      return createCart(cartId);
     }
     throw Exception('fetchCart failed (${resp.statusCode})');
   }

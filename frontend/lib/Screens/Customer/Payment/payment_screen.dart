@@ -11,6 +11,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../Service/order_service.dart';
 import '../../../models/Order.dart';
+import 'address_selection_screen.dart';
 import 'order_success_screen.dart';
 
 class PaymentScreen extends StatefulWidget {
@@ -277,7 +278,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
       return await UserService().fetchUserByEmail(email);
     }
   }
-
+  Future<void> _selectAddress() async {
+    if (user == null) return;
+    final selected = await Navigator.push<Address>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddressSelectionScreen(user: user!),
+      ),
+    );
+    if (selected != null) {
+      setState(() {
+        shippingAddress = selected;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -326,9 +340,20 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             '${shippingAddress!.city != null ? ', ${shippingAddress!.city}' : ''}'
                             '${email != null ? '\nEmail: $email' : ''}',
                       ),
-                      trailing: Icon(Icons.check_circle, color: Colors.green),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.check_circle, color: Colors.green),
+                          IconButton(
+                            icon: Icon(Icons.edit, color: Colors.blue),
+                            tooltip: 'Chọn địa chỉ khác',
+                            onPressed: _selectAddress,
+                          ),
+                        ],
+                      ),
                     ),
                   )
+
                 else ...[
                   TextField(
                     decoration: InputDecoration(labelText: 'Tên người nhận'),

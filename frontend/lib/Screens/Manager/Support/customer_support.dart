@@ -5,7 +5,6 @@ import '../../../models/User.dart';
 import '../../../Service/user_service.dart';
 import '../../../ultis/image_helper.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
-import '../Support/customer_service.dart';
 
 class CustomerSupport extends StatelessWidget {
   const CustomerSupport({super.key});

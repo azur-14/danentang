@@ -55,36 +55,49 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
     final token = prefs.getString('token');
     final email = prefs.getString('email');
 
-    // Lấy user nếu có login
-    if (email != null) {
-      try {
+    Cart cart;
+
+    try {
+      if (email != null && token != null) {
+        // ✅ Đã đăng nhập
         final user = await UserService().fetchUserByEmail(email);
         setState(() => _currentUser = user);
-      } catch (_) {
+
+        cart = await _api.fetchCartByUserId(user.id!);  // ⚠️ dùng hàm này
+        _effectiveCartId = cart.id;
+
+        // Lưu cartId lại phòng trường hợp logout
+        await prefs.setString('cartId', cart.id);
+      } else {
+        // ✅ Guest
+        String? cartId = prefs.getString('cartId');
+        if (cartId == null) {
+          final newCart = await _api.createCart('');
+          cartId = newCart.id;
+          await prefs.setString('cartId', cartId);
+        }
+
+        _effectiveCartId = cartId!;
+        cart = await _api.fetchCart(_effectiveCartId);  // ⚠️ dùng cartId
         setState(() => _currentUser = null);
       }
+
+      // ✅ Tải trước thông tin sản phẩm
+      final ids = cart.items.map((i) => i.productId).toSet().toList();
+      final products = await Future.wait(ids.map((id) => ProductService.getById(id)));
+      _productsById = {for (var p in products) p.id: p};
+
+      setState(() {
+        _cartFuture = Future.value(cart);
+      });
+    } catch (e) {
+      debugPrint('❌ Lỗi khi load giỏ hàng: $e');
+      setState(() {
+        _cartFuture = Future.error('Không thể tải giỏ hàng');
+      });
     }
-
-    // Lấy cartId hoặc tạo mới
-    String? cartId = prefs.getString('cartId');
-    if (cartId == null) {
-      final newCart = await _api.createCart('');
-      cartId = newCart.id;
-      await prefs.setString('cartId', cartId);
-    }
-    _effectiveCartId = cartId;
-
-    // Fetch cart và preload products
-    final cart = await _api.fetchCart(_effectiveCartId);
-    final ids = cart.items.map((i) => i.productId).toSet().toList();
-    final products = await Future.wait(
-        ids.map((id) => ProductService.getById(id)));
-    _productsById = {for (var p in products) p.id: p};
-
-    setState(() {
-      _cartFuture = Future.value(cart);
-    });
   }
+
 
   Future<void> _refresh() async {
     await _loadUserAndCart();

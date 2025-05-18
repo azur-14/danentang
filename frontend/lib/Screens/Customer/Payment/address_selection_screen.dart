@@ -118,13 +118,14 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
                   CheckboxListTile(
                     title: const Text('Đặt làm mặc định'),
                     value: _isDefault,
-                    onChanged: (value) {
+                    onChanged: (bool? value) {
                       setState(() {
                         _isDefault = value ?? false;
                       });
                     },
                     dense: true,
                   ),
+
                 ],
               ),
             ),
@@ -176,6 +177,76 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
       _communeController.dispose();
       _districtController.dispose();
       _cityController.dispose();
+    });
+  }
+  void _editAddressDialog(Address addr, int index) async {
+    final receiver = await _showTextDialog('Người nhận', addr.receiverName);
+    final phone = await _showTextDialog('SĐT', addr.phone);
+    final addressLine = await _showTextDialog('Số nhà, đường', addr.addressLine);
+    final commune = await _showTextDialog('Phường/Xã', addr.commune ?? '');
+    final district = await _showTextDialog('Quận/Huyện', addr.district ?? '');
+    final city = await _showTextDialog('Tỉnh/Thành phố', addr.city ?? '');
+
+    final updated = addr.copyWith(
+      receiverName: receiver,
+      phone: phone,
+      addressLine: addressLine,
+      commune: commune,
+      district: district,
+      city: city,
+    );
+
+    setState(() {
+      widget.user.addresses[index] = updated;
+    });
+  }
+
+  void _deleteAddress(int index) {
+    setState(() {
+      widget.user.addresses.removeAt(index);
+      if (_selectedAddress == widget.user.addresses[index]) {
+        _selectedAddress = widget.user.addresses.firstWhere(
+              (addr) => addr.isDefault,
+          orElse: () => widget.user.addresses.first,
+        );
+
+      }
+    });
+  }
+  Future<String> _showTextDialog(String title, String initialValue) async {
+    final controller = TextEditingController(text: initialValue);
+    String? result;
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Sửa $title'),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(hintText: title),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Huỷ')),
+          ElevatedButton(
+            onPressed: () {
+              result = controller.text;
+              Navigator.pop(context);
+            },
+            child: const Text('Lưu'),
+          ),
+        ],
+      ),
+    );
+
+    return result ?? initialValue;
+  }
+
+  void _setDefault(int index) {
+    setState(() {
+      for (var i = 0; i < widget.user.addresses.length; i++) {
+        widget.user.addresses[i] = widget.user.addresses[i].copyWith(isDefault: i == index);
+      }
+      _selectedAddress = widget.user.addresses[index];
     });
   }
 
@@ -237,44 +308,50 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
 
                 return Card(
                   margin: EdgeInsets.symmetric(vertical: padding / 2),
-                  child: RadioListTile<Address>(
-                    value: address,
-                    groupValue: _selectedAddress,
-                    onChanged: (Address? value) {
-                      setState(() {
-                        _selectedAddress = value;
-                      });
-                    },
-                    title: Text(
-                      address.receiverName,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: fontSize,
-                      ),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          fullAddress,
-                          style: TextStyle(fontSize: fontSize - 2),
-                        ),
-                        Text(
-                          'Phone: ${address.phone}',
-                          style: TextStyle(fontSize: fontSize - 2),
-                        ),
-                        if (address.isDefault)
-                          Text(
-                            'Mặc định',
-                            style: TextStyle(
-                              color: Colors.green,
-                              fontSize: fontSize - 4,
-                            ),
+                  child: Column(
+                    children: [
+                      RadioListTile<Address>(
+                        value: address,
+                        groupValue: _selectedAddress,
+                        onChanged: (Address? value) {
+                          setState(() {
+                            _selectedAddress = value;
+                          });
+                        },
+                        title: Text(
+                          address.receiverName,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: fontSize,
                           ),
-                      ],
-                    ),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(fullAddress, style: TextStyle(fontSize: fontSize - 2)),
+                            Text('Phone: ${address.phone}', style: TextStyle(fontSize: fontSize - 2)),
+                            if (address.isDefault)
+                              Text('Mặc định', style: TextStyle(color: Colors.green, fontSize: fontSize - 4)),
+                          ],
+                        ),
+                        secondary: PopupMenuButton<String>(
+                          onSelected: (value) {
+                            if (value == 'edit') _editAddressDialog(address, index);
+                            if (value == 'delete') _deleteAddress(index);
+                            if (value == 'setDefault') _setDefault(index);
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(value: 'edit', child: Text('Sửa')),
+                            const PopupMenuItem(value: 'delete', child: Text('Xoá')),
+                            if (!address.isDefault)
+                              const PopupMenuItem(value: 'setDefault', child: Text('Chọn làm mặc định')),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 );
+
               },
             ),
           );

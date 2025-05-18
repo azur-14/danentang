@@ -78,7 +78,14 @@ class _CustomerServiceScreenState extends State<CustomerServiceScreen> {
 
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
-    if (text.isEmpty || _currentUser == null || _peerUser == null) return;
+
+    print('[DEBUG] Bấm gửi: "$text"');
+    print('[DEBUG] currentUser: ${_currentUser?.email}, peerUser: ${_peerUser?.email}');
+
+    if (text.isEmpty || _currentUser == null || _peerUser == null) {
+      print('[DEBUG] Không gửi: thiếu dữ liệu');
+      return;
+    }
 
     try {
       await UserService().sendMessage(
@@ -97,10 +104,12 @@ class _CustomerServiceScreenState extends State<CustomerServiceScreen> {
         });
         _controller.clear();
       });
+      print('[DEBUG] Gửi thành công');
     } catch (e) {
       print("❌ Gửi tin nhắn lỗi: $e");
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -206,18 +215,16 @@ class _CustomerServiceScreenState extends State<CustomerServiceScreen> {
             ),
           ),
           const SizedBox(width: 10),
-          GestureDetector(
-            onTap: _sendMessage,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(
-                color: Colors.blueAccent,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.send, color: Colors.white),
+          IconButton(
+            onPressed: _sendMessage,
+            icon: const Icon(Icons.send),
+            color: Colors.white,
+            style: ButtonStyle(
+              backgroundColor: MaterialStateProperty.all(Colors.blueAccent),
+              shape: MaterialStateProperty.all(CircleBorder()),
+              padding: MaterialStateProperty.all(const EdgeInsets.all(16)),
             ),
-          ),
+          )
         ],
       ),
     );
