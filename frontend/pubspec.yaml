@@ -60,7 +60,7 @@ dependencies:
   jwt_decoder: ^2.0.1
   animate_do: ^3.3.4
   google_fonts: ^4.0.4
-
+  web_socket_channel: ^2.4.0
 
 dev_dependencies:
   flutter_test:

@@ -431,6 +431,7 @@ class OrderService {
       throw Exception('deleteOrder failed (${resp.statusCode})');
     }
   }
+
   static Future<List<Order>> fetchOrdersByUserId(String userId) async {
     final uri = Uri.parse('http://localhost:5005/api/orders/user/$userId');
     final resp = await http.get(uri);

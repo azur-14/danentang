@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:danentang/models/User.dart';
 import 'package:danentang/Service/user_service.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'dart:convert';
+import 'package:intl/intl.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
 class CustomerServiceScreen extends StatefulWidget {
   final String? userId;
-
   const CustomerServiceScreen({super.key, this.userId});
 
   @override
@@ -23,6 +25,7 @@ class _CustomerServiceScreenState extends State<CustomerServiceScreen> {
   final TextEditingController _controller = TextEditingController();
   bool _isLoading = true;
   int _selectedIndex = 0;
+  WebSocketChannel? _channel;
 
   @override
   void initState() {
@@ -38,8 +41,8 @@ class _CustomerServiceScreenState extends State<CustomerServiceScreen> {
 
       final service = UserService();
       final currentUser = await service.fetchUserByEmail(email);
-
       User peerUser;
+
       if (role == 'admin') {
         if (widget.userId == null) throw Exception('Thiếu userId cho admin');
         peerUser = await service.fetchUserById(widget.userId!);
@@ -47,19 +50,33 @@ class _CustomerServiceScreenState extends State<CustomerServiceScreen> {
         peerUser = await service.fetchUserById("6826a468061b990b3152e9d2");
       }
 
-      List<Map<String, dynamic>> messages = [];
-      try {
-        messages = await service.getMessages(currentUser.id, peerUser.id);
-      } catch (_) {
-        if (role != 'admin') {
-          messages.add({
-            'sender': 'admin',
-            'content': 'Chào bạn! Hãy đặt câu hỏi nếu cần hỗ trợ.',
-            'isFromCustomer': false,
-            'createdAt': DateTime.now().toIso8601String(),
-          });
-        }
-      }
+      List<Map<String, dynamic>> messages = await service.getMessages(currentUser.id, peerUser.id);
+
+      // Kết nối WebSocket
+      _channel = WebSocketChannel.connect(Uri.parse("ws://localhost:5012/ws/complaint"));
+      print('[WS] Đã kết nối WebSocket');
+
+      _channel!.stream.listen(
+            (data) {
+          print('[WS] Received data: $data'); // ⚠️ Bắt buộc thêm để kiểm tra
+          final msg = jsonDecode(data);
+          final isRelevant = (msg['senderId'] == _peerUser!.id && msg['receiverId'] == _currentUser!.id) ||
+              (msg['senderId'] == _currentUser!.id && msg['receiverId'] == _peerUser!.id);
+          if (isRelevant) {
+            setState(() {
+              _messages.add({
+                'sender': msg['isFromCustomer'] ? 'customer' : 'admin',
+                'content': msg['content'],
+                'isFromCustomer': msg['isFromCustomer'],
+                'createdAt': msg['createdAt'],
+              });
+            });
+          }
+        },
+        onError: (e) => print('[WS ERROR] $e'),
+        onDone: () => print('[WS CLOSED] WebSocket disconnected'),
+      );
+
 
       setState(() {
         _currentUser = currentUser;
@@ -78,38 +95,33 @@ class _CustomerServiceScreenState extends State<CustomerServiceScreen> {
 
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
+    if (text.isEmpty || _currentUser == null || _peerUser == null) return;
 
-    print('[DEBUG] Bấm gửi: "$text"');
-    print('[DEBUG] currentUser: ${_currentUser?.email}, peerUser: ${_peerUser?.email}');
+    final msg = {
+      'senderId': _currentUser!.id,
+      'receiverId': _peerUser!.id,
+      'content': text,
+      'isFromCustomer': !isAdmin,
+    };
 
-    if (text.isEmpty || _currentUser == null || _peerUser == null) {
-      print('[DEBUG] Không gửi: thiếu dữ liệu');
-      return;
-    }
+    _channel?.sink.add(jsonEncode(msg));
 
-    try {
-      await UserService().sendMessage(
-        userId: _peerUser!.id,
-        senderId: _currentUser!.id,
-        content: text,
-        isFromCustomer: !isAdmin,
-      );
-
-      setState(() {
-        _messages.add({
-          'sender': isAdmin ? 'admin' : _currentUser!.email,
-          'content': text,
-          'isFromCustomer': !isAdmin,
-          'createdAt': DateTime.now().toIso8601String(),
-        });
-        _controller.clear();
+    setState(() {
+      _messages.add({
+        'sender': isAdmin ? 'admin' : _currentUser!.email,
+        'content': text,
+        'isFromCustomer': !isAdmin,
+        'createdAt': DateTime.now().toIso8601String(),
       });
-      print('[DEBUG] Gửi thành công');
-    } catch (e) {
-      print("❌ Gửi tin nhắn lỗi: $e");
-    }
+      _controller.clear();
+    });
   }
 
+  @override
+  void dispose() {
+    _channel?.sink.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -160,9 +172,13 @@ class _CustomerServiceScreenState extends State<CustomerServiceScreen> {
                     final isUser = isAdmin
                         ? !(msg['isFromCustomer'] ?? false)
                         : (msg['isFromCustomer'] ?? true);
+                    final createdAt = msg['createdAt'];
                     return ChatBubble(
                       isUser: isUser,
                       message: msg['content'] ?? '',
+                      time: createdAt != null
+                          ? DateFormat('hh:mm a').format(DateTime.parse(createdAt).toLocal())
+                          : '',
                     );
                   },
                 ),
@@ -234,8 +250,14 @@ class _CustomerServiceScreenState extends State<CustomerServiceScreen> {
 class ChatBubble extends StatelessWidget {
   final bool isUser;
   final String message;
+  final String time;
 
-  const ChatBubble({super.key, required this.isUser, required this.message});
+  const ChatBubble({
+    super.key,
+    required this.isUser,
+    required this.message,
+    required this.time,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -249,7 +271,7 @@ class ChatBubble extends StatelessWidget {
         child: FadeTransition(opacity: animation, child: child),
       ),
       child: Align(
-        key: ValueKey<String>(message),
+        key: ValueKey<String>(message + time),
         alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 6),
@@ -264,9 +286,14 @@ class ChatBubble extends StatelessWidget {
               bottomRight: Radius.circular(isUser ? 0 : 16),
             ),
           ),
-          child: Text(
-            message,
-            style: TextStyle(color: isUser ? Colors.white : Colors.black),
+          child: Column(
+            crossAxisAlignment:
+            isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            children: [
+              Text(message, style: TextStyle(color: isUser ? Colors.white : Colors.black)),
+              const SizedBox(height: 4),
+              Text(time, style: TextStyle(color: Colors.white70, fontSize: 10)),
+            ],
           ),
         ),
       ),
