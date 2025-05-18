@@ -94,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      "Login",
+                      "Đăng nhâp",
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -106,7 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: emailController,
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
-                        hintText: "Enter your email *",
+                        hintText: "Nhập email *",
                         hintStyle: TextStyle(color: Colors.grey[400]),
                         filled: true,
                         fillColor: const Color(0xFFF1F5F9),
@@ -121,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: passwordController,
                       obscureText: _obscureText,
                       decoration: InputDecoration(
-                        hintText: "Enter your password *",
+                        hintText: "Nhập mật khẩu*",
                         hintStyle: TextStyle(color: Colors.grey[400]),
                         filled: true,
                         fillColor: const Color(0xFFF1F5F9),
@@ -159,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: isLoading
                             ? const CircularProgressIndicator(color: Colors.white)
                             : Text(
-                          "Login",
+                          "Đăng nhập",
                           style: TextStyle(
                             fontSize: w * 0.045,
                             fontWeight: FontWeight.w600,
@@ -174,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Text(
-                            "You do not have an account? ",
+                            "Bạn chưa có tài khoản? ",
                             style: TextStyle(
                               color: Color(0xFF1E293B),
                               fontSize: 14,
@@ -183,7 +183,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           GestureDetector(
                             onTap: () => context.go('/signup'),
                             child: const Text(
-                              "Sign up now.",
+                              "Đăng kí ngay.",
                               style: TextStyle(
                                 color: Color(0xFF3B82F6),
                                 fontSize: 14,
@@ -220,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Image.asset('assets/Logo.png', width: 250),
                     const SizedBox(height: 30),
                     const Text(
-                      "Welcome Back!",
+                      "Chào mừng trở lại!",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 36,
@@ -230,7 +230,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 20),
                     const Text(
-                      "Login to access exclusive deals and a seamless digital experience.",
+                      "Đăng nhập để truy cập các ưu đãi độc quyền và trải nghiệm kỹ thuật số liền mạch.",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 20,
@@ -268,7 +268,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         const SizedBox(height: 30),
                         const Text(
-                          "Login",
+                          "Đăng nhập",
                           style: TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
@@ -280,7 +280,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: emailController,
                           keyboardType: TextInputType.emailAddress,
                           decoration: InputDecoration(
-                            hintText: "Enter your email *",
+                            hintText: "Nhập email*",
                             hintStyle: TextStyle(color: Colors.grey[400]),
                             filled: true,
                             fillColor: const Color(0xFFF1F5F9),
@@ -295,7 +295,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           controller: passwordController,
                           obscureText: _obscureText,
                           decoration: InputDecoration(
-                            hintText: "Enter your password *",
+                            hintText: "Nhập mật khẩu *",
                             hintStyle: TextStyle(color: Colors.grey[400]),
                             filled: true,
                             fillColor: const Color(0xFFF1F5F9),
@@ -332,7 +332,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: isLoading
                                 ? const CircularProgressIndicator(color: Colors.white)
                                 : const Text(
-                              "Login",
+                              "Đăng nhập",
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
@@ -347,7 +347,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Text(
-                                "You do not have an account? ",
+                                "Bạn chưa có tài khoản? ",
                                 style: TextStyle(
                                   color: Color(0xFF1E293B),
                                   fontSize: 14,
@@ -356,7 +356,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               GestureDetector(
                                 onTap: () => context.go('/signup'),
                                 child: const Text(
-                                  "Sign up now.",
+                                  "Đăng kí ngay.",
                                   style: TextStyle(
                                     color: Color(0xFF3B82F6),
                                     fontSize: 14,

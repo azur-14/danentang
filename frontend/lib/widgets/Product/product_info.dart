@@ -8,7 +8,6 @@ import 'package:danentang/models/Review.dart';
 import 'package:danentang/models/CartItem.dart';
 import 'package:danentang/Service/order_service.dart';
 import 'package:danentang/Service/product_service.dart';
-import 'package:danentang/widgets/Product/buy_now_dialog.dart';
 import 'package:danentang/widgets/Product/AddToCartDialog.dart';
 
 class ProductInfo extends StatefulWidget {
@@ -63,7 +62,7 @@ class _ProductInfoState extends State<ProductInfo> {
         final decoded = jsonDecode(data);
         if (decoded['productId'] == widget.product.id) {
           _loadReviews();
-          setState(() {}); // Trigger FutureBuilder refresh
+          setState(() {});
         }
       });
     } catch (e) {
@@ -214,15 +213,7 @@ class _ProductInfoState extends State<ProductInfo> {
             children: [
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (_) => BuyNowDialog(
-                        product: widget.product,
-                        discountedPrice: _discountedBasePrice,
-                      ),
-                    );
-                  },
+                  onPressed: _onAddToCart,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: lightBlueColor,
                     padding: EdgeInsets.symmetric(
@@ -234,7 +225,7 @@ class _ProductInfoState extends State<ProductInfo> {
                     ),
                   ),
                   child: const Text(
-                    "Mua ngay",
+                    "Thêm vào giỏ hàng",
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -255,24 +246,7 @@ class _ProductInfoState extends State<ProductInfo> {
                         offset: Offset(0, 2)),
                   ],
                 ),
-                child: IconButton(
-                  icon: Icon(Icons.shopping_bag_outlined,
-                      size: 24, color: primaryColor),
-                  onPressed: _onAddToCart,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: backgroundColor,
-                  shape: BoxShape.circle,
-                  boxShadow: const [
-                    BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 4,
-                        offset: Offset(0, 2)),
-                  ],
-                ),
+
                 child: IconButton(
                   icon: Icon(Icons.chat_bubble_outline,
                       size: 24, color: primaryColor),

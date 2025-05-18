@@ -127,7 +127,7 @@ class _WebDashboardState extends State<WebDashboard> with SingleTickerProviderSt
     if (!_isAdmin) return const Scaffold(body: SizedBox.shrink());
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Dashboard', style: TextStyle(color: Color(0xFF171F32), fontWeight: FontWeight.bold)),
+        title: const Text('Bảng điều khiển', style: TextStyle(color: Color(0xFF171F32), fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
           decoration: BoxDecoration(
@@ -188,7 +188,7 @@ class _WebDashboardState extends State<WebDashboard> with SingleTickerProviderSt
           padding: EdgeInsets.zero,
           children: [
             const DrawerHeader(
-              child: Text('Admin Menu', style: TextStyle(color: Color(0xFF171F32), fontSize: 24, fontWeight: FontWeight.bold)),
+              child: Text('Menu Quản trị viên', style: TextStyle(color: Color(0xFF171F32), fontSize: 24, fontWeight: FontWeight.bold)),
             ),
             _drawerItem(context, 'Trang chủ', Icons.dashboard, '/manager/dashboard', Color(0xFF0D47A1)),
             _drawerItem(context, 'Quản lý Sản phẩm', Icons.shopping_cart, '/manager/products', Color(0xFF0D47A1)),
@@ -230,10 +230,10 @@ class _WebDashboardState extends State<WebDashboard> with SingleTickerProviderSt
 
   Widget _buildStatCards() {
     final stats = [
-      {'title': 'Users', 'value': '$_userCount', 'icon': Icons.people},
-      {'title': 'New Users (30d)', 'value': '$_newUserCount', 'icon': Icons.person_add},
-      {'title': 'Orders', 'value': '$_orderCount', 'icon': Icons.shopping_cart},
-      {'title': 'Revenue', 'value': '₫${_totalRevenue.toStringAsFixed(0)}', 'icon': Icons.attach_money},
+      {'title': 'Người dùng', 'value': '$_userCount', 'icon': Icons.people},
+      {'title': 'Người dùng mới (30d)', 'value': '$_newUserCount', 'icon': Icons.person_add},
+      {'title': 'Đơn đặt hàng', 'value': '$_orderCount', 'icon': Icons.shopping_cart},
+      {'title': 'Doanh thu', 'value': '₫${_totalRevenue.toStringAsFixed(0)}', 'icon': Icons.attach_money},
     ];
     return LayoutBuilder(builder: (ctx, cons) {
       final itemW = (cons.maxWidth - 48) / 4;
@@ -282,7 +282,7 @@ class _WebDashboardState extends State<WebDashboard> with SingleTickerProviderSt
         childAspectRatio: 1.2,
         children: [
           _chartCard(
-            title: 'Orders (12m)',
+            title: 'Đơn đặt hàng (12m)',
             child: LineChart(
               LineChartData(
                 titlesData: FlTitlesData(
@@ -308,7 +308,7 @@ class _WebDashboardState extends State<WebDashboard> with SingleTickerProviderSt
             ),
           ),
           _chartCard(
-            title: 'Revenue (12m)',
+            title: 'Doanh thu (12m)',
             child: BarChart(
               BarChartData(
                 titlesData: FlTitlesData(
@@ -328,7 +328,7 @@ class _WebDashboardState extends State<WebDashboard> with SingleTickerProviderSt
             ),
           ),
           _chartCard(
-            title: 'Category Share',
+            title: 'Chia sẻ danh mục',
             child: PieChart(PieChartData(
               sections: catShares.entries.map((e) => PieChartSectionData(
                 value: e.value.toDouble(),
@@ -341,7 +341,7 @@ class _WebDashboardState extends State<WebDashboard> with SingleTickerProviderSt
             )),
           ),
           _chartCard(
-            title: 'Top 5 Categories',
+            title: '5 danh mục hàng đầu',
             child: BarChart(BarChartData(
               titlesData: FlTitlesData(
                 bottomTitles: AxisTitles(sideTitles: SideTitles(
@@ -367,7 +367,7 @@ class _WebDashboardState extends State<WebDashboard> with SingleTickerProviderSt
     return Column(
       children: [
         _filterableChart(
-          title: 'Orders over Interval',
+          title: 'Lệnh vượt quá khoảng thời gian',
           dropdownValue: _ordersInterval,
           onIntervalChanged: (v) {
             if (v != null) setState(() => _ordersInterval = v);
@@ -399,7 +399,7 @@ class _WebDashboardState extends State<WebDashboard> with SingleTickerProviderSt
         ),
         const SizedBox(height: 16),
         _filterableChart(
-          title: 'Revenue vs Profit',
+          title: 'Doanh thu và lợi nhuận',
           dropdownValue: _revenueInterval,
           onIntervalChanged: (v) {
             if (v != null) setState(() => _revenueInterval = v);
@@ -432,7 +432,7 @@ class _WebDashboardState extends State<WebDashboard> with SingleTickerProviderSt
         ),
         const SizedBox(height: 16),
         _filterableChart(
-          title: 'User Registrations',
+          title: 'Đăng ký người dùng',
           dropdownValue: _regInterval,
           onIntervalChanged: (v) {
             if (v != null) setState(() => _regInterval = v);
