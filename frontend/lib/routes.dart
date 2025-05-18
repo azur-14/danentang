@@ -323,7 +323,18 @@ final GoRouter router = GoRouter(
             return OrderDetailsScreen(orderId: orderId);
           },
         ),
-
+        GoRoute(
+          path: 'orders',
+          builder: (context, state) => const OrderListScreenMn(),
+        ),
+        GoRoute(
+          path: 'orders/:orderId',
+          builder: (context, state) {
+            final orderId = state.pathParameters['orderId']!;
+            final extra = state.extra as Order?;
+            return OrderDetailScreenMn(orderId: orderId, order: extra);
+          },
+        ),
         GoRoute(
           path: 'orders-report',
           builder: (context, state) => const OrdersReport(),

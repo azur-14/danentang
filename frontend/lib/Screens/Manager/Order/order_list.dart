@@ -7,14 +7,14 @@ import '../../../Service/order_service.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
 import 'order_detail_screen.dart';
 
-class OrderListScreen extends StatefulWidget {
-  const OrderListScreen({super.key});
+class OrderListScreenMn extends StatefulWidget {
+  const OrderListScreenMn({super.key});
 
   @override
-  State<OrderListScreen> createState() => _OrderListScreenState();
+  State<OrderListScreenMn> createState() => _OrderListScreenState();
 }
 
-class _OrderListScreenState extends State<OrderListScreen> {
+class _OrderListScreenState extends State<OrderListScreenMn> {
   late Future<List<Order>> _ordersFuture;
   bool _isLoading = false;
   String? _errorMessage;
