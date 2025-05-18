@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:danentang/data/user_data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:danentang/Screens/Customer/Product/ProductCatalogPage.dart';
 import '../../../models/product.dart';
@@ -35,8 +34,6 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Category> categories = [];
   List<Tag> tags = [];
   Map<String, List<Product>> productsByTag = {};
-
-  final Map<String, dynamic> userData = UserData.userData;
 
   static const _iconMap = {
     'Laptops': Icons.laptop,

@@ -2,9 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../Service/product_service.dart';
 import '../../../Service/search_service.dart';
 import '../../../models/product.dart';
-import '../../../models/review.dart';
+import '../../../models/Review.dart';
 
 class Searching extends StatelessWidget {
   const Searching({super.key});
@@ -102,7 +103,6 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
   Future<void> _loadRecommendedProducts() async {
     try {
       final highRatedProducts = await _searchService.getHighRatedProducts(minRating: 3.0);
-      await _loadReviewsForProducts(highRatedProducts);
       if (!mounted) return;
       setState(() {
         _recommendedProducts = highRatedProducts.where((product) {
@@ -123,18 +123,14 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
       );
     }
   }
-
   Future<void> _loadReviewsForProducts(List<Product> products) async {
-    for (var product in products) {
-      try {
-        final reviews = await _searchService.getReviewsByProductId(product.id);
-        if (!mounted) return;
-        setState(() {
-          _productReviews[product.id] = reviews;
-        });
-      } catch (e) {
-        _productReviews[product.id] = [];
+    try {
+      for (final product in products) {
+        final reviews = await ProductService.getReviews(product.id);
+        _productReviews[product.id] = reviews;
       }
+    } catch (e) {
+      debugPrint('Lỗi khi tải đánh giá: $e');
     }
   }
 
