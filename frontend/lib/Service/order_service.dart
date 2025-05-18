@@ -298,12 +298,13 @@ class OrderService {
   }
 // Xóa toàn bộ items trong cart
   Future<void> clearCartOnServer(String cartId) async {
-    final url = Uri.parse('$_baseUrl/$cartId/items');
+    final url = Uri.parse('$_cartUrl/$cartId/items');  // Đúng đường dẫn
     final resp = await http.delete(url);
     if (resp.statusCode != 204) {
       throw Exception('Không thể xóa cart trên server');
     }
   }
+
   Future<Order> createOrder(Order order) async {
     final url = Uri.parse('$_baseUrl/orders');
     final headers = {'Content-Type': 'application/json'};

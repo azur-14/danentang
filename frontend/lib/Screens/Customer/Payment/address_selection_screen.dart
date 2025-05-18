@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:danentang/models/User.dart';
 import 'package:danentang/models/Address.dart';
+import 'package:danentang/Service/user_service.dart';
 
 class AddressSelectionScreen extends StatefulWidget {
   final User user;
@@ -8,7 +9,7 @@ class AddressSelectionScreen extends StatefulWidget {
   const AddressSelectionScreen({Key? key, required this.user}) : super(key: key);
 
   @override
-  _AddressSelectionScreenState createState() => _AddressSelectionScreenState();
+  State<AddressSelectionScreen> createState() => _AddressSelectionScreenState();
 }
 
 class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
@@ -17,345 +18,204 @@ class _AddressSelectionScreenState extends State<AddressSelectionScreen> {
   @override
   void initState() {
     super.initState();
-    // Pre-select the default address if it exists, otherwise select the first address
     _selectedAddress = widget.user.addresses.firstWhere(
           (addr) => addr.isDefault,
-      //orElse: () => widget.user.addresses.isNotEmpty ? widget.user.addresses.first : null,
+      orElse: () => widget.user.addresses.first,
     );
+
   }
+  Future<void> _showAddressDialog({Address? existing, required int? index}) async {
+    final formKey = GlobalKey<FormState>();
+    final receiverCtrl = TextEditingController(text: existing?.receiverName ?? '');
+    final phoneCtrl = TextEditingController(text: existing?.phone ?? '');
+    final addressLineCtrl = TextEditingController(text: existing?.addressLine ?? '');
+    final communeCtrl = TextEditingController(text: existing?.commune ?? '');
+    final districtCtrl = TextEditingController(text: existing?.district ?? '');
+    final cityCtrl = TextEditingController(text: existing?.city ?? '');
 
-  // Function to show the add address dialog with responsive design
-  void _showAddAddressDialog(BuildContext context) {
-    final _formKey = GlobalKey<FormState>();
-    final _receiverNameController = TextEditingController(text: widget.user.fullName);
-    final _phoneNumberController = TextEditingController();
-    final _addressLineController = TextEditingController();
-    final _communeController = TextEditingController();
-    final _districtController = TextEditingController();
-    final _cityController = TextEditingController();
-    bool _isDefault = false;
-
-    // Get screen size for responsive dialog
-    final screenSize = MediaQuery.of(context).size;
-    final dialogWidth = screenSize.width > 600 ? 400.0 : screenSize.width * 0.9;
-
-    showDialog(
+    await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Thêm địa chỉ mới'),
-        content: Container(
-          width: dialogWidth,
-          child: SingleChildScrollView(
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: _receiverNameController,
-                    decoration: const InputDecoration(labelText: 'Tên người nhận'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Vui lòng nhập tên';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: _phoneNumberController,
-                    decoration: const InputDecoration(labelText: 'Số điện thoại'),
-                    keyboardType: TextInputType.phone,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Vui lòng nhập số điện thoại';
-                      }
-                      if (!RegExp(r'^\d{10,11}$').hasMatch(value)) {
-                        return 'Số không hợp lệ';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: _addressLineController,
-                    decoration: const InputDecoration(labelText: 'Địa chỉ (số nhà, đường)'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Vui lòng nhập địa chỉ';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: _communeController,
-                    decoration: const InputDecoration(labelText: 'Xã/Phường'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Vui lòng nhập xã/phường';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: _districtController,
-                    decoration: const InputDecoration(labelText: 'Quận/Huyện'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Vui lòng nhập quận/huyện';
-                      }
-                      return null;
-                    },
-                  ),
-                  TextFormField(
-                    controller: _cityController,
-                    decoration: const InputDecoration(labelText: 'Tỉnh/Thành phố'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Vui lòng nhập tỉnh/thành phố';
-                      }
-                      return null;
-                    },
-                  ),
-                  CheckboxListTile(
-                    title: const Text('Đặt làm mặc định'),
-                    value: _isDefault,
-                    onChanged: (bool? value) {
-                      setState(() {
-                        _isDefault = value ?? false;
-                      });
-                    },
-                    dense: true,
-                  ),
-
-                ],
-              ),
+        title: Text(existing != null ? 'Chỉnh sửa địa chỉ' : 'Thêm địa chỉ mới'),
+        content: SingleChildScrollView(
+          child: Form(
+            key: formKey,
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: receiverCtrl,
+                  decoration: const InputDecoration(labelText: 'Người nhận'),
+                  validator: (v) => v == null || v.trim().isEmpty ? 'Vui lòng nhập tên' : null,
+                ),
+                TextFormField(
+                  controller: phoneCtrl,
+                  decoration: const InputDecoration(labelText: 'Số điện thoại'),
+                  keyboardType: TextInputType.phone,
+                  validator: (v) => v == null || !RegExp(r'^\d{10,11}$').hasMatch(v)
+                      ? 'Số không hợp lệ'
+                      : null,
+                ),
+                TextFormField(
+                  controller: addressLineCtrl,
+                  decoration: const InputDecoration(labelText: 'Số nhà, tên đường'),
+                  validator: (v) => v == null || v.trim().isEmpty ? 'Vui lòng nhập địa chỉ' : null,
+                ),
+                TextFormField(
+                  controller: communeCtrl,
+                  decoration: const InputDecoration(labelText: 'Phường/Xã'),
+                ),
+                TextFormField(
+                  controller: districtCtrl,
+                  decoration: const InputDecoration(labelText: 'Quận/Huyện'),
+                ),
+                TextFormField(
+                  controller: cityCtrl,
+                  decoration: const InputDecoration(labelText: 'Tỉnh/Thành phố'),
+                ),
+              ],
             ),
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Huỷ')),
           ElevatedButton(
             onPressed: () {
-              if (_formKey.currentState!.validate()) {
+              if (formKey.currentState!.validate()) {
                 final newAddress = Address(
-                  receiverName: _receiverNameController.text,
-                  phone: _phoneNumberController.text,
-                  addressLine: _addressLineController.text,
-                  commune: _communeController.text,
-                  district: _districtController.text,
-                  city: _cityController.text,
-                  isDefault: _isDefault,
+                  receiverName: receiverCtrl.text.trim(),
+                  phone: phoneCtrl.text.trim(),
+                  addressLine: addressLineCtrl.text.trim(),
+                  commune: communeCtrl.text.trim(),
+                  district: districtCtrl.text.trim(),
+                  city: cityCtrl.text.trim(),
+                  isDefault: existing?.isDefault ?? widget.user.addresses.isEmpty,
                 );
 
-                // If the new address is default, clear other defaults
-                if (_isDefault) {
-                  for (var addr in widget.user.addresses) {
-                    addr.isDefault = false;
-                  }
-                }
-
-                // Add the new address and update the UI
                 setState(() {
-                  widget.user.addresses.add(newAddress);
-                  _selectedAddress = newAddress; // Auto-select the new address
+                  if (index != null) {
+                    widget.user.addresses[index] = newAddress;
+                  } else {
+                    widget.user.addresses.add(newAddress);
+                    _selectedAddress = newAddress;
+                  }
                 });
 
-                Navigator.pop(context); // Close the dialog
+                UserService().updateUserFull(widget.user);
+                Navigator.pop(context, true);
               }
             },
             child: const Text('Lưu'),
           ),
         ],
       ),
-    ).then((_) {
-      // Dispose controllers after dialog is closed
-      _receiverNameController.dispose();
-      _phoneNumberController.dispose();
-      _addressLineController.dispose();
-      _communeController.dispose();
-      _districtController.dispose();
-      _cityController.dispose();
-    });
-  }
-  void _editAddressDialog(Address addr, int index) async {
-    final receiver = await _showTextDialog('Người nhận', addr.receiverName);
-    final phone = await _showTextDialog('SĐT', addr.phone);
-    final addressLine = await _showTextDialog('Số nhà, đường', addr.addressLine);
-    final commune = await _showTextDialog('Phường/Xã', addr.commune ?? '');
-    final district = await _showTextDialog('Quận/Huyện', addr.district ?? '');
-    final city = await _showTextDialog('Tỉnh/Thành phố', addr.city ?? '');
-
-    final updated = addr.copyWith(
-      receiverName: receiver,
-      phone: phone,
-      addressLine: addressLine,
-      commune: commune,
-      district: district,
-      city: city,
     );
 
-    setState(() {
-      widget.user.addresses[index] = updated;
-    });
+    receiverCtrl.dispose();
+    phoneCtrl.dispose();
+    addressLineCtrl.dispose();
+    communeCtrl.dispose();
+    districtCtrl.dispose();
+    cityCtrl.dispose();
   }
 
-  void _deleteAddress(int index) {
-    setState(() {
-      widget.user.addresses.removeAt(index);
-      if (_selectedAddress == widget.user.addresses[index]) {
-        _selectedAddress = widget.user.addresses.firstWhere(
-              (addr) => addr.isDefault,
-          orElse: () => widget.user.addresses.first,
-        );
-
-      }
-    });
-  }
-  Future<String> _showTextDialog(String title, String initialValue) async {
-    final controller = TextEditingController(text: initialValue);
-    String? result;
-
-    await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Sửa $title'),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(hintText: title),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Huỷ')),
-          ElevatedButton(
-            onPressed: () {
-              result = controller.text;
-              Navigator.pop(context);
-            },
-            child: const Text('Lưu'),
-          ),
-        ],
-      ),
-    );
-
-    return result ?? initialValue;
+  Future<void> _addNewAddress() async {
+    await _showAddressDialog(index: null);
   }
 
-  void _setDefault(int index) {
-    setState(() {
-      for (var i = 0; i < widget.user.addresses.length; i++) {
-        widget.user.addresses[i] = widget.user.addresses[i].copyWith(isDefault: i == index);
-      }
-      _selectedAddress = widget.user.addresses[index];
-    });
+  Future<void> _deleteAddress(int index) async {
+    final removed = widget.user.addresses.removeAt(index);
+    if (_selectedAddress == removed) {
+      _selectedAddress = widget.user.addresses.firstWhere(
+            (addr) => addr.isDefault,
+        orElse: () => widget.user.addresses.first,
+      );
+    }
+    setState(() {});
+    await UserService().updateUserFull(widget.user);
+  }
+
+  Future<void> _setDefault(int index) async {
+    for (int i = 0; i < widget.user.addresses.length; i++) {
+      widget.user.addresses[i] = widget.user.addresses[i].copyWith(isDefault: i == index);
+    }
+    _selectedAddress = widget.user.addresses[index];
+    setState(() {});
+    await UserService().updateUserFull(widget.user);
   }
 
   @override
   Widget build(BuildContext context) {
-    // Get screen size for responsive layout
-    final screenSize = MediaQuery.of(context).size;
-    final padding = screenSize.width > 600 ? 32.0 : 16.0;
-    final fontSize = screenSize.width > 600 ? 18.0 : 16.0;
-
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Chọn địa chỉ giao hàng',
-          style: TextStyle(fontSize: fontSize),
-        ),
+        title: const Text('Chọn địa chỉ giao hàng'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context, _selectedAddress),
         ),
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return Padding(
-            padding: EdgeInsets.all(padding),
-            child: widget.user.addresses.isEmpty
-                ? Center(
-              child: Text(
-                'Chưa có địa chỉ nào. Vui lòng thêm địa chỉ.',
-                style: TextStyle(fontSize: fontSize),
-              ),
-            )
-                : ListView.builder(
-              itemCount: widget.user.addresses.length + 1, // +1 for the add button
-              itemBuilder: (context, index) {
-                if (index == widget.user.addresses.length) {
-                  // Add Address button as a ListTile
-                  return ListTile(
-                    leading: const Icon(Icons.add_location, color: Colors.blue),
-                    title: Text(
-                      'Thêm địa chỉ mới',
-                      style: TextStyle(
-                        fontSize: fontSize,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue,
+      body: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Expanded(
+              child: widget.user.addresses.isEmpty
+                  ? const Center(child: Text('Chưa có địa chỉ nào.'))
+                  : ListView.builder(
+                itemCount: widget.user.addresses.length,
+                itemBuilder: (context, index) {
+                  final a = widget.user.addresses[index];
+                  final full = [
+                    a.addressLine,
+                    a.commune,
+                    a.district,
+                    a.city
+                  ].where((part) => part != null && part.isNotEmpty).join(', ');
+
+                  return Card(
+                    child: RadioListTile<Address>(
+                      value: a,
+                      groupValue: _selectedAddress,
+                      onChanged: (val) => setState(() => _selectedAddress = val),
+                      title: Text(a.receiverName),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(full),
+                          Text('SĐT: ${a.phone}'),
+                          if (a.isDefault)
+                            const Text('Mặc định', style: TextStyle(color: Colors.green)),
+                        ],
+                      ),
+                      secondary: PopupMenuButton<String>(
+                        onSelected: (value) {
+                          if (value == 'edit') _showAddressDialog(existing: a, index: index);
+                          if (value == 'delete') _deleteAddress(index);
+                          if (value == 'setDefault') _setDefault(index);
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(value: 'edit', child: Text('Sửa')),
+                          const PopupMenuItem(value: 'delete', child: Text('Xoá')),
+                          if (!a.isDefault)
+                            const PopupMenuItem(value: 'setDefault', child: Text('Chọn làm mặc định')),
+                        ],
                       ),
                     ),
-                    onTap: () => _showAddAddressDialog(context),
                   );
-                }
-
-                final address = widget.user.addresses[index];
-                final fullAddress = [
-                  address.addressLine,
-                  address.commune,
-                  address.district,
-                  address.city,
-                ].where((part) => part != null && part.isNotEmpty).join(', ');
-
-                return Card(
-                  margin: EdgeInsets.symmetric(vertical: padding / 2),
-                  child: Column(
-                    children: [
-                      RadioListTile<Address>(
-                        value: address,
-                        groupValue: _selectedAddress,
-                        onChanged: (Address? value) {
-                          setState(() {
-                            _selectedAddress = value;
-                          });
-                        },
-                        title: Text(
-                          address.receiverName,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: fontSize,
-                          ),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(fullAddress, style: TextStyle(fontSize: fontSize - 2)),
-                            Text('Phone: ${address.phone}', style: TextStyle(fontSize: fontSize - 2)),
-                            if (address.isDefault)
-                              Text('Mặc định', style: TextStyle(color: Colors.green, fontSize: fontSize - 4)),
-                          ],
-                        ),
-                        secondary: PopupMenuButton<String>(
-                          onSelected: (value) {
-                            if (value == 'edit') _editAddressDialog(address, index);
-                            if (value == 'delete') _deleteAddress(index);
-                            if (value == 'setDefault') _setDefault(index);
-                          },
-                          itemBuilder: (context) => [
-                            const PopupMenuItem(value: 'edit', child: Text('Sửa')),
-                            const PopupMenuItem(value: 'delete', child: Text('Xoá')),
-                            if (!address.isDefault)
-                              const PopupMenuItem(value: 'setDefault', child: Text('Chọn làm mặc định')),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-
-              },
+                },
+              ),
             ),
-          );
-        },
+            const SizedBox(height: 8),
+            ElevatedButton.icon(
+              onPressed: _addNewAddress,
+              icon: const Icon(Icons.add_location),
+              label: const Text('Thêm địa chỉ mới'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
