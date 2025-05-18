@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:danentang/models/product.dart';
 import 'package:danentang/Screens/Customer/Payment/payment_screen.dart';
-import 'package:danentang/data/user_data.dart';
 
 class BuyNowDialog extends StatefulWidget {
   final Product product;

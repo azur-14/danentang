@@ -1,3 +1,9 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -67,20 +73,112 @@ class _ProfileMobileLayoutState extends State<ProfileMobileLayout> {
     try {
       final picker = ImagePicker();
       final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-
       if (image != null) {
+        final bytes = await image.readAsBytes();         // đọc byte từ ảnh
+        final base64Image = base64Encode(bytes);         // mã hoá base64
+
+        await UserService().updateAvatar(_user!.id!, base64Image);
         setState(() {
-          _user = _user!.copyWith(avatarUrl: image.path);
+          _user = _user!.copyWith(avatarUrl: base64Image);
         });
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Ảnh đại diện đã được cập nhật')),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lỗi khi chọn ảnh')),
+        SnackBar(content: Text('Lỗi khi chọn ảnh: $e')),
       );
     }
+  }
+
+
+  Future<void> _deleteAvatar() async {
+    try {
+      await UserService().deleteAvatar(_user!.id!);
+      setState(() => _user = _user!.copyWith(avatarUrl: null));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ảnh đại diện đã được xoá')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi xoá ảnh: $e')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading || _user == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final dateFormatter = DateFormat('dd/MM/yyyy');
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 40,
+                backgroundImage: _user!.avatarUrl != null
+                    ? MemoryImage(base64Decode(_user!.avatarUrl!))
+                    : null,
+                child: _user!.avatarUrl == null
+                    ? const Icon(Icons.person, size: 40)
+                    : null,
+              ),
+              const SizedBox(width: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(_user!.fullName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: _pickImage,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2A2E5B),
+                      foregroundColor: Colors.white,
+                    ),
+                    child: const Text('Cập nhật ảnh'),
+                  ),
+                  TextButton(
+                    onPressed: _deleteAvatar,
+                    child: const Text('Xoá ảnh đại diện', style: TextStyle(color: Colors.red)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          const Text('Thông tin cá nhân', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 10),
+          _buildInfoRow(context, 'Giới tính', _user!.gender ?? '', _showGenderDialog),
+          _buildInfoRow(context, 'Ngày sinh', _user!.dateOfBirth != null ? dateFormatter.format(_user!.dateOfBirth!) : '', _showDatePickerDialog),
+          _buildInfoRow(context, 'SĐT', _user!.phoneNumber ?? '', () => _showEditDialog('phoneNumber', 'Số điện thoại')),
+          _buildInfoRow(context, 'Email', _user!.email, () {}),
+          const SizedBox(height: 24),
+          _buildAddressList(),
+          const SizedBox(height: 24),
+          Center(
+            child: ElevatedButton.icon(
+              onPressed: _submitChanges,
+              icon: const Icon(Icons.save),
+              label: const Text('Xác nhận sửa'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                textStyle: const TextStyle(fontSize: 16),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _editAddressDialog(Address addr, int index) async {
@@ -233,79 +331,4 @@ class _ProfileMobileLayoutState extends State<ProfileMobileLayout> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading || _user == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    final dateFormatter = DateFormat('dd/MM/yyyy');
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 40,
-                child: _user!.avatarUrl == null
-                    ? const Icon(Icons.person, size: 40)
-                    : Image.network(
-                  _user!.avatarUrl!,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return const CircularProgressIndicator();
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(Icons.error, size: 40);
-                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(_user!.fullName, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: _pickImage,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2A2E5B),
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Cập nhật ảnh'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          const Text('Thông tin cá nhân', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 10),
-          _buildInfoRow(context, 'Giới tính', _user!.gender ?? '', _showGenderDialog),
-          _buildInfoRow(context, 'Ngày sinh', _user!.dateOfBirth != null ? dateFormatter.format(_user!.dateOfBirth!) : '', _showDatePickerDialog),
-          _buildInfoRow(context, 'SĐT', _user!.phoneNumber ?? '', () => _showEditDialog('phoneNumber', 'Số điện thoại')),
-          _buildInfoRow(context, 'Email', _user!.email, () {}),
-          const SizedBox(height: 24),
-          _buildAddressList(),
-          const SizedBox(height: 24),
-          Center(
-            child: ElevatedButton.icon(
-              onPressed: _submitChanges,
-              icon: const Icon(Icons.save),
-              label: const Text('Xác nhận sửa'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.teal,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                textStyle: const TextStyle(fontSize: 16),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
