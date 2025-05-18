@@ -30,10 +30,18 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isLoading = true;
 
   List<Product> allProducts = [];
-  List<Product> promoProducts = [];
+  List<Product> filteredProducts = [];
   List<Category> categories = [];
   List<Tag> tags = [];
   Map<String, List<Product>> productsByTag = {};
+
+  // Trạng thái bộ lọc
+  String? selectedCategory;
+  String? selectedTag;
+  double minPrice = 0;
+  double maxPrice = 10000000;
+  bool isPromoOnly = false;
+  String sortOrder = 'A-Z';
 
   static const _iconMap = {
     'Laptops': Icons.laptop,
@@ -74,12 +82,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
       setState(() {
         allProducts = prods;
+        filteredProducts = List<Product>.from(prods); // Khởi tạo filteredProducts
         categories = cats;
         tags = tgs;
         productsByTag = mapByTag;
-        promoProducts = prods
-            .where((p) => p.discountPercentage != null && p.discountPercentage! > 0)
-            .toList();
+        _applyFilters(prods); // Áp dụng bộ lọc ngay sau khi tải dữ liệu
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -88,6 +95,44 @@ class _HomeScreenState extends State<HomeScreen> {
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
+  }
+
+  void _applyFilters(List<Product> products) {
+    var filtered = List<Product>.from(products);
+
+    // Lọc theo danh mục
+    if (selectedCategory != null && selectedCategory!.isNotEmpty) {
+      filtered = filtered.where((p) => p.categoryId == selectedCategory).toList();
+    }
+
+    // Lọc theo thẻ
+    if (selectedTag != null && selectedTag!.isNotEmpty) {
+      filtered = filtered.where((p) => productsByTag[selectedTag]?.contains(p) ?? false).toList();
+    }
+
+    // Lọc theo giá
+    filtered = filtered.where((p) {
+      final effectivePrice = p.discountPercentage != null && p.discountPercentage! > 0
+          ? p.minPrice * (1 - p.discountPercentage! / 100)
+          : p.minPrice;
+      return effectivePrice >= minPrice && effectivePrice <= maxPrice;
+    }).toList();
+
+    // Lọc theo khuyến mãi
+    if (isPromoOnly) {
+      filtered = filtered.where((p) => p.discountPercentage != null && p.discountPercentage! > 0).toList();
+    }
+
+    // Sắp xếp
+    if (sortOrder == 'A-Z') {
+      filtered.sort((a, b) => a.name.compareTo(b.name));
+    } else if (sortOrder == 'Z-A') {
+      filtered.sort((a, b) => b.name.compareTo(a.name));
+    }
+
+    setState(() {
+      filteredProducts = filtered;
+    });
   }
 
   void _onNavTapped(int idx) {
@@ -111,6 +156,128 @@ class _HomeScreenState extends State<HomeScreen> {
   int _calculateItemsPerRow(double screenWidth, double itemWidth, double spacing, double pad) {
     final avail = screenWidth - pad * 2;
     return ((avail + spacing) / (itemWidth + spacing)).floor();
+  }
+
+  void _showFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Bộ Lọc'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButton<String>(
+                hint: const Text('Chọn Danh Mục'),
+                value: selectedCategory == null ? "" : selectedCategory,
+                items: [
+                  const DropdownMenuItem<String>(
+                    value: "",
+                    child: Text('Tất cả danh mục'),
+                  ),
+                  ...categories.map((c) => DropdownMenuItem<String>(
+                    value: c.id,
+                    child: Text(c.name),
+                  )),
+                ],
+                onChanged: (value) => setState(() {
+                  selectedCategory = value == "" ? null : value;
+                  _applyFilters(allProducts);
+                }),
+              ),
+              DropdownButton<String>(
+                hint: const Text('Chọn Thẻ'),
+                value: selectedTag == null ? "" : selectedTag,
+                items: [
+                  const DropdownMenuItem<String>(
+                    value: "",
+                    child: Text('Tất cả thẻ'),
+                  ),
+                  ...tags.map((t) => DropdownMenuItem<String>(
+                    value: t.id,
+                    child: Text(t.name),
+                  )),
+                ],
+                onChanged: (value) => setState(() {
+                  selectedTag = value == "" ? null : value;
+                  _applyFilters(allProducts);
+                }),
+              ),
+              Row(
+                children: [
+                  Expanded(child: Text('Giá Từ: ₫${minPrice.toStringAsFixed(0)}')),
+                  Expanded(
+                    child: Slider(
+                      value: minPrice,
+                      min: 0,
+                      max: 10000000,
+                      onChanged: (value) => setState(() {
+                        minPrice = value;
+                        if (minPrice > maxPrice) maxPrice = minPrice;
+                        _applyFilters(allProducts);
+                      }),
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Expanded(child: Text('Giá Đến: ₫${maxPrice.toStringAsFixed(0)}')),
+                  Expanded(
+                    child: Slider(
+                      value: maxPrice,
+                      min: 0,
+                      max: 10000000,
+                      onChanged: (value) => setState(() {
+                        maxPrice = value;
+                        if (maxPrice < minPrice) minPrice = maxPrice;
+                        _applyFilters(allProducts);
+                      }),
+                    ),
+                  ),
+                ],
+              ),
+              CheckboxListTile(
+                title: const Text('Chỉ Khuyến Mãi'),
+                value: isPromoOnly,
+                onChanged: (value) => setState(() {
+                  isPromoOnly = value ?? false;
+                  _applyFilters(allProducts);
+                }),
+              ),
+              DropdownButton<String>(
+                hint: const Text('Sắp Xếp'),
+                value: sortOrder,
+                items: ['A-Z', 'Z-A'].map((e) => DropdownMenuItem<String>(value: e, child: Text(e))).toList(),
+                onChanged: (value) => setState(() {
+                  sortOrder = value ?? 'A-Z';
+                  _applyFilters(allProducts);
+                }),
+              ),
+              ElevatedButton(
+                onPressed: () => setState(() {
+                  selectedCategory = null;
+                  selectedTag = null;
+                  minPrice = 0;
+                  maxPrice = 10000000;
+                  isPromoOnly = false;
+                  sortOrder = 'A-Z';
+                  _applyFilters(allProducts);
+                  Navigator.pop(context);
+                }),
+                child: const Text('Xóa Bộ Lọc'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Đóng'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -140,7 +307,15 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const MobileSearchBar(),
+            Row(
+              children: [
+                Expanded(child: MobileSearchBar()),
+                IconButton(
+                  icon: const Icon(Icons.filter_list),
+                  onPressed: _showFilterDialog,
+                ),
+              ],
+            ),
             const SizedBox(height: 20),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: iconPadding, vertical: 8),
@@ -189,20 +364,20 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            if (promoProducts.isNotEmpty)
+            if (filteredProducts.isNotEmpty)
               ProductSection(
                 title: 'Khuyến mãi',
-                products: promoProducts,
+                products: filteredProducts.where((p) => p.discountPercentage != null && p.discountPercentage! > 0).toList(),
                 isWeb: false,
                 screenWidth: w,
                 onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
               ),
             const SizedBox(height: 20),
             for (final cat in categories)
-              if (allProducts.any((p) => p.categoryId == cat.id))
+              if (filteredProducts.any((p) => p.categoryId == cat.id))
                 ProductSection(
                   title: cat.name,
-                  products: allProducts.where((p) => p.categoryId == cat.id).toList(),
+                  products: filteredProducts.where((p) => p.categoryId == cat.id).toList(),
                   isWeb: false,
                   screenWidth: w,
                   onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
@@ -212,7 +387,7 @@ class _HomeScreenState extends State<HomeScreen> {
               if ((productsByTag[tag.id] ?? []).isNotEmpty)
                 ProductSection(
                   title: tag.name,
-                  products: productsByTag[tag.id]!,
+                  products: filteredProducts.where((p) => productsByTag[tag.id]?.contains(p) ?? false).toList(),
                   isWeb: false,
                   screenWidth: w,
                   onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
@@ -231,10 +406,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildWebLayout(BuildContext context, double w) {
     final bool isLoggedIn = _isLoggedIn;
-    final promoProducts = allProducts
-        .where((p) => p.discountPercentage != null && p.discountPercentage! > 0)
-        .toList();
-
     const iconSize = 80.0, iconSpacing = 16.0, iconPadding = 32.0;
     final maxCats = _calculateItemsPerRow(w, iconSize, iconSpacing, iconPadding);
     final visibleCats = showAllCategories ? categories : categories.take(maxCats).toList();
@@ -249,11 +420,18 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            WebSearchBar(isLoggedIn: _isLoggedIn),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(width: w * 0.8, child: WebSearchBar(isLoggedIn: _isLoggedIn)),
+                IconButton(
+                  icon: const Icon(Icons.filter_list),
+                  onPressed: _showFilterDialog,
+                ),
+              ],
+            ),
             const SizedBox(height: 8),
             BannerSection(isWeb: true, screenWidth: w),
-            const SizedBox(height: 16),
-            //_buildPromoIcons(),
             const SizedBox(height: 16),
             categories.isEmpty
                 ? const Padding(
@@ -306,10 +484,10 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            if (promoProducts.isNotEmpty)
+            if (filteredProducts.isNotEmpty)
               ProductSection(
                 title: 'Khuyến mãi',
-                products: promoProducts,
+                products: filteredProducts.where((p) => p.discountPercentage != null && p.discountPercentage! > 0).toList(),
                 isWeb: true,
                 screenWidth: w,
                 onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
@@ -319,17 +497,17 @@ class _HomeScreenState extends State<HomeScreen> {
               if ((productsByTag[tag.id] ?? []).isNotEmpty)
                 ProductSection(
                   title: tag.name,
-                  products: productsByTag[tag.id]!,
+                  products: filteredProducts.where((p) => productsByTag[tag.id]?.contains(p) ?? false).toList(),
                   isWeb: true,
                   screenWidth: w,
                   onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
                 ),
             const SizedBox(height: 16),
             for (final cat in categories)
-              if (allProducts.any((p) => p.categoryId == cat.id))
+              if (filteredProducts.any((p) => p.categoryId == cat.id))
                 ProductSection(
                   title: cat.name,
-                  products: allProducts.where((p) => p.categoryId == cat.id).toList(),
+                  products: filteredProducts.where((p) => p.categoryId == cat.id).toList(),
                   isWeb: true,
                   screenWidth: w,
                   onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
@@ -341,24 +519,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
-  /*Widget _buildPromoIcons() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _buildPromoItem(Icons.local_shipping, 'Giao Hỏa Tốc'),
-          const SizedBox(width: 24),
-          _buildPromoItem(Icons.discount, 'Mã Giảm Giá'),
-          const SizedBox(width: 24),
-          _buildPromoItem(Icons.category, 'Danh Mục Hàng'),
-          const SizedBox(width: 24),
-          _buildPromoItem(Icons.chat, 'Trò Chuyện'),
-        ],
-      ),
-    );
-  }*/
 
   Widget _buildPromoItem(IconData icon, String label) {
     return Column(

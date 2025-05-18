@@ -24,7 +24,7 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
 
   // Hàm gọi API và điều hướng sang Login/Signup
   void checkEmailAndNavigate(BuildContext context, String email) async {
-    final url = Uri.parse('http://localhost:5012/api/auth/check-email?email=$email');
+    final url = Uri.parse('https://usermanagementservice-production-697c.up.railway.app/api/auth/check-email?email=$email');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {

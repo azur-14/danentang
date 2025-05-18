@@ -66,7 +66,7 @@ class _ProductTabsState extends State<ProductTabs> {
   }
 
   Future<String?> analyzeSentiment(String comment) async {
-    const apiKey = 'YOUR_API_KEY';
+    const apiKey = 'AIzaSyA-7IcYzs8SGl-y5jBy-UNfT_7098rxCAw';
     const model = 'gemini-1.5-flash';
     final url = 'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey';
 
