@@ -123,16 +123,10 @@ class _WebHeaderState extends State<WebHeader> {
             ),
           ),
           const SizedBox(width: 16),
-          const SizedBox(width: 8),
           if (loggedIn) ...[
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: Color(0xFF4D72E4).withOpacity(0.5),
-                  width: 1.0,
-                ),
-                borderRadius: BorderRadius.circular(8.0),
-              ),
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: Colors.white,
               child: IconButton(
                 icon: const Icon(
                   Icons.message,
@@ -147,7 +141,24 @@ class _WebHeaderState extends State<WebHeader> {
                   }
                 },
                 tooltip: 'Tin nhắn',
-                hoverColor: Color(0xFF4D72E4).withOpacity(0.2),
+                hoverColor: Color(0xFF4D72E4).withOpacity(0.1),
+              ),
+            ),
+            const SizedBox(width: 8),
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: Colors.white,
+              child: IconButton(
+                icon: const Icon(
+                  Icons.shopping_cart,
+                  color: Color(0xFF4D72E4),
+                  size: 24,
+                ),
+                onPressed: () {
+                  context.go('/cart');
+                },
+                tooltip: 'Giỏ hàng',
+                hoverColor: Color(0xFF4D72E4).withOpacity(0.1),
               ),
             ),
             const SizedBox(width: 8),
@@ -180,18 +191,35 @@ class _WebHeaderState extends State<WebHeader> {
               ),
             ),
           ] else ...[
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: Colors.white,
+              child: IconButton(
+                icon: const Icon(
+                  Icons.shopping_cart,
+                  color: Color(0xFF4D72E4),
+                  size: 24,
+                ),
+                onPressed: () {
+                  context.go('/checkout');
+                },
+                tooltip: 'Giỏ hàng',
+                hoverColor: Color(0xFF4D72E4).withOpacity(0.1),
+              ),
+            ),
+            const SizedBox(width: 8),
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Color(0xFF6989E8), // Match WebHeader gradient
+                    Color(0xFF6989E8),
                     Color(0xFF4D72E4),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 border: Border.all(
-                  color: Colors.white, // Match the green bottom border
+                  color: Colors.white,
                   width: 1.0,
                 ),
                 borderRadius: BorderRadius.circular(20.0),

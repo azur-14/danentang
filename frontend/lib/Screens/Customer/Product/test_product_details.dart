@@ -1,5 +1,3 @@
-// lib/screens/product_detail_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:danentang/models/product.dart';
@@ -75,17 +73,22 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
     final screenWidth = MediaQuery.of(context).size.width;
     const maxContentWidth = 1200.0;
 
+    // Define blue-green color scheme
+    const primaryColor = Color(0xFF1E90FF); // Dodger Blue
+    const accentColor = Color(0xFF20B2AA); // Light Sea Green
+    const backgroundColor = Color(0xFFE6F3F7); // Light blue-green background
+
     return FutureBuilder<List<dynamic>>(
       future: Future.wait([_productFuture, _ratingFuture]),
       builder: (ctx, snap) {
         if (snap.connectionState != ConnectionState.done) {
           return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+            body: Center(child: CircularProgressIndicator(color: primaryColor)),
           );
         }
         if (snap.hasError || snap.data == null) {
           return const Scaffold(
-            body: Center(child: Text('Không tải được dữ liệu sản phẩm.')),
+            body: Center(child: Text('Không tải được dữ liệu sản phẩm.', style: TextStyle(color: primaryColor))),
           );
         }
 
@@ -93,9 +96,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
         final productRating = snap.data![1] as ProductRating;
 
         return Scaffold(
-          backgroundColor: Colors.grey[100],
+          backgroundColor: backgroundColor, // Subtle blue-green background
           appBar: screenWidth <= 800
-              ? AppBar(title: const Text("Chi tiết sản phẩm"))
+              ? AppBar(
+            title: const Text("Chi tiết sản phẩm", style: TextStyle(color: Colors.white)),
+            backgroundColor: primaryColor,
+          )
               : null,
           body: SingleChildScrollView(
             child: Center(
@@ -103,58 +109,87 @@ class _ProductDetailScreenState extends State<ProductDetailScreen>
                 constraints: BoxConstraints(
                   maxWidth: screenWidth > 800 ? maxContentWidth : 600.0,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Web header chỉ hiển thị ở desktop
-                    if (screenWidth > 800) WebHeader(isLoggedIn: _isLoggedIn),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [backgroundColor, Colors.white],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Web header chỉ hiển thị ở desktop
+                      if (screenWidth > 800) WebHeader(isLoggedIn: _isLoggedIn),
 
-                    // Layout ảnh + info desktop
-                    if (screenWidth > 800)
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            width: 400,
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child:
-                              ProductImageCarousel(product: product),
-                            ),
-                          ),
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: ProductInfo(
-                                product: product,
-                                productRating: productRating,
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    else ...[
-                      // Mobile: hình trước, info sau
-                      ProductImageCarousel(product: product),
+                      // Layout ảnh + info
                       Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: ProductInfo(
-                          product: product,
-                          productRating: productRating,
+                        padding: const EdgeInsets.all(16.0),
+                        child: Card(
+                          elevation: 8,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          color: Colors.white,
+                          child: screenWidth > 800
+                              ? Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                width: 400,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: ProductImageCarousel(product: product),
+                                ),
+                              ),
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: ProductInfo(
+                                    product: product,
+                                    productRating: productRating,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                              : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: ProductImageCarousel(product: product),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: ProductInfo(
+                                  product: product,
+                                  productRating: productRating,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
+
+                      const SizedBox(height: 32),
+
+                      // Tabs: chi tiết vs đánh giá
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Card(
+                          elevation: 8,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          color: Colors.white,
+                          child: ProductTabs(
+                            tabController: _tabController,
+                            product: product,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 32),
                     ],
-
-                    const SizedBox(height: 32),
-
-                    // Tabs: chi tiết vs đánh giá
-                    ProductTabs(
-                      tabController: _tabController,
-                      product: product,
-                    ),
-
-                    const SizedBox(height: 32),
-                  ],
+                  ),
                 ),
               ),
             ),
