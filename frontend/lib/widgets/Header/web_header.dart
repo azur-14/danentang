@@ -155,7 +155,7 @@ class _WebHeaderState extends State<WebHeader> {
                   size: 24,
                 ),
                 onPressed: () {
-                  context.go('/cart');
+                  context.go('/checkout');
                 },
                 tooltip: 'Giỏ hàng',
                 hoverColor: Color(0xFF4D72E4).withOpacity(0.1),

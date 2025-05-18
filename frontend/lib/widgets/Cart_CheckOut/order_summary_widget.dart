@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:danentang/constants/colors.dart';
 
 class OrderSummaryWidget extends StatelessWidget {
   final double subtotal;
@@ -51,7 +50,7 @@ class OrderSummaryWidget extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.all(16),
-      color: Colors.white,
+      color: Colors.white, // Keep background white
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -71,7 +70,7 @@ class OrderSummaryWidget extends StatelessWidget {
                     hintText: "Nhập mã giảm giá",
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(25),
-                      borderSide: BorderSide(color: AppColors.hexToColor(AppColors.grey300)),
+                      borderSide: const BorderSide(color: Color(0xFFB3E5FC)), // Blue-grey border
                     ),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
@@ -87,7 +86,7 @@ class OrderSummaryWidget extends StatelessWidget {
                   : ElevatedButton(
                 onPressed: applyingCoupon ? null : onApplyCoupon,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.hexToColor(AppColors.purple),
+                  backgroundColor: const Color(0xFF4FC3F7), // Light blue button
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25),
@@ -95,7 +94,14 @@ class OrderSummaryWidget extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
                 child: applyingCoupon
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
                     : const Text("Áp dụng"),
               ),
             ],
@@ -105,7 +111,11 @@ class OrderSummaryWidget extends StatelessWidget {
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 "Điểm từ mã giảm giá: -₫$couponDiscountValue",
-                style: const TextStyle(color: Colors.green, fontSize: 14, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  color: Colors.green,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           if (couponApplied)
@@ -113,7 +123,11 @@ class OrderSummaryWidget extends StatelessWidget {
               padding: const EdgeInsets.only(top: 2),
               child: Text(
                 "Chỉ được sử dụng 1 mã giảm giá cho mỗi đơn hàng.",
-                style: const TextStyle(color: Colors.orange, fontSize: 13, fontStyle: FontStyle.italic),
+                style: const TextStyle(
+                  color: Colors.orange,
+                  fontSize: 13,
+                  fontStyle: FontStyle.italic,
+                ),
               ),
             ),
           if (errorCoupon != null)
@@ -143,7 +157,7 @@ class OrderSummaryWidget extends StatelessWidget {
                     hintText: "Nhập điểm muốn dùng",
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(25),
-                      borderSide: BorderSide(color: AppColors.hexToColor(AppColors.grey300)),
+                      borderSide: const BorderSide(color: Color(0xFFB3E5FC)), // Blue-grey border
                     ),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
@@ -170,7 +184,7 @@ class OrderSummaryWidget extends StatelessWidget {
           ElevatedButton(
             onPressed: onCheckout,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.hexToColor(AppColors.purple),
+              backgroundColor: const Color(0xFF4FC3F7), // Light blue button
               minimumSize: const Size(double.infinity, 50),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25),
@@ -197,7 +211,7 @@ class OrderSummaryWidget extends StatelessWidget {
             style: TextStyle(
               fontSize: isTotal ? 16 : 14,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-              color: isTotal ? Colors.black : AppColors.hexToColor(AppColors.grey),
+              color: isTotal ? Colors.black : const Color(0xFF0288D1), // Darker blue for non-total text
             ),
           ),
           Text(
@@ -205,7 +219,7 @@ class OrderSummaryWidget extends StatelessWidget {
             style: TextStyle(
               fontSize: isTotal ? 16 : 14,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-              color: isTotal ? Colors.black : AppColors.hexToColor(AppColors.grey),
+              color: isTotal ? Colors.black : const Color(0xFF0288D1), // Darker blue for non-total text
             ),
           ),
         ],

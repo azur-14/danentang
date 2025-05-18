@@ -30,6 +30,8 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
   Future<Cart>? _cartFuture;
   late String _effectiveCartId;
   bool isEditing = false;
+  final Set<String> _selectedItemIds = {};
+  bool _selectAll = false;
 
   // Coupon & loyalty logic
   Coupon? _appliedCoupon;
@@ -49,7 +51,6 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
     _loadUserAndCart();
   }
 
-
   Future<void> _loadUserAndCart() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
@@ -59,17 +60,14 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
 
     try {
       if (email != null && token != null) {
-        // ✅ Đã đăng nhập
         final user = await UserService().fetchUserByEmail(email);
         setState(() => _currentUser = user);
 
-        cart = await _api.fetchCartByUserId(user.id!);  // ⚠️ dùng hàm này
+        cart = await _api.fetchCartByUserId(user.id!);
         _effectiveCartId = cart.id;
 
-        // Lưu cartId lại phòng trường hợp logout
         await prefs.setString('cartId', cart.id);
       } else {
-        // ✅ Guest
         String? cartId = prefs.getString('cartId');
         if (cartId == null) {
           final newCart = await _api.createCart('');
@@ -78,17 +76,18 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
         }
 
         _effectiveCartId = cartId!;
-        cart = await _api.fetchCart(_effectiveCartId);  // ⚠️ dùng cartId
+        cart = await _api.fetchCart(_effectiveCartId);
         setState(() => _currentUser = null);
       }
 
-      // ✅ Tải trước thông tin sản phẩm
       final ids = cart.items.map((i) => i.productId).toSet().toList();
       final products = await Future.wait(ids.map((id) => ProductService.getById(id)));
       _productsById = {for (var p in products) p.id: p};
 
       setState(() {
         _cartFuture = Future.value(cart);
+        _selectedItemIds.clear();
+        _selectAll = false;
       });
     } catch (e) {
       debugPrint('❌ Lỗi khi load giỏ hàng: $e');
@@ -98,9 +97,36 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
     }
   }
 
-
   Future<void> _refresh() async {
     await _loadUserAndCart();
+  }
+
+  Future<void> _deleteSelectedItems(Cart cart) async {
+    try {
+      for (final id in _selectedItemIds) {
+        await _api.removeCartItem(cart.id, id);
+      }
+      setState(() {
+        _selectedItemIds.clear();
+        _selectAll = false;
+      });
+      await _refresh();
+    } catch (e) {
+      debugPrint('❌ Lỗi khi xóa các mục đã chọn: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lỗi khi xóa các mục đã chọn')),
+      );
+    }
+  }
+
+  void _toggleSelectAll(bool? value, Cart cart) {
+    setState(() {
+      _selectAll = value ?? false;
+      _selectedItemIds.clear();
+      if (_selectAll) {
+        _selectedItemIds.addAll(cart.items.map((item) => item.productVariantId ?? item.productId));
+      }
+    });
   }
 
   Future<double> _calculateSubtotal(List<CartItem> items) async {
@@ -129,7 +155,6 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
       final cart = await _cartFuture!;
       final subtotal = await _calculateSubtotal(cart.items);
 
-      // CHECK: chỉ áp dụng coupon nếu discountValue <= subtotal
       if (coupon.discountValue > subtotal) {
         setState(() {
           _appliedCoupon = null;
@@ -154,7 +179,6 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
     }
   }
 
-
   void _onLoyaltyChanged(String v) {
     final maxPoints = _currentUser?.loyaltyPoints ?? 0;
     final pts = int.tryParse(v) ?? 0;
@@ -165,11 +189,10 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
   }
 
   double get _discount {
-    // Loyalty points quy đổi 1 point = 1000đ (tùy hệ thống bạn)
     return (_couponDiscountAmount) + (_loyaltyPointsToUse * 1000);
   }
 
-  double get _shipping => 30000; // phí ship mặc định
+  double get _shipping => 30000;
   double get _vat => 0;
 
   void _onCheckout(Cart cart) async {
@@ -186,21 +209,17 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
       };
     }).toList();
 
-    // Gọi sang màn hình thanh toán và truyền loyalty points đang dùng
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            PaymentScreen(
-              products: products,
-              voucher: _appliedCoupon,
-              loyaltyPointsToUse: _loyaltyPointsToUse, // <- TRUYỀN VÀO ĐÂY
-              // Có thể truyền thêm address/user nếu cần
-            ),
+        builder: (_) => PaymentScreen(
+          products: products,
+          voucher: _appliedCoupon,
+          loyaltyPointsToUse: _loyaltyPointsToUse,
+        ),
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -209,10 +228,7 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-    final width = MediaQuery
-        .of(context)
-        .size
-        .width;
+    final width = MediaQuery.of(context).size.width;
     return width > 800 ? _buildWeb(context) : _buildMobile(context);
   }
 
@@ -231,7 +247,80 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
           ),
         ],
       ),
-      backgroundColor: AppColors.hexToColor(AppColors.grey),
+      backgroundColor: AppColors.hexToColor('#F5F5F5'),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            builder: (context) => DraggableScrollableSheet(
+              initialChildSize: 0.8,
+              minChildSize: 0.5,
+              maxChildSize: 0.95,
+              expand: false,
+              builder: (context, scrollController) => SingleChildScrollView(
+                controller: scrollController,
+                child: FutureBuilder<Cart>(
+                  future: _cartFuture!,
+                  builder: (ctx, snap) {
+                    if (snap.connectionState != ConnectionState.done) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snap.hasError) {
+                      return Center(child: Text('Error: ${snap.error}'));
+                    }
+                    final cart = snap.data!;
+                    return FutureBuilder<double>(
+                      future: _calculateSubtotal(cart.items),
+                      builder: (context, subSnap) {
+                        if (!subSnap.hasData) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        final subtotal = subSnap.data!;
+                        final total = subtotal + _shipping + _vat - _discount;
+                        return OrderSummaryWidget(
+                          subtotal: subtotal,
+                          vat: _vat,
+                          shipping: _shipping,
+                          discount: _discount,
+                          total: total,
+                          discountController: _discountController,
+                          onApplyCoupon: _applyCoupon,
+                          applyingCoupon: _applyingCoupon,
+                          errorCoupon: _errorCoupon,
+                          loyaltyPointsAvailable: _currentUser?.loyaltyPoints ?? 0,
+                          loyaltyPointsToUse: _loyaltyPointsToUse,
+                          loyaltyController: _loyaltyController,
+                          onLoyaltyChanged: _onLoyaltyChanged,
+                          onCheckout: () => _onCheckout(cart),
+                          couponDiscountValue: _couponDiscountAmount,
+                          couponApplied: _appliedCoupon != null,
+                          onRemoveCoupon: () {
+                            setState(() {
+                              _appliedCoupon = null;
+                              _couponDiscountAmount = 0;
+                              _discountController.clear();
+                            });
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
+          );
+        },
+        backgroundColor: AppColors.hexToColor(AppColors.purple),
+        label: const Text(
+          'Xem tóm tắt đơn hàng',
+          style: TextStyle(color: Colors.white),
+        ),
+        icon: const Icon(Icons.receipt_long, color: Colors.white),
+      ),
       body: FutureBuilder<Cart>(
         future: _cartFuture!,
         builder: (ctx, snap) {
@@ -242,95 +331,117 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
             return Center(child: Text('Error: ${snap.error}'));
           }
           final cart = snap.data!;
-
-          return FutureBuilder<double>(
-            future: _calculateSubtotal(cart.items),
-            builder: (context, subSnap) {
-              if (!subSnap.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final subtotal = subSnap.data!;
-              final total = subtotal + _shipping + _vat - _discount;
-
-              return Column(
-                children: [
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: cart.items.length,
-                      itemBuilder: (_, i) {
-                        final item = cart.items[i];
-                        final product = _productsById[item.productId];
-                        final variants = product?.variants ?? [];
-
-                        return CartItemWidget(
-                          item: item,
-                          product: product!,
-                          // <-- FIX: thêm dòng này
-                          isEditing: isEditing,
-                          variants: variants,
-                          onVariantChanged: (String? newVariantId) async {
-                            if (newVariantId == null) return;
-                            await _api.upsertCartItem(
-                              cart.id,
-                              CartItem(
-                                productId: item.productId,
-                                productVariantId: newVariantId,
-                                quantity: item.quantity,
-                              ),
-                            );
-                            await _refresh();
-                          },
-                          onDelete: () async {
-                            final idToRemove = item.productVariantId ??
-                                item.productId;
-                            await _api.removeCartItem(cart.id, idToRemove);
-                            await _refresh();
-                          },
-                          onQuantityChanged: (qty) async {
-                            await _api.upsertCartItem(
-                              cart.id,
-                              CartItem(
-                                productId: item.productId,
-                                productVariantId: item.productVariantId,
-                                quantity: qty,
-                              ),
-                            );
-                            await _refresh();
-                          },
-                          isMobile: true, // hoặc false ở web
-                        );
-                      },
-                    ),
+          return Column(
+            children: [
+              if (cart.items.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _selectAll,
+                            onChanged: (value) => _toggleSelectAll(value, cart),
+                            activeColor: const Color(0xFF2E2E2E),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Chọn Tất Cả',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF333333),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Visibility(
+                        visible: _selectedItemIds.isNotEmpty,
+                        child: ElevatedButton(
+                          onPressed: () => _deleteSelectedItems(cart),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF2E2E2E),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Xóa Tất Cả Đã Chọn',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  OrderSummaryWidget(
-                    subtotal: subtotal,
-                    vat: _vat,
-                    shipping: _shipping,
-                    discount: _discount,
-                    total: total,
-                    discountController: _discountController,
-                    onApplyCoupon: _applyCoupon,
-                    applyingCoupon: _applyingCoupon,
-                    errorCoupon: _errorCoupon,
-                    loyaltyPointsAvailable: _currentUser?.loyaltyPoints ?? 0,
-                    loyaltyPointsToUse: _loyaltyPointsToUse,
-                    loyaltyController: _loyaltyController,
-                    onLoyaltyChanged: _onLoyaltyChanged,
-                    onCheckout: () => _onCheckout(cart),
-                    couponDiscountValue: _couponDiscountAmount,
-                    couponApplied: _appliedCoupon != null,
-                    onRemoveCoupon: () {
-                      setState(() {
-                        _appliedCoupon = null;
-                        _couponDiscountAmount = 0;
-                        _discountController.clear();
-                      });
-                    },
-                  )
-
-                ],
-              );
-            },
+                ),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: cart.items.length,
+                  itemBuilder: (_, i) {
+                    final item = cart.items[i];
+                    final product = _productsById[item.productId];
+                    final variants = product?.variants ?? [];
+                    return CartItemWidget(
+                      item: item,
+                      product: product!,
+                      isEditing: isEditing,
+                      variants: variants,
+                      onVariantChanged: (String? newVariantId) async {
+                        if (newVariantId == null) return;
+                        await _api.upsertCartItem(
+                          cart.id,
+                          CartItem(
+                            productId: item.productId,
+                            productVariantId: newVariantId,
+                            quantity: item.quantity,
+                          ),
+                        );
+                        await _refresh();
+                      },
+                      onDelete: () async {
+                        final idToRemove = item.productVariantId ?? item.productId;
+                        await _api.removeCartItem(cart.id, idToRemove);
+                        await _refresh();
+                      },
+                      onQuantityChanged: (qty) async {
+                        await _api.upsertCartItem(
+                          cart.id,
+                          CartItem(
+                            productId: item.productId,
+                            productVariantId: item.productVariantId,
+                            quantity: qty,
+                          ),
+                        );
+                        await _refresh();
+                      },
+                      isMobile: true,
+                      onSelectionChanged: (selected) {
+                        setState(() {
+                          final itemId = item.productVariantId ?? item.productId;
+                          if (selected) {
+                            _selectedItemIds.add(itemId);
+                          } else {
+                            _selectedItemIds.remove(itemId);
+                          }
+                          _selectAll = _selectedItemIds.length == cart.items.length;
+                        });
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -366,58 +477,123 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
                     final subtotal = subSnap.data!;
                     final total = subtotal + _shipping + _vat - _discount;
                     return Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 32, vertical: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
                       child: Row(
                         children: [
                           Expanded(
                             flex: 3,
-                            child: ListView.builder(
-                              itemCount: cart.items.length,
-                              itemBuilder: (_, i) {
-                                final item = cart.items[i];
-                                final product = _productsById[item.productId];
-                                final variants = product?.variants ?? [];
-                                return CartItemWidget(
-                                  item: item,
-                                  product: product!,
-                                  // <-- FIX: thêm dòng này
-                                  isEditing: isEditing,
-                                  variants: variants,
-                                  onVariantChanged: (
-                                      String? newVariantId) async {
-                                    if (newVariantId == null) return;
-                                    await _api.upsertCartItem(
-                                      cart.id,
-                                      CartItem(
-                                        productId: item.productId,
-                                        productVariantId: newVariantId,
-                                        quantity: item.quantity,
-                                      ),
-                                    );
-                                    await _refresh();
-                                  },
-                                  onDelete: () async {
-                                    final idToRemove = item.productVariantId ??
-                                        item.productId;
-                                    await _api.removeCartItem(
-                                        cart.id, idToRemove);
-                                    await _refresh();
-                                  },
-                                  onQuantityChanged: (qty) async {
-                                    await _api.upsertCartItem(
-                                      cart.id,
-                                      CartItem(
-                                        productId: item.productId,
-                                        productVariantId: item.productVariantId,
-                                        quantity: qty,
-                                      ),
-                                    );
-                                    await _refresh();
-                                  },
-                                  isMobile: false,
-                                );
-                              },
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (cart.items.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 16),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Checkbox(
+                                              value: _selectAll,
+                                              onChanged: (value) => _toggleSelectAll(value, cart),
+                                              activeColor: const Color(0xFF2E2E2E),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            const Text(
+                                              'Chọn Tất Cả',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                                color: Color(0xFF333333),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        Visibility(
+                                          visible: _selectedItemIds.isNotEmpty,
+                                          child: ElevatedButton(
+                                            onPressed: () => _deleteSelectedItems(cart),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: const Color(0xFF2E2E2E),
+                                              foregroundColor: Colors.white,
+                                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              elevation: 0,
+                                            ),
+                                            child: const Text(
+                                              'Xóa Tất Cả Đã Chọn',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                Expanded(
+                                  child: ListView.builder(
+                                    itemCount: cart.items.length,
+                                    itemBuilder: (_, i) {
+                                      final item = cart.items[i];
+                                      final product = _productsById[item.productId];
+                                      final variants = product?.variants ?? [];
+                                      return CartItemWidget(
+                                        item: item,
+                                        product: product!,
+                                        isEditing: isEditing,
+                                        variants: variants,
+                                        onVariantChanged: (String? newVariantId) async {
+                                          if (newVariantId == null) return;
+                                          await _api.upsertCartItem(
+                                            cart.id,
+                                            CartItem(
+                                              productId: item.productId,
+                                              productVariantId: newVariantId,
+                                              quantity: item.quantity,
+                                            ),
+                                          );
+                                          await _refresh();
+                                        },
+                                        onDelete: () async {
+                                          final idToRemove = item.productVariantId ?? item.productId;
+                                          await _api.removeCartItem(cart.id, idToRemove);
+                                          await _refresh();
+                                        },
+                                        onQuantityChanged: (qty) async {
+                                          await _api.upsertCartItem(
+                                            cart.id,
+                                            CartItem(
+                                              productId: item.productId,
+                                              productVariantId: item.productVariantId,
+                                              quantity: qty,
+                                            ),
+                                          );
+                                          await _refresh();
+                                        },
+                                        isMobile: false,
+                                        onSelectionChanged: (selected) {
+                                          setState(() {
+                                            final itemId = item.productVariantId ?? item.productId;
+                                            if (selected) {
+                                              _selectedItemIds.add(itemId);
+                                            } else {
+                                              _selectedItemIds.remove(itemId);
+                                            }
+                                            _selectAll = _selectedItemIds.length == cart.items.length;
+                                          });
+                                        },
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(width: 32),
@@ -447,7 +623,7 @@ class _CartScreenCheckOutState extends State<CartScreenCheckOut> {
                                   _discountController.clear();
                                 });
                               },
-                            )
+                            ),
                           ),
                         ],
                       ),
