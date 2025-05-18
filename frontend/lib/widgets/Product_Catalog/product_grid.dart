@@ -1,7 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-
-import '../../../models/product.dart';
-import 'product_card.dart';
+import 'package:danentang/models/product.dart';
 
 class ProductGrid extends StatelessWidget {
   final List<Product> products;
@@ -17,57 +16,135 @@ class ProductGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Product List', style: TextStyle(fontSize: 18)),
-              Row(
-                children: [
-                  const Text('Sort by:'),
-                  DropdownButton<String>(
-                    value: 'All Products',
-                    items: const [
-                      DropdownMenuItem(value: 'All Products', child: Text('All Products')),
-                      DropdownMenuItem(value: 'Price: Low to High', child: Text('Price: Low to High')),
-                      DropdownMenuItem(value: 'Price: High to Low', child: Text('Price: High to Low')),
-                    ],
-                    onChanged: (_) {},
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: products.isEmpty && !isLoading
-              ? const Center(child: Text('No products to display'))
-              : GridView.builder(
-            controller: scrollController,
-            padding: const EdgeInsets.all(16),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: isMobile ? 2 : 4,
-              childAspectRatio: isMobile ? 0.65 : 0.75,
+    return CustomScrollView(
+      controller: scrollController,
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.all(16),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 300,
+              childAspectRatio: 0.7,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
             ),
-            itemCount: products.length + (isLoading ? 1 : 0),
-            itemBuilder: (context, index) {
-              if (index >= products.length) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              return ProductCard(
-                product: products[index],
-                index: index,
-              );
-            },
+            delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                final product = products[index];
+                final price = product.variants.isNotEmpty
+                    ? product.variants[0].additionalPrice
+                    : 0;
+                final discountedPrice =
+                    price * (1 - product.discountPercentage / 100);
+                return Card(
+                  elevation: 2,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      product.images.isNotEmpty
+                          ? ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(12)),
+                        child: _safeBase64Image(
+                          product.images.first.url,
+                          height: 150,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                          : Container(
+                        height: 150,
+                        color: Colors.grey.shade300,
+                        child: const Icon(Icons.image, size: 50),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              product.name,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '₫${discountedPrice.toStringAsFixed(0)}',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Last updated: 11:14 AM +07 on Sunday, May 18, 2025',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              childCount: products.length,
+            ),
           ),
         ),
+        if (isLoading)
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          ),
       ],
+    );
+  }
+
+  Widget _safeBase64Image(
+      String base64String, {
+        double? width,
+        double? height,
+        BoxFit? fit,
+      }) {
+    try {
+      final bytes = base64Decode(base64String);
+      return Image.memory(
+        bytes,
+        width: width,
+        height: height,
+        fit: fit,
+        errorBuilder: (context, error, stackTrace) =>
+            _fallbackImage(width, height),
+      );
+    } catch (_) {
+      return _fallbackImage(width, height);
+    }
+  }
+
+  Widget _fallbackImage(double? width, double? height) {
+    return Container(
+      width: width,
+      height: height,
+      color: Colors.grey.shade300,
+      alignment: Alignment.center,
+      child: const Icon(
+        Icons.broken_image,
+        size: 40,
+        color: Colors.grey,
+      ),
     );
   }
 }

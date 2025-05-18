@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
 import 'package:danentang/models/product.dart';
 import 'package:danentang/Service/product_service.dart';
 
 class DeleteProductScreen extends StatefulWidget {
   final Product product;
-  const DeleteProductScreen({Key? key, required this.product}) : super(key: key);
+  const DeleteProductScreen({Key? key, required this.product})
+      : super(key: key);
 
   @override
   State<DeleteProductScreen> createState() => _DeleteProductScreenState();
 }
 
-class _DeleteProductScreenState extends State<DeleteProductScreen> with SingleTickerProviderStateMixin {
+class _DeleteProductScreenState extends State<DeleteProductScreen>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _fadeAnimation, _scaleAnimation;
   bool _isDeleting = false;
@@ -27,18 +27,14 @@ class _DeleteProductScreenState extends State<DeleteProductScreen> with SingleTi
       vsync: this,
       duration: const Duration(milliseconds: 400),
     );
-    _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
-    _scaleAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeOutBack);
-    _checkLoginStatus();
-  }
-
-  Future<void> _checkLoginStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-    final role = prefs.getString('role');
-    if (token == null || role != ' teammember') {
-      context.go('/login');
-    }
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeIn,
+    );
+    _scaleAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutBack,
+    );
   }
 
   @override
@@ -78,7 +74,7 @@ class _DeleteProductScreenState extends State<DeleteProductScreen> with SingleTi
       });
       _controller.forward();
       await Future.delayed(const Duration(seconds: 1));
-      if (mounted) context.pop(true); // Trả về true để báo hiệu xóa thành công
+      if (mounted) Navigator.pop(context, true);
     } catch (e) {
       setState(() {
         _errorMessage = e.toString();
@@ -91,107 +87,94 @@ class _DeleteProductScreenState extends State<DeleteProductScreen> with SingleTi
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return PopScope(
-      canPop: false,
-      onPopInvoked: (didPop) async {
-        if (!didPop) {
-          context.go('/manager/products'); // Quay lại danh sách sản phẩm
-        }
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Xóa sản phẩm'),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.go('/manager/products'),
-          ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Xóa sản phẩm'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context, false),
         ),
-        body: Center(
-          child: _isDeleting
-              ? _deleteSuccess
-              ? FadeTransition(
-            opacity: _fadeAnimation,
-            child: ScaleTransition(
-              scale: _scaleAnimation,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  CircleAvatar(
-                    radius: 60,
-                    backgroundColor: Colors.green,
-                    child: Icon(Icons.check, size: 60, color: Colors.white),
-                  ),
-                  SizedBox(height: 20),
-                  Text(
-                    'Xóa Thành Công!',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          )
-              : const CircularProgressIndicator()
-              : Padding(
-            padding: const EdgeInsets.all(24.0),
+      ),
+      body: Center(
+        child: _isDeleting
+            ? _deleteSuccess
+            ? FadeTransition(
+          opacity: _fadeAnimation,
+          child: ScaleTransition(
+            scale: _scaleAnimation,
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Bạn có chắc muốn xóa?',
-                  style: Theme.of(context).textTheme.titleLarge,
+              children: const [
+                CircleAvatar(
+                  radius: 60,
+                  backgroundColor: Colors.green,
+                  child: Icon(Icons.check, size: 60, color: Colors.white),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 20),
                 Text(
-                  '"${widget.product.name}"',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 16),
-                ),
-                if (_errorMessage != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    'Lỗi: $_errorMessage',
-                    style: const TextStyle(color: Colors.red),
+                  'Xóa Thành Công!',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
                   ),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: _confirmAndDelete,
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                    child: const Text('Thử lại'),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    TextButton(
-                      onPressed: () => context.go('/manager/products'),
-                      child: const Text('Hủy'),
-                    ),
-                    const SizedBox(width: 16),
-                    ElevatedButton(
-                      onPressed: _confirmAndDelete,
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                      child: const Text('Xóa'),
-                    ),
-                  ],
                 ),
               ],
             ),
           ),
-        ),
-        bottomNavigationBar: isMobile
-            ? MobileNavigationBar(
-          selectedIndex: 0,
-          onItemTapped: (_) {},
-          isLoggedIn: true,
-          role: 'admin', // Đồng bộ với vai trò admin
         )
-            : null,
+            : const CircularProgressIndicator()
+            : Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Bạn có chắc muốn xóa?',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '"${widget.product.name}"',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16),
+              ),
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'Lỗi: $_errorMessage',
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ],
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Hủy'),
+                  ),
+                  const SizedBox(width: 16),
+                  ElevatedButton(
+                    onPressed: _confirmAndDelete,
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red),
+                    child: const Text('Xóa'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
+      bottomNavigationBar: isMobile
+          ? MobileNavigationBar(
+        selectedIndex: 0,
+        onItemTapped: (_) {},
+        isLoggedIn: true,
+        role: 'manager',
+      )
+          : null,
     );
   }
 }
