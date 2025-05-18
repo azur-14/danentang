@@ -1,5 +1,3 @@
-// lib/Screens/Manager/WebDashboard.dart
-
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:go_router/go_router.dart';
@@ -20,8 +18,8 @@ class WebDashboard extends StatefulWidget {
   @override
   State<WebDashboard> createState() => _WebDashboardState();
 }
-class _WebDashboardState extends State<WebDashboard>
-    with SingleTickerProviderStateMixin {
+
+class _WebDashboardState extends State<WebDashboard> with SingleTickerProviderStateMixin {
   bool _isAdmin = false;
   int _selectedDrawerIndex = 0;
 
@@ -47,16 +45,17 @@ class _WebDashboardState extends State<WebDashboard>
   DateTime? _customEnd;
   late final AnimationController _opacityController;
   late final Animation<double> _opacityAnimation;
+
   @override
   void initState() {
     super.initState();
     _opacityController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 1000),
     );
     _opacityAnimation = CurvedAnimation(
       parent: _opacityController,
-      curve: Curves.easeIn,
+      curve: Curves.easeInOut,
     );
 
     _opacityController.forward();
@@ -70,6 +69,7 @@ class _WebDashboardState extends State<WebDashboard>
     _opacityController.dispose();
     super.dispose();
   }
+
   Future<void> _checkAuth() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
@@ -126,12 +126,31 @@ class _WebDashboardState extends State<WebDashboard>
   Widget build(BuildContext context) {
     if (!_isAdmin) return const Scaffold(body: SizedBox.shrink());
     return Scaffold(
-      appBar: AppBar(title: const Text('Admin Dashboard'), backgroundColor: Colors.deepPurple),
+      appBar: AppBar(
+        title: const Text('Admin Dashboard', style: TextStyle(color: Color(0xFF171F32), fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFE2EEFE), Color(0xFFE2EEFE)],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+        ),
+      ),
       drawer: _buildDrawer(context),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF0288D1)))
           : (_error != null
-          ? Center(child: Text('Error: $_error', style: const TextStyle(color: Colors.red)))
+          ? Center(child: Text('Error: $_error', style: TextStyle(color: Color(0xFF0D47A1), fontSize: 16)))
           : SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -144,11 +163,10 @@ class _WebDashboardState extends State<WebDashboard>
             _buildChartsGrid(),
 
             // --- Advanced ---
-            const Divider(height: 40),
+            const Divider(height: 40, color: Color(0xFF0288D1), thickness: 1),
             _sectionTitle('Advanced Filters & Charts'),
             _buildAdvancedCharts(),
             const SizedBox(height: 24),
-            // <-- chèn ở đây:
             _buildManagementLinks(context),
           ],
         ),
@@ -158,46 +176,55 @@ class _WebDashboardState extends State<WebDashboard>
 
   Widget _buildDrawer(BuildContext context) {
     return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          const DrawerHeader(
-            decoration: BoxDecoration(color: Colors.deepPurple),
-            child: Text('Admin Menu', style: TextStyle(color: Colors.white, fontSize: 24)),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFE2EEFE), Color(0xFFE2EEFE)],
           ),
-          _drawerItem(context, 'Trang chủ', Icons.dashboard, '/manager/dashboard'),
-          _drawerItem(context, 'Quản lý Sản phẩm', Icons.shopping_cart, '/manager/products'),
-          _drawerItem(context, 'Quản lý Mã giảm giá', Icons.card_giftcard, '/manager/coupons'),
-          _drawerItem(context, 'Quản lý Danh mục', Icons.category, '/manager/categories'),
-          _drawerItem(context, 'Quản lý Người dùng', Icons.people, '/manager/users'),
-          _drawerItem(context, 'Quản lý Đơn hàng', Icons.receipt, '/manager/orders'),
-          _drawerItem(context, 'Hỗ trợ người dùng', Icons.support, '/manager/support'),
-          const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout),
-            title: const Text('Đăng xuất'),
-            onTap: () async {
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.clear();
-              Navigator.pop(context); // Đóng drawer
-              context.go('/login');
-            },
-          ),
-        ],
+        ),
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              child: Text('Admin Menu', style: TextStyle(color: Color(0xFF171F32), fontSize: 24, fontWeight: FontWeight.bold)),
+            ),
+            _drawerItem(context, 'Trang chủ', Icons.dashboard, '/manager/dashboard', Color(0xFF0D47A1)),
+            _drawerItem(context, 'Quản lý Sản phẩm', Icons.shopping_cart, '/manager/products', Color(0xFF0D47A1)),
+            _drawerItem(context, 'Quản lý Mã giảm giá', Icons.card_giftcard, '/manager/coupons', Color(0xFF0D47A1)),
+            _drawerItem(context, 'Quản lý Danh mục', Icons.category, '/manager/categories', Color(0xFF0D47A1)),
+            _drawerItem(context, 'Quản lý Người dùng', Icons.people, '/manager/users', Color(0xFF0D47A1)),
+            _drawerItem(context, 'Quản lý Đơn hàng', Icons.receipt, '/manager/orders', Color(0xFF0D47A1)),
+            _drawerItem(context, 'Hỗ trợ người dùng', Icons.support, '/manager/support', Color(0xFF0D47A1)),
+            const Divider(color: Colors.white54),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Color(0xFF171F32)),
+              title: const Text('Đăng xuất', style: TextStyle(color: Color(0xFF171F32))),
+              onTap: () async {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.clear();
+                Navigator.pop(context);
+                context.go('/login');
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _drawerItem(BuildContext context, String title, IconData icon, String? path) {
+  Widget _drawerItem(BuildContext context, String title, IconData icon, String? path, Color iconColor) {
     return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
+      leading: Icon(icon, color: iconColor),
+      title: Text(title, style: TextStyle(color: iconColor)),
       onTap: () {
-        Navigator.pop(context); // Đóng drawer
+        Navigator.pop(context);
         if (path != null) {
-          context.go(path); // Sử dụng GoRouter
+          context.go(path);
         }
       },
+      hoverColor: Color(0xFFBBDEFB).withOpacity(0.3),
     );
   }
 
@@ -217,17 +244,17 @@ class _WebDashboardState extends State<WebDashboard>
           return SizedBox(
             width: itemW,
             child: Card(
-              elevation: 3,
+              elevation: 6,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    Icon(s['icon'] as IconData, size: 32, color: Colors.deepPurple),
+                    Icon(s['icon'] as IconData, size: 32, color: Color(0xFF0D47A1)),
                     const SizedBox(height: 8),
-                    Text(s['title'] as String, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    Text(s['title'] as String, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF0D47A1))),
                     const SizedBox(height: 4),
-                    Text(s['value'] as String, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    Text(s['value'] as String, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0288D1))),
                   ],
                 ),
               ),
@@ -263,7 +290,7 @@ class _WebDashboardState extends State<WebDashboard>
                     showTitles: true,
                     getTitlesWidget: (x, _) {
                       final key = ordersByMonth.keys.elementAt(x.toInt().clamp(0, ordersByMonth.length - 1));
-                      return Text(key, style: const TextStyle(fontSize: 10));
+                      return Text(key, style: TextStyle(fontSize: 10, color: Color(0xFF0D47A1)));
                     },
                   )),
                 ),
@@ -272,8 +299,11 @@ class _WebDashboardState extends State<WebDashboard>
                     spots: List.generate(ordersByMonth.length,
                             (i) => FlSpot(i.toDouble(), ordersByMonth.values.elementAt(i))),
                     isCurved: true,
+                    color: Color(0xFF0288D1),
+                    barWidth: 2,
                   )
                 ],
+                gridData: FlGridData(show: true, drawVerticalLine: true, getDrawingHorizontalLine: (value) => FlLine(color: Color(0xFFBBDEFB).withOpacity(0.5))),
               ),
             ),
           ),
@@ -286,13 +316,14 @@ class _WebDashboardState extends State<WebDashboard>
                     showTitles: true,
                     getTitlesWidget: (x, _) {
                       final key = revenueByMonth.keys.elementAt(x.toInt().clamp(0, revenueByMonth.length - 1));
-                      return Text(key, style: const TextStyle(fontSize: 10));
+                      return Text(key, style: TextStyle(fontSize: 10, color: Color(0xFF0D47A1)));
                     },
                   )),
                 ),
                 barGroups: List.generate(revenueByMonth.length, (i) => BarChartGroupData(x: i, barRods: [
-                  BarChartRodData(toY: revenueByMonth.values.elementAt(i))
+                  BarChartRodData(toY: revenueByMonth.values.elementAt(i), color: Color(0xFF0288D1), width: 8)
                 ])),
+                gridData: FlGridData(show: true, drawVerticalLine: true, getDrawingHorizontalLine: (value) => FlLine(color: Color(0xFFBBDEFB).withOpacity(0.5))),
               ),
             ),
           ),
@@ -303,7 +334,8 @@ class _WebDashboardState extends State<WebDashboard>
                 value: e.value.toDouble(),
                 title: e.key,
                 radius: 40,
-                titleStyle: const TextStyle(fontSize: 12),
+                color: Colors.primaries[catShares.keys.toList().indexOf(e.key) % Colors.primaries.length].withOpacity(0.8),
+                titleStyle: TextStyle(fontSize: 12, color: Color(0xFF0D47A1)),
               )).toList(),
               centerSpaceRadius: 40,
             )),
@@ -316,13 +348,14 @@ class _WebDashboardState extends State<WebDashboard>
                   showTitles: true,
                   getTitlesWidget: (x, _) {
                     final key = top5Cats[x.toInt().clamp(0, top5Cats.length - 1)].key;
-                    return Text(key, style: const TextStyle(fontSize: 10));
+                    return Text(key, style: TextStyle(fontSize: 10, color: Color(0xFF0D47A1)));
                   },
                 )),
               ),
               barGroups: List.generate(top5Cats.length, (i) => BarChartGroupData(x: i, barRods: [
-                BarChartRodData(toY: top5Cats[i].value.toDouble())
+                BarChartRodData(toY: top5Cats[i].value.toDouble(), color: Color(0xFF0288D1), width: 8)
               ])),
+              gridData: FlGridData(show: true, drawVerticalLine: true, getDrawingHorizontalLine: (value) => FlLine(color: Color(0xFFBBDEFB).withOpacity(0.5))),
             )),
           ),
         ],
@@ -333,7 +366,6 @@ class _WebDashboardState extends State<WebDashboard>
   Widget _buildAdvancedCharts() {
     return Column(
       children: [
-        // Orders over interval
         _filterableChart(
           title: 'Orders over Interval',
           dropdownValue: _ordersInterval,
@@ -347,7 +379,7 @@ class _WebDashboardState extends State<WebDashboard>
                 getTitlesWidget: (x, _) {
                   final map = _aggByInterval(_ordersInterval, onlyRevenue: false);
                   final key = map.keys.elementAt(x.toInt().clamp(0, map.length - 1));
-                  return Text(key, style: const TextStyle(fontSize: 10));
+                  return Text(key, style: TextStyle(fontSize: 10, color: Color(0xFF0D47A1)));
                 },
               )),
             ),
@@ -358,12 +390,14 @@ class _WebDashboardState extends State<WebDashboard>
                         (i) => FlSpot(i.toDouble(),
                         _aggByInterval(_ordersInterval, onlyRevenue: false).values.elementAt(i))),
                 isCurved: true,
+                color: Color(0xFF0288D1),
+                barWidth: 2,
               )
             ],
+            gridData: FlGridData(show: true, drawVerticalLine: true, getDrawingHorizontalLine: (value) => FlLine(color: Color(0xFFBBDEFB).withOpacity(0.5))),
           )),
         ),
         const SizedBox(height: 16),
-        // Revenue vs Profit
         _filterableChart(
           title: 'Revenue vs Profit',
           dropdownValue: _revenueInterval,
@@ -377,7 +411,7 @@ class _WebDashboardState extends State<WebDashboard>
                 getTitlesWidget: (x, _) {
                   final map = _aggregateRevenueByInterval(_revenueInterval);
                   final key = map.keys.elementAt(x.toInt().clamp(0, map.length - 1));
-                  return Text(key, style: const TextStyle(fontSize: 10));
+                  return Text(key, style: TextStyle(fontSize: 10, color: Color(0xFF0D47A1)));
                 },
               )),
             ),
@@ -388,15 +422,15 @@ class _WebDashboardState extends State<WebDashboard>
                 final rev = _aggregateRevenueByInterval(_revenueInterval)[key]!;
                 final prof = rev * 0.2;
                 return BarChartGroupData(x: i, barsSpace: 4, barRods: [
-                  BarChartRodData(toY: rev, width: 8, color: Colors.blue),
-                  BarChartRodData(toY: prof, width: 8, color: Colors.red),
+                  BarChartRodData(toY: rev, width: 8, color: Color(0xFF0288D1)),
+                  BarChartRodData(toY: prof, width: 8, color: Color(0xFF0D47A1)),
                 ]);
               },
             ),
+            gridData: FlGridData(show: true, drawVerticalLine: true, getDrawingHorizontalLine: (value) => FlLine(color: Color(0xFFBBDEFB).withOpacity(0.5))),
           )),
         ),
         const SizedBox(height: 16),
-        // Registrations over interval
         _filterableChart(
           title: 'User Registrations',
           dropdownValue: _regInterval,
@@ -410,7 +444,7 @@ class _WebDashboardState extends State<WebDashboard>
                 getTitlesWidget: (x, _) {
                   final map = _aggRegistrationsByInterval(_regInterval);
                   final key = map.keys.elementAt(x.toInt().clamp(0, map.length - 1));
-                  return Text(key, style: const TextStyle(fontSize: 10));
+                  return Text(key, style: TextStyle(fontSize: 10, color: Color(0xFF0D47A1)));
                 },
               )),
             ),
@@ -421,8 +455,11 @@ class _WebDashboardState extends State<WebDashboard>
                         (i) => FlSpot(i.toDouble(),
                         _aggRegistrationsByInterval(_regInterval).values.elementAt(i))),
                 isCurved: true,
+                color: Color(0xFF0288D1),
+                barWidth: 2,
               )
             ],
+            gridData: FlGridData(show: true, drawVerticalLine: true, getDrawingHorizontalLine: (value) => FlLine(color: Color(0xFFBBDEFB).withOpacity(0.5))),
           )),
         ),
       ],
@@ -436,7 +473,7 @@ class _WebDashboardState extends State<WebDashboard>
     required Widget chart,
   }) {
     return Card(
-      elevation: 2,
+      elevation: 6,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(12),
@@ -444,15 +481,17 @@ class _WebDashboardState extends State<WebDashboard>
           children: [
             Row(
               children: [
-                Text(title,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF0D47A1))),
                 const Spacer(),
                 DropdownButton<IntervalType>(
                   value: dropdownValue,
+                  dropdownColor: Color(0xFFBBDEFB),
+                  style: TextStyle(color: Color(0xFF0D47A1)),
+                  underline: Container(height: 1, color: Color(0xFF0288D1)),
                   items: IntervalType.values.map((i) {
                     return DropdownMenuItem(
                       value: i,
-                      child: Text(i.toString().split('.').last),
+                      child: Text(i.toString().split('.').last, style: TextStyle(color: Color(0xFF0D47A1))),
                     );
                   }).toList(),
                   onChanged: onIntervalChanged,
@@ -470,11 +509,9 @@ class _WebDashboardState extends State<WebDashboard>
   Widget _sectionTitle(String txt) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Text(txt, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+      child: Text(txt, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0D47A1))),
     );
   }
-
-  // --- helpers ---
 
   Map<String, double> _aggOrdersByMonth() {
     final now = DateTime.now();
@@ -517,21 +554,6 @@ class _WebDashboardState extends State<WebDashboard>
     return cnt;
   }
 
-  Map<String, double> _aggRegistrationsByMonth(IntervalType t) {
-    final now = DateTime.now();
-    final m = <String, double>{};
-    for (int i = 11; i >= 0; i--) {
-      final dt = DateTime(now.year, now.month - i);
-      final key = '${dt.year}-${dt.month.toString().padLeft(2, '0')}';
-      m[key] = 0;
-    }
-    for (var u in _allUsers) {
-      final key = '${u.createdAt.year}-${u.createdAt.month.toString().padLeft(2, '0')}';
-      if (m.containsKey(key)) m[key] = m[key]! + 1;
-    }
-    return m;
-  }
-
   Map<String, double> _aggByInterval(IntervalType t, {required bool onlyRevenue}) {
     final out = <String, double>{};
     for (var o in _allOrders) {
@@ -566,27 +588,11 @@ class _WebDashboardState extends State<WebDashboard>
     final map = _aggByInterval(t, onlyRevenue: true);
     return map;
   }
-  Widget _chartCard({required String title, required Widget child}) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            Text(title, style: const TextStyle(fontSize:16,fontWeight:FontWeight.w600)),
-            const SizedBox(height:8),
-            Expanded(child: child),
-          ],
-        ),
-      ),
-    );
-  }
-  /// Gộp số lượt đăng ký user theo interval (yearly, quarterly, monthly, weekly, custom)
+
   Map<String, double> _aggRegistrationsByInterval(IntervalType t) {
     final now = DateTime.now();
     final out = <String, double>{};
-    // Khởi tạo keys cho 12 tháng (nếu muốn last 12) hoặc theo interval
+    // Initialize keys based on interval type (last 12 months for monthly, adjust for others as needed)
     if (t == IntervalType.monthly) {
       for (int i = 11; i >= 0; i--) {
         final dt = DateTime(now.year, now.month - i);
@@ -594,27 +600,49 @@ class _WebDashboardState extends State<WebDashboard>
         out[key] = 0;
       }
     }
-    // Với các interval khác, bạn có thể khởi tạo tương tự hoặc để out rỗng và nó tự sinh keys khi gặp
+    // For other intervals, keys will be generated dynamically
     for (var u in _allUsers) {
       final dt = u.createdAt;
       String key;
       switch (t) {
         case IntervalType.yearly:
-          key = '${dt.year}'; break;
+          key = '${dt.year}';
+          break;
         case IntervalType.quarterly:
           final q = ((dt.month - 1) ~/ 3) + 1;
-          key = '${dt.year}-Q$q'; break;
+          key = '${dt.year}-Q$q';
+          break;
         case IntervalType.monthly:
-          key = '${dt.year}-${dt.month.toString().padLeft(2, '0')}'; break;
+          key = '${dt.year}-${dt.month.toString().padLeft(2, '0')}';
+          break;
         case IntervalType.weekly:
           final w = ((dt.day - 1) ~/ 7) + 1;
-          key = '${dt.year}-W$w'; break;
+          key = '${dt.year}-W$w';
+          break;
         case IntervalType.custom:
-          key = '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}'; break;
+          key = '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+          break;
       }
       out[key] = (out[key] ?? 0) + 1;
     }
     return out;
+  }
+
+  Widget _chartCard({required String title, required Widget child}) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 6,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF0D47A1))),
+            const SizedBox(height: 8),
+            Expanded(child: child),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildManagementLinks(BuildContext context) {
@@ -630,20 +658,27 @@ class _WebDashboardState extends State<WebDashboard>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Lối tắt", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const Text("Lối tắt", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0D47A1))),
         const SizedBox(height: 12),
         ...managements.map((item) {
           return AnimatedBuilder(
             animation: _opacityAnimation,
             builder: (context, _) => Opacity(
               opacity: _opacityAnimation.value,
-              child: Card(
-                child: ListTile(
-                  title: Text(item["title"]),
-                  trailing: const Icon(Icons.arrow_forward_ios),
-                  onTap: () {
-                    context.go(item["path"]); // Sử dụng GoRouter
-                  },
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    title: Text(item["title"], style: TextStyle(fontSize: 16, color: Color(0xFF0D47A1))),
+                    trailing: Icon(Icons.arrow_forward_ios, color: Color(0xFF0288D1), size: 18),
+                    onTap: () {
+                      context.go(item["path"]);
+                    },
+                    hoverColor: Color(0xFFBBDEFB).withOpacity(0.3),
+                  ),
                 ),
               ),
             ),
@@ -653,5 +688,3 @@ class _WebDashboardState extends State<WebDashboard>
     );
   }
 }
-
-
