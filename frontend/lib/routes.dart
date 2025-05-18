@@ -20,7 +20,6 @@ import 'package:danentang/Screens/Customer/User/personal_info_screen.dart';
 import 'package:danentang/Screens/Customer/User/account_settings_screen.dart';
 import 'package:danentang/Screens/Customer/Order/MyOrdersScreen.dart';
 import 'package:danentang/Screens/Customer/Order/OrderDetailsScreen.dart';
-import 'package:danentang/Screens/Customer/Order/ReviewScreen.dart';
 import 'package:danentang/Screens/Customer/Payment/order_success_screen.dart';
 import 'package:danentang/Screens/Customer/Payment/payment_method_screen.dart';
 import 'package:danentang/Screens/Customer/Payment/add_card_screen.dart';
@@ -49,8 +48,6 @@ import 'package:danentang/models/ship.dart';
 import 'package:danentang/models/voucher.dart';
 import 'package:danentang/models/Address.dart';
 import 'package:danentang/models/Order.dart';
-import 'package:danentang/data/order_data.dart';
-
 import 'Screens/Customer/Product/ProductCatalogPage.dart';
 import 'Screens/Customer/Product/test_product_details.dart';
 import 'Screens/Customer/User/change_password.dart';
@@ -209,13 +206,7 @@ final GoRouter router = GoRouter(
         return OrderDetailsScreen(orderId: orderId);
       },
     ),
-    GoRoute(
-      path: '/review/:orderId',
-      builder: (context, state) {
-        final orderId = state.pathParameters['orderId'] ?? '';
-        return ReviewScreen(orderId: orderId);
-      },
-    ),
+
     GoRoute(
       path: '/reorder/:orderId',
       builder: (context, state) {

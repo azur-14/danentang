@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:bson/bson.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -21,6 +20,7 @@ class AddProductScreen extends StatefulWidget {
 class _AddProductScreenState extends State<AddProductScreen> {
   final _formKey = GlobalKey<FormState>();
   final _picker = ImagePicker();
+  late bool isEdit;
 
   late TextEditingController _nameCtl;
   late TextEditingController _brandCtl;
@@ -35,6 +35,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   final List<String?> _imageBase64 = [];
   final List<TextEditingController> _variantNameCtrls = [];
+  final List<TextEditingController> _variantOriginalPriceCtrls = [];
   final List<TextEditingController> _variantPriceCtrls = [];
   final List<TextEditingController> _variantInvCtrls = [];
 
@@ -48,6 +49,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   @override
   void initState() {
     super.initState();
+    isEdit = widget.product != null;
     _nameCtl = TextEditingController(text: widget.product?.name ?? '');
     _brandCtl = TextEditingController(text: widget.product?.brand ?? '');
     _descCtl = TextEditingController(text: widget.product?.description ?? '');
@@ -55,23 +57,21 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
     _selectedCategoryId = widget.product?.categoryId;
 
-    // Images
     if (widget.product != null && widget.product!.images.isNotEmpty) {
       for (var img in widget.product!.images) _imageBase64.add(img.url);
     }
     if (_imageBase64.isEmpty) _addImageField();
 
-    // Variants
     if (widget.product != null && widget.product!.variants.isNotEmpty) {
       for (var v in widget.product!.variants) {
         _variantNameCtrls.add(TextEditingController(text: v.variantName));
+        _variantOriginalPriceCtrls.add(TextEditingController(text: v.originalPrice.toString()));
         _variantPriceCtrls.add(TextEditingController(text: v.additionalPrice.toString()));
         _variantInvCtrls.add(TextEditingController(text: v.inventory.toString()));
       }
     }
     if (_variantNameCtrls.isEmpty) _addVariantField();
 
-    // Load categories and tags with error handling
     ProductService.fetchAllCategories().then((cats) {
       setState(() {
         _categories = cats;
@@ -106,8 +106,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   void _addImageField() => _imageBase64.add(null);
+
   void _addVariantField() {
     _variantNameCtrls.add(TextEditingController());
+    _variantOriginalPriceCtrls.add(TextEditingController(text: '0'));
     _variantPriceCtrls.add(TextEditingController(text: '0'));
     _variantInvCtrls.add(TextEditingController(text: '0'));
   }
@@ -119,6 +121,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _descCtl.dispose();
     _discountCtl.dispose();
     for (var c in _variantNameCtrls) c.dispose();
+    for (var c in _variantOriginalPriceCtrls) c.dispose();
     for (var c in _variantPriceCtrls) c.dispose();
     for (var c in _variantInvCtrls) c.dispose();
     super.dispose();
@@ -145,6 +148,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         sortOrder: i,
       ),
     );
+
     final variants = List<ProductVariant>.generate(
       _variantNameCtrls.length,
           (i) => ProductVariant(
@@ -155,6 +159,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
             ? widget.product!.variants[i].createdAt
             : DateTime.now(),
         variantName: _variantNameCtrls[i].text.trim(),
+        originalPrice: double.tryParse(_variantOriginalPriceCtrls[i].text) ?? 0,
         additionalPrice: double.tryParse(_variantPriceCtrls[i].text) ?? 0,
         inventory: int.tryParse(_variantInvCtrls[i].text) ?? 0,
         updatedAt: DateTime.now(),
@@ -180,11 +185,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
       } else {
         await ProductService.updateProduct(p);
       }
-      // bulk upsert tags
       await ProductService.upsertTagsForProduct(p.id, _selectedTagIds);
       Navigator.pop(context, true);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e'))); // Sửa cú pháp lỗi
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
     } finally {
       setState(() => _loading = false);
     }
@@ -232,12 +236,22 @@ class _AddProductScreenState extends State<AddProductScreen> {
               ),
               const SizedBox(height: 12),
               // Discount percentage
-              TextFormField(
+              isEdit
+                  ? TextFormField(
                 controller: _discountCtl,
                 decoration: _baseDecoration.copyWith(labelText: 'Discount %'),
                 keyboardType: TextInputType.number,
                 validator: (v) => v == null || int.tryParse(v) == null ? 'Invalid' : null,
+              )
+                  : TextFormField(
+                controller: _discountCtl,
+                enabled: false,
+                decoration: _baseDecoration.copyWith(
+                  labelText: 'Discount %',
+                  suffixIcon: const Icon(Icons.lock_outline),
+                ),
               ),
+
               const SizedBox(height: 12),
               // Category
               DropdownButtonFormField<String>(
@@ -344,9 +358,16 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             children: [
                               Expanded(
                                 child: TextFormField(
+                                  controller: _variantOriginalPriceCtrls[i],
+                                  decoration: const InputDecoration(labelText: 'Original Price'),
+                                  keyboardType: TextInputType.number,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: TextFormField(
                                   controller: _variantPriceCtrls[i],
-                                  decoration: const InputDecoration(
-                                      labelText: 'Add. Price'),
+                                  decoration: const InputDecoration(labelText: 'Add. Price'),
                                   keyboardType: TextInputType.number,
                                 ),
                               ),
@@ -354,22 +375,22 @@ class _AddProductScreenState extends State<AddProductScreen> {
                               Expanded(
                                 child: TextFormField(
                                   controller: _variantInvCtrls[i],
-                                  decoration:
-                                  const InputDecoration(labelText: 'Stock'),
+                                  decoration: const InputDecoration(labelText: 'Stock'),
                                   keyboardType: TextInputType.number,
                                 ),
                               ),
                               IconButton(
-                                icon: const Icon(Icons.delete,
-                                    color: Colors.red),
+                                icon: const Icon(Icons.delete, color: Colors.red),
                                 onPressed: () => setState(() {
                                   _variantNameCtrls.removeAt(i);
+                                  _variantOriginalPriceCtrls.removeAt(i);
                                   _variantPriceCtrls.removeAt(i);
                                   _variantInvCtrls.removeAt(i);
                                 }),
                               ),
                             ],
                           ),
+
                         ],
                       ),
                     ),

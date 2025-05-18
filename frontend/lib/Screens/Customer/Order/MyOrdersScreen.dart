@@ -6,6 +6,8 @@ import 'package:danentang/widgets/Order/order_filter_widget.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../Service/user_service.dart';
+import 'package:danentang/models/product.dart';
+import 'package:danentang/Service/product_service.dart';
 
 class MyOrdersScreen extends StatefulWidget {
   const MyOrdersScreen({super.key});
@@ -32,6 +34,7 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
   String _selectedBrand = 'All';
   final List<String> _categories = ['All', 'Laptop', 'Headphones', 'MacBook'];
   final List<String> _brands = ['All', 'Lenovo', 'Apple', 'Logitech'];
+  List<Product> products = [];
 
   @override
   bool get wantKeepAlive => true;
@@ -54,9 +57,11 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
       userId = user.id;
 
       userOrders = await OrderService.fetchOrdersByUserId(userId!);
-      debugPrint('💡 fetched userOrders.length = ${userOrders.length} for userId=$userId');
+      products = await ProductService.fetchAllProducts(); // ✅ THÊM DÒNG NÀY
 
+      debugPrint('💡 fetched userOrders.length = ${userOrders.length} for userId=$userId');
       _applyFilters();
+
       setState(() => _isLoading = false);
     } catch (e) {
       setState(() {
@@ -383,7 +388,11 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
           final order = orders[index];
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
-            child: OrderCard(order: order),
+            child: OrderCard(
+              order: order,
+              products: products,
+            ),
+
           );
         },
       ),

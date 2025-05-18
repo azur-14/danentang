@@ -13,13 +13,13 @@ class BannerSection extends StatelessWidget {
   }) : super(key: key);
 
   static const List<String> slideshowImages = [
-    'assets/images/1.jpg',
-    'assets/images/2.jpg',
-    'assets/images/3.jpg',
+    'assets/images/bn1.jpg',
+    'assets/images/bn2.jpg',
+    'assets/images/bn3.jpg',
   ];
 
-  static const String voucherImage1 = 'assets/images/4.jpg';
-  static const String voucherImage2 = 'assets/images/5.jpg';
+  static const String voucherImage1 = 'assets/images/cd1.jpg';
+  static const String voucherImage2 = 'assets/images/cd2.jpg';
 
   @override
   Widget build(BuildContext context) {
@@ -198,14 +198,14 @@ class BannerSection extends StatelessWidget {
                     _buildVoucherBanner(
                       context,
                       voucherImage1,
-                      "VivoBook 14",
-                      "Perfect for Work & Study",
+                      "",
+                      "",
                     ),
                     _buildVoucherBanner(
                       context,
                       voucherImage2,
-                      "Super Friday Sale",
-                      "Up to 50% Off",
+                      "",
+                      "",
                     ),
                   ],
                 ),
@@ -225,7 +225,6 @@ class BannerSection extends StatelessWidget {
       ) {
     return Expanded(
       child: GestureDetector(
-        onTap: () => context.go('/products'),
         child: Container(
           margin: const EdgeInsets.all(8.0),
           decoration: BoxDecoration(

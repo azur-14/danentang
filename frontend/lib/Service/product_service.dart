@@ -33,11 +33,13 @@ class ProductService {
         return ProductVariant(
           id: id,
           variantName: v.variantName,
+          originalPrice: v.originalPrice, // ✅ thêm dòng này
           additionalPrice: v.additionalPrice,
           inventory: v.inventory,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
+
       }).toList(),
     );
 
@@ -62,10 +64,13 @@ class ProductService {
       return ProductVariant(
         id: id,
         variantName: v.variantName,
+        originalPrice: v.originalPrice, // ✅ thêm dòng này
         additionalPrice: v.additionalPrice,
-        inventory: v.inventory,createdAt: v.createdAt ?? DateTime.now(), updatedAt: v.updatedAt ?? DateTime.now(),
-
+        inventory: v.inventory,
+        createdAt: v.createdAt,
+        updatedAt: v.updatedAt,
       );
+
     }).toList();
 
     final updatedProduct = p.copyWith(variants: newVariants);

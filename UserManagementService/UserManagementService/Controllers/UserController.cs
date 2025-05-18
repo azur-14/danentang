@@ -55,6 +55,32 @@ namespace UserManagementService.Controllers
 
             return Ok(result);
         }
+        // PATCH /api/user/{id}/avatar
+        [HttpPatch("{id:length(24)}/avatar")]
+        public async Task<IActionResult> UpdateAvatar(string id, [FromBody] AvatarDto dto)
+        {
+            // Nếu avatar rỗng hoặc null thì xóa (unset)
+            UpdateDefinition<User> update;
+            if (string.IsNullOrWhiteSpace(dto.AvatarUrl))
+            {
+                update = Builders<User>.Update
+                    .Unset(u => u.AvatarUrl)
+                    .Set(u => u.UpdatedAt, DateTime.UtcNow);
+            }
+            else
+            {
+                update = Builders<User>.Update
+                    .Set(u => u.AvatarUrl, dto.AvatarUrl)
+                    .Set(u => u.UpdatedAt, DateTime.UtcNow);
+            }
+
+            var result = await _context.Users.UpdateOneAsync(u => u.Id == id, update);
+
+            if (result.MatchedCount == 0)
+                return NotFound("User not found.");
+
+            return NoContent();
+        }
 
 
         // --- 1. GET all users, optional excludeRole (e.g. admin)  ---
@@ -219,6 +245,11 @@ namespace UserManagementService.Controllers
     {
         public int LoyaltyPointsDelta { get; set; }
     }
+    public class AvatarDto
+    {
+        public string AvatarUrl { get; set; } = null!;
+    }
+
     public class StatusDto
     {
         public string Status { get; set; } = null!;

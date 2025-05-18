@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../models/Order.dart';
 import '../../../Service/order_service.dart';
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
-import 'order_detail_screen.dart';
 
 class OrderListScreenMn extends StatefulWidget {
   const OrderListScreenMn({super.key});
@@ -32,6 +31,15 @@ class _OrderListScreenState extends State<OrderListScreenMn> {
     _checkLoginStatus();
     _loadFilters();
     _refreshOrders();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final refreshParam = GoRouterState.of(context).uri.queryParameters['refresh'];
+    if (refreshParam == 'true') {
+      _refreshOrders();
+    }
   }
 
   Future<void> _checkLoginStatus() async {
@@ -75,7 +83,9 @@ class _OrderListScreenState extends State<OrderListScreenMn> {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
-      _ordersFuture = OrderService.fetchAllOrders().then((orders) => _applyFilters(orders));
+      _ordersFuture = OrderService.fetchAllOrders().then(_applyFilters).whenComplete(() {
+        setState(() => _isLoading = false);
+      });
     });
   }
 
@@ -83,30 +93,23 @@ class _OrderListScreenState extends State<OrderListScreenMn> {
     final now = DateTime.now();
     List<Order> filtered = all;
 
-    if (selectedFilter != 'all') {
-      if (selectedFilter == 'today') {
-        filtered = filtered
-            .where((o) =>
-        o.createdAt.year == now.year &&
-            o.createdAt.month == now.month &&
-            o.createdAt.day == now.day)
-            .toList();
-      } else if (selectedFilter == 'week') {
-        final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-        filtered = filtered.where((o) => o.createdAt.isAfter(startOfWeek)).toList();
-      } else if (selectedFilter == 'month') {
-        filtered = filtered
-            .where((o) => o.createdAt.year == now.year && o.createdAt.month == now.month)
-            .toList();
-      }
+    if (selectedFilter == 'today') {
+      filtered = filtered.where((o) =>
+      o.createdAt.year == now.year &&
+          o.createdAt.month == now.month &&
+          o.createdAt.day == now.day).toList();
+    } else if (selectedFilter == 'week') {
+      final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+      filtered = filtered.where((o) => o.createdAt.isAfter(startOfWeek)).toList();
+    } else if (selectedFilter == 'month') {
+      filtered = filtered.where((o) =>
+      o.createdAt.year == now.year && o.createdAt.month == now.month).toList();
     }
 
     if (startDate != null && endDate != null) {
-      filtered = filtered
-          .where((o) =>
+      filtered = filtered.where((o) =>
       o.createdAt.isAfter(startDate!.subtract(const Duration(days: 1))) &&
-          o.createdAt.isBefore(endDate!.add(const Duration(days: 1))))
-          .toList();
+          o.createdAt.isBefore(endDate!.add(const Duration(days: 1)))).toList();
     }
 
     if (selectedStatus != null && selectedStatus != 'all') {
@@ -121,7 +124,8 @@ class _OrderListScreenState extends State<OrderListScreenMn> {
     return orders.skip(start).take(_itemsPerPage).toList();
   }
 
-  int _getTotalPages(List<Order> orders) => (orders.length / _itemsPerPage).ceil();
+  int _getTotalPages(List<Order> orders) =>
+      (orders.length / _itemsPerPage).ceil();
 
   void _changeFilter(String value) {
     setState(() {
@@ -163,15 +167,12 @@ class _OrderListScreenState extends State<OrderListScreenMn> {
       canPop: false,
       onPopInvoked: (didPop) async {
         if (!didPop) {
-          context.go('/manager'); // Quay lại dashboard
+          context.go('/manager');
         }
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text(
-            "Quản lý đơn hàng",
-            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
-          ),
+          title: const Text("Quản lý đơn hàng", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
           centerTitle: true,
           backgroundColor: Colors.white,
           elevation: 0,
@@ -180,10 +181,7 @@ class _OrderListScreenState extends State<OrderListScreenMn> {
             onPressed: () => context.go('/manager'),
           ),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh, color: Colors.black),
-              onPressed: _refreshOrders,
-            ),
+            IconButton(icon: const Icon(Icons.refresh, color: Colors.black), onPressed: _refreshOrders),
             DropdownButton<String>(
               value: selectedStatus ?? 'all',
               underline: Container(),
@@ -211,7 +209,6 @@ class _OrderListScreenState extends State<OrderListScreenMn> {
             PopupMenuButton<String>(
               icon: const Icon(Icons.filter_list, color: Colors.black),
               onSelected: _changeFilter,
-              tooltip: 'Lọc đơn hàng',
               itemBuilder: (context) => const [
                 PopupMenuItem(value: 'all', child: Text("Tất cả")),
                 PopupMenuItem(value: 'today', child: Text("Hôm nay")),
@@ -231,35 +228,11 @@ class _OrderListScreenState extends State<OrderListScreenMn> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text("Lỗi: ${snapshot.error}"),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _refreshOrders,
-                          child: const Text('Thử lại'),
-                        ),
-                      ],
-                    ),
-                  );
+                  return Center(child: Text("Lỗi: ${snapshot.error}"));
                 }
-                final orders = snapshot.data!;
+                final orders = snapshot.data ?? [];
                 if (orders.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text('Không có đơn hàng nào.'),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _refreshOrders,
-                          child: const Text('Làm mới'),
-                        ),
-                      ],
-                    ),
-                  );
+                  return const Center(child: Text("Không có đơn hàng."));
                 }
                 final pagedOrders = _getPagedOrders(orders);
                 final totalPages = _getTotalPages(orders);
@@ -274,10 +247,9 @@ class _OrderListScreenState extends State<OrderListScreenMn> {
                           return GestureDetector(
                             onTap: () {
                               if (order.id != null) {
-                                context.push('/manager/orders/${order.id}', extra: order);
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Đơn hàng không hợp lệ')),
+                                context.push(
+                                  '/manager/orders/${order.id}',
+                                  extra: order,
                                 );
                               }
                             },
@@ -364,10 +336,7 @@ class _OrderCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(
-                order.orderNumber,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
+              Text(order.orderNumber, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -375,23 +344,14 @@ class _OrderCard extends StatelessWidget {
                   color: getStatusColor(order.status).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(15),
                 ),
-                child: Text(
-                  order.status,
-                  style: TextStyle(
-                    color: getStatusColor(order.status),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: Text(order.status, style: TextStyle(color: getStatusColor(order.status), fontWeight: FontWeight.bold)),
               ),
             ],
           ),
           const SizedBox(height: 8),
           _infoRow("Người nhận", shipping.receiverName),
           _infoRow("SĐT", shipping.phoneNumber),
-          _infoRow(
-            "Địa chỉ",
-            "${shipping.addressLine}, ${shipping.ward}, ${shipping.district}, ${shipping.city}",
-          ),
+          _infoRow("Địa chỉ", "${shipping.addressLine}, ${shipping.ward}, ${shipping.district}, ${shipping.city}"),
           _infoRow("Ngày tạo", DateFormat('dd/MM/yyyy – HH:mm').format(order.createdAt)),
           _infoRow("Tổng tiền", "${order.totalAmount.toStringAsFixed(0)} ₫"),
         ],
@@ -404,10 +364,7 @@ class _OrderCard extends StatelessWidget {
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "$label: ",
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
+        Text("$label: ", style: const TextStyle(fontWeight: FontWeight.bold)),
         Flexible(child: Text(value)),
       ],
     ),

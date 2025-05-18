@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -66,23 +68,42 @@ class _ProfileWebLayoutState extends State<ProfileWebLayout> {
       final XFile? image = await picker.pickImage(source: ImageSource.gallery);
 
       if (image != null) {
+        final bytes = await image.readAsBytes(); // đọc ảnh dưới dạng byte
+        final base64Image = base64Encode(bytes); // mã hóa base64
+
+        await UserService().updateAvatar(_user!.id!, base64Image); // API cập nhật avatar
         setState(() {
-          _user = _user!.copyWith(avatarUrl: image.path);
+          _user = _user!.copyWith(avatarUrl: base64Image); // cập nhật UI
         });
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Ảnh đại diện đã được cập nhật')),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lỗi khi chọn ảnh')),
+        SnackBar(content: Text('Lỗi khi chọn ảnh: $e')),
       );
     }
   }
 
-  void _deleteImage() {
-    setState(() => _user = _user!.copyWith(avatarUrl: null));
+
+  void _deleteImage() async {
+    try {
+      await UserService().deleteAvatar(_user!.id!); // gọi API xoá ảnh
+      setState(() {
+        _user = _user!.copyWith(avatarUrl: null);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đã xoá ảnh đại diện')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi xoá ảnh: $e')),
+      );
+    }
   }
+
 
   void _editAddress(int index) async {
     final addr = _user!.addresses[index];
@@ -234,7 +255,7 @@ class _ProfileWebLayoutState extends State<ProfileWebLayout> {
                                   child: CircleAvatar(
                                     radius: 60,
                                     backgroundImage: _user!.avatarUrl != null
-                                        ? NetworkImage(_user!.avatarUrl!)
+                                        ? MemoryImage(base64Decode(_user!.avatarUrl!))
                                         : null,
                                     backgroundColor: Colors.grey[200],
                                     child: _user!.avatarUrl == null

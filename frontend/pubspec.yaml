@@ -113,6 +113,11 @@ flutter:
     - assets/images/5.jpg
     - assets/placeholder.jpg
     - assets/images/logoapbar.jpg
+    - assets/images/bn1.jpg
+    - assets/images/bn2.jpg
+    - assets/images/bn3.jpg
+    - assets/images/cd1.jpg
+    - assets/images/cd2.jpg
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

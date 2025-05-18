@@ -25,6 +25,30 @@ class UserService {
 
 
   // ─── AuthController ─────────────────────────────────────────────────────────
+  Future<void> updateAvatar(String userId, String base64Image) async {
+    final uri = Uri.parse('$_userBase/$userId/avatar');
+    final res = await http.patch(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'avatarUrl': base64Image}),
+    );
+    if (res.statusCode != 204) {
+      throw Exception('updateAvatar failed: ${res.statusCode}');
+    }
+  }
+
+  Future<void> deleteAvatar(String userId) async {
+    final uri = Uri.parse('$_userBase/$userId/avatar');
+    final res = await http.patch(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'avatarUrl': ''}), // hoặc null tùy backend xử lý
+    );
+
+    if (res.statusCode != 204) {
+      throw Exception('deleteAvatar failed: ${res.statusCode}');
+    }
+  }
 
   /// 1. Check if an email exists and whether it's verified
   Future<EmailCheckResult> checkEmailExists(String email) async {

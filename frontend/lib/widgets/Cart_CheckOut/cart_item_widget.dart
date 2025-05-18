@@ -47,7 +47,7 @@ class _CartItemWidgetState extends State<CartItemWidget> {
         additionalPrice: 0,
         inventory: 0,
         createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+        updatedAt: DateTime.now(), originalPrice: 0,
       ),
     );
 

@@ -219,8 +219,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreene>
             return ListTile(
               leading: const Icon(Icons.settings_input_component),
               title: Text(v.variantName),
-              subtitle: Text(
-                'Additional ₫${v.additionalPrice.toStringAsFixed(0)} • Stock: ${v.inventory}',
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Original: ₫${v.originalPrice.toStringAsFixed(0)}'),
+                  Text('Additional: ₫${v.additionalPrice.toStringAsFixed(0)}'),
+                  Text('Stock: ${v.inventory}'),
+                ],
               ),
             );
           },
