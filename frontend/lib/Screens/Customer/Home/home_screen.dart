@@ -28,6 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int selectedIndex = 0;
   bool showAllCategories = false;
   bool isLoading = true;
+  double _opacity = 0.0; // For fade-in effect
 
   List<Product> allProducts = [];
   List<Product> filteredProducts = [];
@@ -43,15 +44,31 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isPromoOnly = false;
   String sortOrder = 'A-Z';
 
-  static const _iconMap = {
-    'Laptops': Icons.laptop,
-    'Gaming': Icons.sports_esports,
-    'Ultrabooks': Icons.laptop_mac,
-    'Workstations': Icons.work,
-    'Budget': Icons.money_off,
-    '2-in-1': Icons.tablet,
-    'Desktops': Icons.desktop_windows,
-    'Accessories': Icons.assessment,
+  static const Map<String, Map<String, Object>> _iconMap = {
+    'Laptops': {
+      'icon': Icons.laptop,
+      'color': Color(0xFFB3CDE0), // Pastel blue
+    },
+    'Hard Drives': {
+      'icon': Icons.storage,
+      'color': Color(0xFFE0BBE4), // Pastel purple
+    },
+    'Monitors': {
+      'icon': Icons.monitor,
+      'color': Color(0xFFC5E1A5), // Pastel green
+    },
+    'Keyboards': {
+      'icon': Icons.keyboard,
+      'color': Color(0xFFF9C1B1), // Pastel peach
+    },
+    'Headsets': {
+      'icon': Icons.headset,
+      'color': Color(0xFFB0E0E6), // Pastel aqua
+    },
+    'Speakers': {
+      'icon': Icons.speaker,
+      'color': Color(0xFFF8E1B0), // Pastel yellow
+    },
   };
 
   @override
@@ -82,35 +99,37 @@ class _HomeScreenState extends State<HomeScreen> {
 
       setState(() {
         allProducts = prods;
-        filteredProducts = List<Product>.from(prods); // Khởi tạo filteredProducts
+        filteredProducts = List<Product>.from(prods);
         categories = cats;
         tags = tgs;
         productsByTag = mapByTag;
-        _applyFilters(prods); // Áp dụng bộ lọc ngay sau khi tải dữ liệu
+        _applyFilters(prods);
+        isLoading = false;
+        // Trigger fade-in animation
+        Future.delayed(const Duration(milliseconds: 100), () {
+          setState(() => _opacity = 1.0);
+        });
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi tải dữ liệu: $e')),
       );
     } finally {
-      if (mounted) setState(() => isLoading = false);
+      if (mounted && isLoading) setState(() => isLoading = false);
     }
   }
 
   void _applyFilters(List<Product> products) {
     var filtered = List<Product>.from(products);
 
-    // Lọc theo danh mục
     if (selectedCategory != null && selectedCategory!.isNotEmpty) {
       filtered = filtered.where((p) => p.categoryId == selectedCategory).toList();
     }
 
-    // Lọc theo thẻ
     if (selectedTag != null && selectedTag!.isNotEmpty) {
       filtered = filtered.where((p) => productsByTag[selectedTag]?.contains(p) ?? false).toList();
     }
 
-    // Lọc theo giá
     filtered = filtered.where((p) {
       final effectivePrice = p.discountPercentage != null && p.discountPercentage! > 0
           ? p.minPrice * (1 - p.discountPercentage! / 100)
@@ -118,12 +137,10 @@ class _HomeScreenState extends State<HomeScreen> {
       return effectivePrice >= minPrice && effectivePrice <= maxPrice;
     }).toList();
 
-    // Lọc theo khuyến mãi
     if (isPromoOnly) {
       filtered = filtered.where((p) => p.discountPercentage != null && p.discountPercentage! > 0).toList();
     }
 
-    // Sắp xếp
     if (sortOrder == 'A-Z') {
       filtered.sort((a, b) => a.name.compareTo(b.name));
     } else if (sortOrder == 'Z-A') {
@@ -303,96 +320,124 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: MobileHeader(
         isLoggedIn: _isLoggedIn,
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(child: MobileSearchBar()),
-                IconButton(
-                  icon: const Icon(Icons.filter_list),
-                  onPressed: _showFilterDialog,
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: iconPadding, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: AnimatedOpacity(
+        opacity: _opacity,
+        duration: const Duration(milliseconds: 500),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  const Text('Loại sản phẩm', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  GestureDetector(
-                    onTap: () => setState(() => showAllCategories = !showAllCategories),
-                    child: Text(
-                      showAllCategories ? 'Thu lại' : 'Xem tất cả',
-                      style: const TextStyle(color: Colors.blue),
-                    ),
+                  Expanded(child: MobileSearchBar()), // Removed isLoggedIn parameter
+                  IconButton(
+                    icon: const Icon(Icons.filter_list),
+                    onPressed: _showFilterDialog,
                   ),
                 ],
               ),
-            ),
-            BannerSection(isWeb: false, screenWidth: w),
-            const SizedBox(height: 20),
-            categories.isEmpty
-                ? const Padding(
-              padding: EdgeInsets.symmetric(horizontal: iconPadding, vertical: 8),
-              child: Text('Không có danh mục nào'),
-            )
-                : SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: iconPadding),
-              child: Row(
-                children: visibleCats.map((cat) {
-                  final icon = _iconMap[cat.name] ?? Icons.category;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: iconSpacing),
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ProductCatalogPage(categoryId: cat.id),
-                          ),
-                        );
-                      },
-                      child: CategoryIcon(icon: icon, label: cat.name),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: iconPadding, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Loại sản phẩm', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    GestureDetector(
+                      onTap: () => setState(() => showAllCategories = !showAllCategories),
+                      child: Text(
+                        showAllCategories ? 'Thu lại' : 'Xem tất cả',
+                        style: const TextStyle(color: Colors.blue),
+                      ),
                     ),
-                  );
-                }).toList(),
-              ),
-            ),
-            const SizedBox(height: 20),
-            if (filteredProducts.isNotEmpty)
-              ProductSection(
-                title: 'Khuyến mãi',
-                products: filteredProducts.where((p) => p.discountPercentage != null && p.discountPercentage! > 0).toList(),
-                isWeb: false,
-                screenWidth: w,
-                onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
-              ),
-            const SizedBox(height: 20),
-            for (final cat in categories)
-              if (filteredProducts.any((p) => p.categoryId == cat.id))
-                ProductSection(
-                  title: cat.name,
-                  products: filteredProducts.where((p) => p.categoryId == cat.id).toList(),
-                  isWeb: false,
-                  screenWidth: w,
-                  onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+                  ],
                 ),
-            const SizedBox(height: 20),
-            for (final tag in tags)
-              if ((productsByTag[tag.id] ?? []).isNotEmpty)
-                ProductSection(
-                  title: tag.name,
-                  products: filteredProducts.where((p) => productsByTag[tag.id]?.contains(p) ?? false).toList(),
-                  isWeb: false,
-                  screenWidth: w,
-                  onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+              ),
+              BannerSection(isWeb: false, screenWidth: w),
+              const SizedBox(height: 20),
+              categories.isEmpty
+                  ? const Padding(
+                padding: EdgeInsets.symmetric(horizontal: iconPadding, vertical: 8),
+                child: Text('Không có danh mục nào'),
+              )
+                  : SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: iconPadding),
+                child: Row(
+                  children: visibleCats.map((cat) {
+                    final iconData = _iconMap[cat.name]?['icon'] as IconData? ?? Icons.category;
+                    final iconColor = _iconMap[cat.name]?['color'] as Color? ?? Colors.grey;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: iconSpacing),
+                      child: _AnimatedCategoryIcon(
+                        icon: iconData,
+                        label: cat.name,
+                        color: iconColor,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProductCatalogPage(categoryId: cat.id),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  }).toList(),
                 ),
-          ],
+              ),
+
+              const SizedBox(height: 40), // Increased spacing above
+              if (filteredProducts.isNotEmpty)
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFFE0B2), Color(0xFFFFB3B3)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  margin: const EdgeInsets.symmetric(horizontal: iconPadding),
+                  padding: const EdgeInsets.all(16), // Added padding to create space inside the Container
+                  child: ProductSection(
+                    title: 'Khuyến mãi',
+                    products: filteredProducts.where((p) => p.discountPercentage != null && p.discountPercentage! > 0).toList(),
+                    isWeb: false,
+                    screenWidth: w,
+                    onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+                  ),
+                ),
+              const SizedBox(height: 40), // Increased spacing below
+
+              for (final cat in categories)
+                if (filteredProducts.any((p) => p.categoryId == cat.id))
+                  ProductSection(
+                    title: cat.name,
+                    products: filteredProducts.where((p) => p.categoryId == cat.id).toList(),
+                    isWeb: false,
+                    screenWidth: w,
+                    onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+                  ),
+              const SizedBox(height: 20),
+              for (final tag in tags)
+                if ((productsByTag[tag.id] ?? []).isNotEmpty)
+                  ProductSection(
+                    title: tag.name,
+                    products: filteredProducts.where((p) => productsByTag[tag.id]?.contains(p) ?? false).toList(),
+                    isWeb: false,
+                    screenWidth: w,
+                    onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+                  ),
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: MobileNavigationBar(
@@ -417,104 +462,129 @@ class _HomeScreenState extends State<HomeScreen> {
           isLoggedIn: _isLoggedIn,
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(width: w * 0.8, child: WebSearchBar(isLoggedIn: _isLoggedIn)),
-                IconButton(
-                  icon: const Icon(Icons.filter_list),
-                  onPressed: _showFilterDialog,
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            BannerSection(isWeb: true, screenWidth: w),
-            const SizedBox(height: 16),
-            categories.isEmpty
-                ? const Padding(
-              padding: EdgeInsets.symmetric(horizontal: iconPadding, vertical: 8),
-              child: Text('Không có danh mục nào'),
-            )
-                : Padding(
-              padding: const EdgeInsets.symmetric(horizontal: iconPadding, vertical: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      body: AnimatedOpacity(
+        opacity: _opacity,
+        duration: const Duration(milliseconds: 500),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Loại sản phẩm',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      GestureDetector(
-                        onTap: () => setState(() => showAllCategories = !showAllCategories),
-                        child: Text(
-                          showAllCategories ? 'Thu lại' : 'Xem tất cả',
-                          style: const TextStyle(color: Colors.blue, fontSize: 14),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: visibleCats.map((cat) {
-                      final icon = _iconMap[cat.name] ?? Icons.category;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: iconSpacing),
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ProductCatalogPage(categoryId: cat.id),
-                              ),
-                            );
-                          },
-                          child: CategoryIcon(icon: icon, label: cat.name),
-                        ),
-                      );
-                    }).toList(),
+                  SizedBox(width: w * 0.8, child: WebSearchBar(isLoggedIn: _isLoggedIn)),
+                  IconButton(
+                    icon: const Icon(Icons.filter_list),
+                    onPressed: _showFilterDialog,
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 16),
-            if (filteredProducts.isNotEmpty)
-              ProductSection(
-                title: 'Khuyến mãi',
-                products: filteredProducts.where((p) => p.discountPercentage != null && p.discountPercentage! > 0).toList(),
-                isWeb: true,
-                screenWidth: w,
-                onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+              const SizedBox(height: 8),
+              BannerSection(isWeb: true, screenWidth: w),
+              const SizedBox(height: 16),
+              categories.isEmpty
+                  ? const Padding(
+                padding: EdgeInsets.symmetric(horizontal: iconPadding, vertical: 8),
+                child: Text('Không có danh mục nào'),
+              )
+                  : Padding(
+                padding: const EdgeInsets.symmetric(horizontal: iconPadding, vertical: 8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Loại sản phẩm',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0251CD)),
+                        ),
+                        GestureDetector(
+                          onTap: () => setState(() => showAllCategories = !showAllCategories),
+                          child: Text(
+                            showAllCategories ? 'Thu lại' : 'Xem tất cả',
+                            style: const TextStyle(color: Colors.blue, fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: visibleCats.map((cat) {
+                        final iconData = _iconMap[cat.name]?['icon'] as IconData? ?? Icons.category;
+                        final iconColor = _iconMap[cat.name]?['color'] as Color? ?? Colors.grey;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: iconSpacing),
+                          child: _AnimatedCategoryIcon(
+                            icon: iconData,
+                            label: cat.name,
+                            color: iconColor,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ProductCatalogPage(categoryId: cat.id),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
               ),
-            const SizedBox(height: 16),
-            for (final tag in tags)
-              if ((productsByTag[tag.id] ?? []).isNotEmpty)
-                ProductSection(
-                  title: tag.name,
-                  products: filteredProducts.where((p) => productsByTag[tag.id]?.contains(p) ?? false).toList(),
-                  isWeb: true,
-                  screenWidth: w,
-                  onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+              const SizedBox(height: 16),
+              if (filteredProducts.isNotEmpty)
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFFE0B2), Color(0xFFFFB3B3)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  margin: const EdgeInsets.symmetric(horizontal: iconPadding),
+                  child: ProductSection(
+                    title: 'Khuyến mãi',
+                    products: filteredProducts.where((p) => p.discountPercentage != null && p.discountPercentage! > 0).toList(),
+                    isWeb: true,
+                    screenWidth: w,
+                    onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+                  ),
                 ),
-            const SizedBox(height: 16),
-            for (final cat in categories)
-              if (filteredProducts.any((p) => p.categoryId == cat.id))
-                ProductSection(
-                  title: cat.name,
-                  products: filteredProducts.where((p) => p.categoryId == cat.id).toList(),
-                  isWeb: true,
-                  screenWidth: w,
-                  onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
-                ),
-            const SizedBox(height: 16),
-            Footer(),
-          ],
+              const SizedBox(height: 16),
+              for (final tag in tags)
+                if ((productsByTag[tag.id] ?? []).isNotEmpty)
+                  ProductSection(
+                    title: tag.name,
+                    products: filteredProducts.where((p) => productsByTag[tag.id]?.contains(p) ?? false).toList(),
+                    isWeb: true,
+                    screenWidth: w,
+                    onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+                  ),
+              const SizedBox(height: 16),
+              for (final cat in categories)
+                if (filteredProducts.any((p) => p.categoryId == cat.id))
+                  ProductSection(
+                    title: cat.name,
+                    products: filteredProducts.where((p) => p.categoryId == cat.id).toList(),
+                    isWeb: true,
+                    screenWidth: w,
+                    onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+                  ),
+              const SizedBox(height: 16),
+              Footer(),
+            ],
+          ),
         ),
       ),
     );
@@ -550,6 +620,54 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ],
+    );
+  }
+}
+
+// Animated Category Icon Widget
+class _AnimatedCategoryIcon extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _AnimatedCategoryIcon({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  __AnimatedCategoryIconState createState() => __AnimatedCategoryIconState();
+}
+
+class __AnimatedCategoryIconState extends State<_AnimatedCategoryIcon> with SingleTickerProviderStateMixin {
+  double _scale = 1.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _scale = 1.1), // Slight scale-up on hover (web)
+      onExit: (_) => setState(() => _scale = 1.0),
+      child: InkWell(
+        onTap: () {
+          setState(() => _scale = 0.95); // Scale down on tap
+          Future.delayed(const Duration(milliseconds: 100), () {
+            setState(() => _scale = 1.0);
+            widget.onTap();
+          });
+        },
+        child: AnimatedScale(
+          scale: _scale,
+          duration: const Duration(milliseconds: 200),
+          child: CategoryIcon(
+            icon: widget.icon,
+            label: widget.label,
+            color: widget.color,
+          ),
+        ),
+      ),
     );
   }
 }

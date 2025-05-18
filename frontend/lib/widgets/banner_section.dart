@@ -85,60 +85,7 @@ class BannerSection extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      "BẠN MỚI GIẢM 50.000Đ",
-                      style: TextStyle(
-                        fontSize: screenWidth * 0.045,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        shadows: const [
-                          Shadow(
-                            color: Colors.black87,
-                            offset: Offset(2, 2),
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Text(
-                      "GIẢM ĐỈNH CAO",
-                      style: TextStyle(
-                        fontSize: screenWidth * 0.035,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white70,
-                        shadows: const [
-                          Shadow(
-                            color: Colors.black87,
-                            offset: Offset(2, 2),
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ElevatedButton(
-                      onPressed: () => context.go('/products'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.purple.shade700,
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                        shadowColor: Colors.black45,
-                      ),
-                      child: Text(
-                        "Shop now",
-                        style: TextStyle(
-                          fontSize: screenWidth * 0.035,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+
                   ],
                 ),
               ),
