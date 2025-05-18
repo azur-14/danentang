@@ -23,6 +23,19 @@ namespace ProductManagementService.Controllers
         // -----------------------
         // PRODUCT CRUD
         // -----------------------
+        // GET: /api/products/category/{categoryId}
+        [HttpGet("category/{categoryId}")]
+        public async Task<IActionResult> GetByCategory(string categoryId)
+        {
+            var products = await _products
+                .Find(p => p.CategoryId == categoryId)
+                .ToListAsync();
+
+            if (products == null || products.Count == 0)
+                return NotFound("No products found in this category.");
+
+            return Ok(products);
+        }
 
         [HttpPost]
         public async Task<IActionResult> CreateProduct([FromBody] Product product)

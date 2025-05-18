@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:danentang/data/user_data.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:danentang/Screens/Customer/Product/ProductCatalogPage.dart';
 import '../../../models/product.dart';
@@ -35,8 +34,6 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Category> categories = [];
   List<Tag> tags = [];
   Map<String, List<Product>> productsByTag = {};
-
-  final Map<String, dynamic> userData = UserData.userData;
 
   static const _iconMap = {
     'Laptops': Icons.laptop,
@@ -256,7 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 8),
             BannerSection(isWeb: true, screenWidth: w),
             const SizedBox(height: 16),
-            _buildPromoIcons(),
+            //_buildPromoIcons(),
             const SizedBox(height: 16),
             categories.isEmpty
                 ? const Padding(
@@ -345,7 +342,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildPromoIcons() {
+  /*Widget _buildPromoIcons() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
       child: Row(
@@ -361,7 +358,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
-  }
+  }*/
 
   Widget _buildPromoItem(IconData icon, String label) {
     return Column(

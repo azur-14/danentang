@@ -7,6 +7,7 @@ class Review {
   final String? guestName;
   final String comment;
   final int? rating;
+  final String? sentiment;
   final DateTime createdAt;
 
   Review({
@@ -16,6 +17,7 @@ class Review {
     this.guestName,
     required this.comment,
     this.rating,
+    this.sentiment,
     required this.createdAt,
   });
 
@@ -27,6 +29,7 @@ class Review {
       guestName: json['guestName'] as String?,
       comment: json['comment'] as String,
       rating: json['rating'] != null ? (json['rating'] as num).toInt() : null,
+      sentiment: json['sentiment'] as String?, // <- Thêm dòng này
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
@@ -39,7 +42,9 @@ class Review {
       if (guestName != null) 'guestName': guestName,
       'comment': comment,
       if (rating != null)    'rating': rating,
+      if (sentiment != null) 'sentiment': sentiment, // <- Thêm dòng này
       'createdAt': createdAt.toIso8601String(),
     };
   }
+
 }
