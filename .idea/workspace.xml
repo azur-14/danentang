@@ -4,20 +4,18 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="c5e27ea5-3704-40f2-9df8-de805808e829" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/danentang/frontend/build/flutter_assets/NOTICES" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/build/flutter_assets/NOTICES" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/danentang/frontend/build/flutter_assets/shaders/ink_sparkle.frag" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/build/flutter_assets/shaders/ink_sparkle.frag" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/danentang/frontend/lib/Screens/Customer/Login/Login_Screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/lib/Screens/Customer/Login/Login_Screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/danentang/frontend/lib/Screens/Customer/Login/Login_SignUp_Screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/lib/Screens/Customer/Login/Login_SignUp_Screen.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/danentang/frontend/lib/Screens/Customer/Login/SignUp.dart" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/lib/Screens/Customer/Login/SignUp.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/danentang/frontend/lib/Screens/Customer/Search/search_v2.dart" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/lib/Screens/Customer/Search/search_v2.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/danentang/frontend/lib/Screens/Manager/Coupon/coupon_management.dart" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/lib/Screens/Manager/Coupon/coupon_management.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/danentang/frontend/lib/Service/search_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/lib/Service/search_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/danentang/frontend/lib/routes.dart" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/lib/routes.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/danentang/frontend/lib/widgets/Order/OrderCard.dart" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/lib/widgets/Order/OrderCard.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/danentang/frontend/lib/widgets/Search/mobile_search_bar.dart" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/lib/widgets/Search/mobile_search_bar.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/danentang/frontend/lib/widgets/Search/web_search_bar.dart" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/lib/widgets/Search/web_search_bar.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/danentang/frontend/lib/widgets/product_card.dart" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/lib/widgets/product_card.dart" afterDir="false" />
+    <list default="true" id="27fedf31-aece-476d-90a8-1ce907606622" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/danentang/OrderManagementService/Dockerfile" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/danentang/ProductManagementService/Dockerfile" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/danentang/UserManagementService/UserManagementService/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/Final.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Final.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/danentang/ReviewManagementService/Controllers/ReviewController.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/danentang/ReviewManagementService/Data/ReviewDbContext.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/danentang/ReviewManagementService/Model/Review.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/danentang/ReviewManagementService/Program.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/danentang/ReviewManagementService/ReviewBackend.csproj" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -30,49 +28,50 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/danentang" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "Dat-svg"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;Dat-svg&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/azur-14/danentang.git",
-    "accountId": "6187d078-7469-4a33-b126-ed5e336a48e0"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/azur-14/danentang.git&quot;,
+    &quot;accountId&quot;: &quot;6187d078-7469-4a33-b126-ed5e336a48e0&quot;
   }
-}]]></component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "customColor": "",
-  "associatedIndex": 8
-}]]></component>
-  <component name="ProjectId" id="2xDbwcS1xmAj4LFR0kGnq2gVwdm" />
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 8
+}</component>
+  <component name="ProjectId" id="2xGQoLZrkGsfTd1TJfHAwSldk15" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.cidr.known.project.marker": "true",
-    "RunOnceActivity.readMode.enableVisualFormatting": "true",
-    "cf.first.check.clang-format": "false",
-    "cidr.known.project.marker": "true",
-    "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "master",
-    "kotlin-language-version-configured": "true",
-    "settings.editor.selected.configurable": "AndroidSdkUpdater",
-    "show.migrate.to.gradle.popup": "false"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.readMode.enableVisualFormatting&quot;: &quot;true&quot;,
+    &quot;cf.first.check.clang-format&quot;: &quot;false&quot;,
+    &quot;cidr.known.project.marker&quot;: &quot;true&quot;,
+    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;AndroidSdkUpdater&quot;,
+    &quot;show.migrate.to.gradle.popup&quot;: &quot;false&quot;
   }
-}]]></component>
+}</component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="c5e27ea5-3704-40f2-9df8-de805808e829" name="Changes" comment="" />
-      <created>1747475838793</created>
+      <changelist id="27fedf31-aece-476d-90a8-1ce907606622" name="Changes" comment="" />
+      <created>1747562109350</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1747475838793</updated>
+      <updated>1747562109350</updated>
     </task>
     <servers />
   </component>
