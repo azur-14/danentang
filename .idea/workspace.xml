@@ -4,18 +4,21 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="27fedf31-aece-476d-90a8-1ce907606622" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/danentang/OrderManagementService/Dockerfile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/danentang/ProductManagementService/Dockerfile" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/danentang/UserManagementService/UserManagementService/Dockerfile" afterDir="false" />
+    <list default="true" id="27fedf31-aece-476d-90a8-1ce907606622" name="Changes" comment="Commit cho dui">
       <change beforePath="$PROJECT_DIR$/.idea/Final.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Final.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/danentang/ReviewManagementService/Controllers/ReviewController.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/danentang/ReviewManagementService/Data/ReviewDbContext.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/danentang/ReviewManagementService/Model/Review.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/danentang/ReviewManagementService/Program.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/danentang/ReviewManagementService/ReviewBackend.csproj" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/danentang" beforeDir="false" afterPath="$PROJECT_DIR$/danentang" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/danentang/frontend/build/cache.dill.track.dill" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/build/cache.dill.track.dill" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/danentang/frontend/build/flutter_assets/AssetManifest.bin" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/build/flutter_assets/AssetManifest.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/danentang/frontend/build/flutter_assets/AssetManifest.bin.json" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/build/flutter_assets/AssetManifest.bin.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/danentang/frontend/build/flutter_assets/AssetManifest.json" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/build/flutter_assets/AssetManifest.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/danentang/frontend/lib/Screens/Customer/Home/home_screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/lib/Screens/Customer/Home/home_screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/danentang/frontend/lib/Screens/Customer/Login/Login_SignUp_Screen.dart" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/lib/Screens/Customer/Login/Login_SignUp_Screen.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/danentang/frontend/lib/Service/order_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/lib/Service/order_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/danentang/frontend/lib/Service/product_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/lib/Service/product_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/danentang/frontend/lib/Service/user_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/lib/Service/user_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/danentang/frontend/lib/widgets/Product/product_info.dart" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/lib/widgets/Product/product_info.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/danentang/frontend/lib/widgets/Product/product_tabs.dart" beforeDir="false" afterPath="$PROJECT_DIR$/danentang/frontend/lib/widgets/Product/product_tabs.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -73,6 +76,19 @@
       <option name="presentableId" value="Default" />
       <updated>1747562109350</updated>
     </task>
+    <task id="LOCAL-00001" summary="Commit cho dui">
+      <option name="closed" value="true" />
+      <created>1747572660908</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1747572660908</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Commit cho dui" />
+    <option name="LAST_COMMIT_MESSAGE" value="Commit cho dui" />
   </component>
 </project>
