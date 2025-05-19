@@ -1,5 +1,3 @@
-// File: lib/screens/ProductCatalogPage.dart
-
 import 'package:flutter/material.dart';
 import 'package:danentang/models/product.dart';
 import 'package:danentang/models/Category.dart';
@@ -128,14 +126,26 @@ class _ProductCatalogPageState extends State<ProductCatalogPage> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
+    final canPop = GoRouter.of(context).canPop();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Elap Commerce', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.blue[700],
-        leading: IconButton(
+        leading: canPop
+            ? IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => context.pop(),
+          onPressed: () {
+            debugPrint('Back button pressed, canPop: $canPop');
+            context.pop();
+          },
+        )
+            : IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            debugPrint('No previous page, navigating to /home');
+            context.go('/homepage');
+          },
         ),
         actions: [
           IconButton(icon: const Icon(Icons.search, color: Colors.white), onPressed: () {}),
