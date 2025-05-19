@@ -88,8 +88,8 @@ class _ResponsiveCouponScreenState extends State<ResponsiveCouponScreen> {
       return;
     }
 
-    if (usageLimit == null || usageLimit <= 0 || usageLimit > 1000) {
-      setState(() => _errorMessage = 'Số lần sử dụng phải từ 1 đến 1000');
+    if (usageLimit == null || usageLimit <= 0 || usageLimit > 10) {
+      setState(() => _errorMessage = 'Số lần sử dụng phải từ 1 đến 10');
       return;
     }
 
@@ -391,7 +391,7 @@ class CouponContent extends StatelessWidget {
           controller: limitCtrl,
           keyboardType: TextInputType.number,
           decoration: const InputDecoration(
-            labelText: 'Số lần sử dụng (1-1000)',
+            labelText: 'Số lần sử dụng (1-10)',
             border: OutlineInputBorder(),
             errorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
             focusedErrorBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
