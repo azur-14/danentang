@@ -13,6 +13,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Text;
+using OrderManagementService.Services;
 
 namespace OrderManagementService.Controllers
 {
@@ -25,16 +26,21 @@ namespace OrderManagementService.Controllers
         private readonly IConfiguration _configuration;
         private readonly IMongoCollection<Coupon> _coupons;
 
+        private readonly RabbitMQPublisher _publisher;
+
         public OrdersController(
-    MongoDbContext context,
-    IHttpClientFactory httpClientFactory,
-    IConfiguration configuration)
+            MongoDbContext context,
+            IHttpClientFactory httpClientFactory,
+            IConfiguration configuration,
+            RabbitMQPublisher publisher) // ✅ Inject đúng cách
         {
             _orders = context.Orders;
-            _coupons = context.Coupons;  // THÊM DÒNG NÀY
+            _coupons = context.Coupons;
             _httpClientFactory = httpClientFactory;
             _configuration = configuration;
+            _publisher = publisher;
         }
+
 
 
         // GET: api/orders
@@ -130,12 +136,11 @@ namespace OrderManagementService.Controllers
                     await userClient.PatchAsync($"/api/user/{order.UserId}/loyalty", content);
                 }
 
-                // 11. Giảm tồn kho ở ProductService
                 foreach (var item in order.Items)
                 {
-                    var content = new StringContent(item.Quantity.ToString(), Encoding.UTF8, "application/json");
-                    await client.PatchAsync($"products/variants/{item.ProductVariantId}/decrease", content);
+                    _publisher.PublishStockDecrease(item.ProductVariantId, item.Quantity); // ✅ Dùng DI
                 }
+
             }
             catch (Exception ex)
             {

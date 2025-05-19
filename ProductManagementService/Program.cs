@@ -1,6 +1,8 @@
 ﻿using ProductManagementService.Data;
 using ProductManagementService.WebSockets; // ✅ Quan trọng!
 using Microsoft.Extensions.Options;
+using ProductManagementService.Services;
+using RabbitMQ.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,7 +65,13 @@ app.Use(async (context, next) =>
         await next();
     }
 });
+// Lấy MongoDbContext
+var mongoContext = app.Services.GetRequiredService<MongoDbContext>();
+
+// ✅ Bắt đầu consumer cho RabbitMQ (bất đồng bộ)
+Task.Run(() => RabbitMQConsumer.Start(mongoContext.Products));
 
 app.UseAuthorization();
 app.MapControllers();
+
 app.Run();

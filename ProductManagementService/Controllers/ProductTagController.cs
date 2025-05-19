@@ -43,26 +43,46 @@ namespace ProductManagementService.Controllers
             return Ok(tags);
         }
 
-        [HttpGet("by-tag/{tagId}")]
+        [HttpGet("by-tag/{tagId:length(24)}")]
         public async Task<IActionResult> GetProductsByTag(string tagId)
         {
-            // 1) Filter the product_tags collection by the raw "tag_id" field
-            var linkFilter = Builders<ProductTag>.Filter.Eq("tag_id", tagId);
+            // 1) Parse và trim để chắc chắn
+            tagId = tagId.Trim();
+            if (!ObjectId.TryParse(tagId, out _))
+                return BadRequest("tagId không hợp lệ");
+
+            // 2) Dùng expression, driver tự convert string thành ObjectId
             var links = await _productTags
-              .Find(linkFilter)
-              .ToListAsync();
+                .Find(pt => pt.TagId == tagId)
+                .ToListAsync();
 
-            // 2) Pull out the product_id values
             var productIds = links.Select(l => l.ProductId).ToList();
-
-            // 3) Fetch the actual products whose Id is in that list
-            var prodFilter = Builders<Product>.Filter.In(p => p.Id, productIds);
             var products = await _products
-              .Find(prodFilter)
-              .ToListAsync();
+                .Find(p => productIds.Contains(p.Id))
+                .ToListAsync();
 
             return Ok(products);
         }
+
+        [HttpGet("tags-with-products")]
+        public async Task<IActionResult> GetTagsWithProducts()
+        {
+            // 1) Lấy distinct ObjectId của tag_id
+            var objectIds = await _productTags
+                .Distinct<ObjectId>("tag_id", FilterDefinition<ProductTag>.Empty)
+                .ToListAsync();
+
+            // 2) Chuyển thành chuỗi
+            var tagIds = objectIds.Select(oid => oid.ToString()).ToList();
+
+            // 3) Lấy tag documents tương ứng
+            var usedTags = await _tags
+                .Find(t => tagIds.Contains(t.Id))
+                .ToListAsync();
+
+            return Ok(usedTags);
+        }
+
 
         [HttpDelete]
         public async Task<IActionResult> RemoveTagFromProduct(
