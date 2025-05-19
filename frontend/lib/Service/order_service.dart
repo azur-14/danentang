@@ -17,8 +17,8 @@ class OrderService {
   OrderService._();
   static final OrderService instance = OrderService._();
 
-  static const String _baseUrl = 'http://localhost:5005/api';
-  static const String _cartUrl = 'http://localhost:5005/api/carts';  final http.Client _http = http.Client();
+  static const String _baseUrl = 'https://orderservice-production-e536.up.railway.app.up.railway.app/api';
+  static const String _cartUrl = 'https://orderservice-production-e536.up.railway.app.up.railway.app/api/carts';  final http.Client _http = http.Client();
   final Uuid _uuid = Uuid();
 
   // ───────────────────────────────────────────────
@@ -327,7 +327,7 @@ class OrderService {
 
   // trong order_service.dart
   Future<Map<String, dynamic>> fetchProductInfo(String productId, String? variantId) async {
-    final productUri = Uri.parse('http://localhost:5011/api/products/$productId');
+    final productUri = Uri.parse('https://productservice-production.up.railway.app/api/products/$productId');
     final resp = await http.get(productUri);
     if (resp.statusCode != 200) {
       throw Exception('Lỗi lấy sản phẩm $productId');
@@ -432,7 +432,7 @@ class OrderService {
   }
 
   static Future<List<Order>> fetchOrdersByUserId(String userId) async {
-    final uri = Uri.parse('http://localhost:5005/api/orders/user/$userId');
+    final uri = Uri.parse('https://orderservice-production-e536.up.railway.app.up.railway.app/api/orders/user/$userId');
     final resp = await http.get(uri);
     if (resp.statusCode == 200) {
       final data = json.decode(resp.body) as List<dynamic>;

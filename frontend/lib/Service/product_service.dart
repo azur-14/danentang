@@ -12,7 +12,7 @@ import '../models/Review.dart';
 
 class ProductService {
 
-  static const String _baseUrl         = 'http://localhost:5011/api';
+  static const String _baseUrl         = 'https://productservice-production.up.railway.app/api';
   static const String _productsPath    = '$_baseUrl/products';
   static const String _categoriesPath  = '$_baseUrl/categories';
   static const String _tagsPath        = '$_baseUrl/Tag';
