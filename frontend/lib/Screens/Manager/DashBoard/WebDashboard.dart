@@ -328,7 +328,7 @@ class _WebDashboardState extends State<WebDashboard> with SingleTickerProviderSt
             ),
           ),
           _chartCard(
-            title: 'Chia sẻ danh mục',
+            title: 'Tỉ lệ loại sản phẩm',
             child: PieChart(PieChartData(
               sections: catShares.entries.map((e) => PieChartSectionData(
                 value: e.value.toDouble(),
@@ -367,7 +367,7 @@ class _WebDashboardState extends State<WebDashboard> with SingleTickerProviderSt
     return Column(
       children: [
         _filterableChart(
-          title: 'Lệnh vượt quá khoảng thời gian',
+          title: 'Số đơn hàng trong thời gian',
           dropdownValue: _ordersInterval,
           onIntervalChanged: (v) {
             if (v != null) setState(() => _ordersInterval = v);
@@ -432,7 +432,7 @@ class _WebDashboardState extends State<WebDashboard> with SingleTickerProviderSt
         ),
         const SizedBox(height: 16),
         _filterableChart(
-          title: 'Đăng ký người dùng',
+          title: 'Lượng người dùng đăng ký',
           dropdownValue: _regInterval,
           onIntervalChanged: (v) {
             if (v != null) setState(() => _regInterval = v);

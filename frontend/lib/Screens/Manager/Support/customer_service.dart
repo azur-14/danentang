@@ -56,26 +56,21 @@ class _CustomerServiceScreenState extends State<CustomerServiceScreen> {
       _channel = WebSocketChannel.connect(Uri.parse("ws://localhost:5012/ws/complaint"));
       print('[WS] Đã kết nối WebSocket');
 
-      _channel!.stream.listen(
-            (data) {
-          print('[WS] Received data: $data'); // ⚠️ Bắt buộc thêm để kiểm tra
-          final msg = jsonDecode(data);
-          final isRelevant = (msg['senderId'] == _peerUser!.id && msg['receiverId'] == _currentUser!.id) ||
-              (msg['senderId'] == _currentUser!.id && msg['receiverId'] == _peerUser!.id);
-          if (isRelevant) {
-            setState(() {
-              _messages.add({
-                'sender': msg['isFromCustomer'] ? 'customer' : 'admin',
-                'content': msg['content'],
-                'isFromCustomer': msg['isFromCustomer'],
-                'createdAt': msg['createdAt'],
-              });
+      _channel!.stream.listen((data) {
+        final msg = jsonDecode(data);
+        // Chỉ xử lý khi sender là peerUser, không phải currentUser
+        if (msg['senderId'] == _peerUser!.id &&
+            msg['receiverId'] == _currentUser!.id) {
+          setState(() {
+            _messages.add({
+              'sender': msg['isFromCustomer'] ? 'customer' : 'admin',
+              'content': msg['content'],
+              'isFromCustomer': msg['isFromCustomer'],
+              'createdAt': msg['createdAt'],
             });
-          }
-        },
-        onError: (e) => print('[WS ERROR] $e'),
-        onDone: () => print('[WS CLOSED] WebSocket disconnected'),
-      );
+          });
+        }
+      });
 
 
       setState(() {
