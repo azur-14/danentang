@@ -71,7 +71,11 @@ final GoRouter router = GoRouter(
     /// Login / Sign-Up
     GoRoute(
       path: '/login',
-      builder: (context, state) => const LoginScreen(),
+      name: 'login', // thêm name nếu muốn xài goNamed
+      builder: (context, state) {
+        final email = state.extra as String? ?? '';
+        return LoginScreen(email: email);
+      },
     ),
     GoRoute(
       path: '/login-signup',
@@ -79,8 +83,13 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(
       path: '/signup',
-      builder: (context, state) => const Signup(email: ""),
+      name: 'signup',    // nếu bạn muốn dùng goNamed
+      builder: (context, state) {
+        final email = state.extra as String? ?? '';
+        return Signup(email: email);
+      },
     ),
+
     GoRoute(
       path: '/change_password',
       builder: (context, state) {

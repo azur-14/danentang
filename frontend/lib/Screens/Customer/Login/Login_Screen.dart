@@ -174,16 +174,20 @@ class _LoginScreenState extends State<LoginScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Text(
-                            "Bạn chưa có tài khoản? ",
+                            "Quên mật khẩu? ",
                             style: TextStyle(
                               color: Color(0xFF1E293B),
                               fontSize: 14,
                             ),
                           ),
                           GestureDetector(
-                            onTap: () => context.go('/signup'),
+                            onTap: () {
+                              final email = emailController.text.trim();
+                              // Truyền email qua extra
+                              context.go('/change_password', extra: email);
+                            },
                             child: const Text(
-                              "Đăng kí ngay.",
+                              "Đặt lại mật khẩu ngay.",
                               style: TextStyle(
                                 color: Color(0xFF3B82F6),
                                 fontSize: 14,
@@ -347,16 +351,20 @@ class _LoginScreenState extends State<LoginScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Text(
-                                "Bạn chưa có tài khoản? ",
+                                "Quên mật khẩu? ",
                                 style: TextStyle(
                                   color: Color(0xFF1E293B),
                                   fontSize: 14,
                                 ),
                               ),
                               GestureDetector(
-                                onTap: () => context.go('/signup'),
+                                onTap: () {
+                                  final email = emailController.text.trim();
+                                  // Truyền email qua extra
+                                  context.go('/change_password', extra: email);
+                                },
                                 child: const Text(
-                                  "Đăng kí ngay.",
+                                  "Đặt lại mật khẩu ngay.",
                                   style: TextStyle(
                                     color: Color(0xFF3B82F6),
                                     fontSize: 14,

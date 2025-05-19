@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -33,16 +34,15 @@ class _LoginSignupScreenState extends State<LoginSignupScreen>
         final isVerified = jsonData['isEmailVerified'] as bool;
 
         if (exists && isVerified) {
-          // Đã có tài khoản và đã verify
-          Navigator.push(context, MaterialPageRoute(
-            builder: (_) => LoginScreen(email: email),
-          ));
+          // chuyển sang màn login, truyền extra = email
+          context.go('/login', extra: email);
+          // hoặc: context.goNamed('login', extra: email);
         } else {
-          // Chưa có tài khoản, hoặc chỉ là guest (chưa verify) → vẫn redirect tới Signup
-          Navigator.push(context, MaterialPageRoute(
-            builder: (_) => Signup(email: email),
-          ));
+          // chuyển sang màn signup, truyền extra = email
+          context.go('/signup', extra: email);
+          // hoặc: context.goNamed('signup', extra: email);
         }
+
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Lỗi khi kiểm tra email: ${response.body}')),

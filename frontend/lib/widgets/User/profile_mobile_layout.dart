@@ -160,7 +160,29 @@ class _ProfileMobileLayoutState extends State<ProfileMobileLayout> {
           _buildInfoRow(context, 'Giới tính', _user!.gender ?? '', _showGenderDialog),
           _buildInfoRow(context, 'Ngày sinh', _user!.dateOfBirth != null ? dateFormatter.format(_user!.dateOfBirth!) : '', _showDatePickerDialog),
           _buildInfoRow(context, 'SĐT', _user!.phoneNumber ?? '', () => _showEditDialog('phoneNumber', 'Số điện thoại')),
-          _buildInfoRow(context, 'Email', _user!.email, () {}),
+          // Email (không cho edit)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Email', style: TextStyle(fontSize: 16)),
+                Text(_user!.email, style: const TextStyle(fontSize: 16, color: Colors.grey)),
+              ],
+            ),
+          ),
+          // Điểm khách hàng thân thiết (readonly)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Điểm thân thiết', style: TextStyle(fontSize: 16)),
+                // giả sử User có field loyaltyPoints kiểu int
+                Text('${_user!.loyaltyPoints}', style: const TextStyle(fontSize: 16, color: Colors.grey)),
+              ],
+            ),
+          ),
           const SizedBox(height: 24),
           _buildAddressList(),
           const SizedBox(height: 24),

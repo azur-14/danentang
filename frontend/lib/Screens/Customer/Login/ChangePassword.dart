@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:danentang/constants/colors.dart';
-import 'package:danentang/Screens/Customer/Login/Login_Screen.dart';
 import 'package:danentang/Service/user_service.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -44,12 +44,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         errorMessage = null;
       });
       _showSnackBar('Mã OTP đã gửi đến ${widget.email}');
-    } catch (e, st) {
+    } catch (e) {
       debugPrint('Error in sendOtp(): $e');
-      debugPrintStack(stackTrace: st);
-      setState(() {
-        errorMessage = e.toString();
-      });
+      setState(() => errorMessage = e.toString());
       _showSnackBar('Lỗi gửi OTP: $e');
     }
   }
@@ -58,9 +55,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     if (otpController.text.trim() != _serverOtp) {
-      setState(() {
-        errorMessage = 'OTP không đúng';
-      });
+      setState(() => errorMessage = 'OTP không đúng');
       _showSnackBar('OTP không đúng');
       return;
     }
@@ -85,29 +80,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (_) => LoginScreen(email: widget.email),
-                  ),
-                );
+                Navigator.of(context).pop(); // đóng dialog
+                context.go('/login', extra: widget.email);
               },
               child: const Text('OK'),
             ),
           ],
         ),
       );
-    } catch (e, st) {
+    } catch (e) {
       debugPrint('Error in resetPassword(): $e');
-      debugPrintStack(stackTrace: st);
-      setState(() {
-        errorMessage = e.toString();
-      });
+      setState(() => errorMessage = e.toString());
       _showSnackBar('Lỗi đổi mật khẩu: $e');
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      setState(() => isLoading = false);
     }
   }
 
@@ -179,7 +165,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
           const SizedBox(height: 20),
 
-          // Email read-only
+          // Email (readonly)
           TextFormField(
             controller: emailController,
             readOnly: true,
@@ -236,7 +222,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
           const SizedBox(height: 15),
 
-          // Hiển thị lỗi (nếu có)
+          // Lỗi nếu có
           if (errorMessage != null) ...[
             Text(
               errorMessage!,
@@ -245,28 +231,37 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             const SizedBox(height: 15),
           ],
 
-          const SizedBox(height: 25),
+          // Nút Đặt lại mật khẩu
           SizedBox(
             width: double.infinity,
-            height: h * 0.07,
+            height: 50,
             child: ElevatedButton(
               onPressed: isLoading ? null : _resetPassword,
               style: ElevatedButton.styleFrom(
+                shape: const StadiumBorder(),
                 backgroundColor: AppColors.brandSecondary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                disabledBackgroundColor:
+                AppColors.brandSecondary.withOpacity(0.5),
+                elevation: 6,
+                shadowColor: Colors.black26,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                foregroundColor: Colors.white,
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
                 ),
               ),
               child: isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : Text(
-                "Đặt lại mật khẩu",
-                style: TextStyle(
-                  fontSize: w * 0.045,
-                  fontWeight: FontWeight.bold,
+                  ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
                   color: Colors.white,
+                  strokeWidth: 2.5,
                 ),
-              ),
+              )
+                  : const Text("Đặt lại mật khẩu"),
             ),
           ),
           const SizedBox(height: 20),
@@ -288,12 +283,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           Center(
             child: TextButton(
               onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => LoginScreen(email: widget.email),
-                  ),
-                );
+                context.go('/login', extra: widget.email);
               },
               child: const Text.rich(
                 TextSpan(
@@ -315,42 +305,115 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final w = MediaQuery.of(context).size.width;
+  Widget _buildMobileLayout() {
     final h = MediaQuery.of(context).size.height;
-
-    if (w > 800) {
-      // Web layout
-      return Scaffold(
-        body: Row(
-          children: [
-            Expanded(
-              child: Container(color: AppColors.brandPrimary),
+    final w = MediaQuery.of(context).size.width;
+    return Scaffold(
+      backgroundColor: AppColors.brandPrimary,
+      body: Column(
+        children: [
+          const SizedBox(height: 40),
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(30),
+                  topRight: Radius.circular(30),
+                ),
+              ),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20, vertical: 30),
+                child: _buildFormContent(h, w),
+              ),
             ),
-            Expanded(
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWebLayout() {
+    final h = MediaQuery.of(context).size.height;
+    final w = MediaQuery.of(context).size.width;
+    return Scaffold(
+      body: Row(
+        children: [
+          // Bên trái: màu chủ đạo + tiêu đề
+          Expanded(
+            flex: 1,
+            child: Container(
+              color: AppColors.brandPrimary,
+              padding: const EdgeInsets.all(60),
               child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(40),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 500),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.asset('assets/Logo.png', width: 200),
+                    const SizedBox(height: 30),
+                    const Text(
+                      "Quên mật khẩu",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      "Vui lòng nhập OTP và thiết lập mật khẩu mới",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // Bên phải: card trắng chứa form
+          Expanded(
+            flex: 1,
+            child: Center(
+              child: Container(
+                margin: const EdgeInsets.all(60),
+                padding: const EdgeInsets.all(40),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 20,
+                      offset: Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 500),
+                  child: SingleChildScrollView(
                     child: _buildFormContent(h, w),
                   ),
                 ),
               ),
             ),
-          ],
-        ),
-      );
-    }
-
-    // Mobile layout
-    return Scaffold(
-      backgroundColor: AppColors.brandPrimary,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 30),
-        child: _buildFormContent(h, w),
+          ),
+        ],
       ),
     );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    return screenWidth > 800
+        ? _buildWebLayout()
+        : _buildMobileLayout();
   }
 }

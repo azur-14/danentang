@@ -367,11 +367,27 @@ class _ProfileWebLayoutState extends State<ProfileWebLayout> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      TextFieldWidget(
-                        label: 'EMAIL',
-                        value: _user!.email,
-                        onChanged: (_) {},
-                        icon: Icons.email,
+                      // Email (readonly)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('EMAIL', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                            Text(_user!.email, style: TextStyle(fontSize: 16, color: Colors.grey[700])),
+                          ],
+                        ),
+                      ),
+                      // Điểm thân thiết (loyalty points)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('ĐIỂM THÂN THIẾT', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                            Text('${_user!.loyaltyPoints}', style: TextStyle(fontSize: 16, color: Colors.grey[700])),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 16),
                       TextFieldWidget(
