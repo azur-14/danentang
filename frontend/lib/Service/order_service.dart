@@ -17,8 +17,8 @@ class OrderService {
   OrderService._();
   static final OrderService instance = OrderService._();
 
-  static const String _baseUrl = 'https://ordermanagementservice-production.up.railway.app/api';
-  static const String _cartUrl = 'https://ordermanagementservice-production.up.railway.app/api/carts';
+  static const String _baseUrl = 'http://localhost:5005/api';
+  static const String _cartUrl = 'http://localhost:5005/api/carts';
   final http.Client _http = http.Client();
   final Uuid _uuid = Uuid();
 

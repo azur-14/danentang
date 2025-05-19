@@ -12,7 +12,7 @@ import '../models/Review.dart';
 
 class ProductService {
 
-  static const String _baseUrl         = 'https://productmanagementservice-production.up.railway.app/api';
+  static const String _baseUrl         = 'http://localhost:5011/api';
   static const String _productsPath    = '$_baseUrl/products';
   static const String _categoriesPath  = '$_baseUrl/categories';
   static const String _tagsPath        = '$_baseUrl/Tag';
@@ -233,27 +233,30 @@ class ProductService {
     }
     return [];
   }
-
   /// GET /api/product-tags/by-tag/{tagId}
   static Future<List<Product>> fetchProductsByTag(String tagId) async {
-    final uri = Uri.parse('$_productTagsPath/by-tag/$tagId');
+    // 1) Trim whitespace (đảm bảo đúng 24 ký tự hex)
+    final trimmedId = tagId.trim();
+
+    // 2) Build URI
+    final uri = Uri.parse('$_productTagsPath/by-tag/$trimmedId');
     debugPrint('→ GET $uri');
-    try {
-      final resp = await http.get(uri);
-      debugPrint('← ${resp.statusCode} ${resp.body}');
-      if (resp.statusCode == 200) {
-        final data = json.decode(resp.body) as List<dynamic>;
-        return data
-            .map((e) => Product.fromJson(e as Map<String, dynamic>))
-            .toList();
-      } else {
-        debugPrint('‼️ fetchProductsByTag API error ${resp.statusCode}');
-      }
-    } catch (e, st) {
-      debugPrint('❌ fetchProductsByTag exception: $e\n$st');
+
+    // 3) Thực hiện request
+    final resp = await http.get(uri);
+    debugPrint('← ${resp.statusCode} ${resp.body}');
+
+    // 4) Xử lý response
+    if (resp.statusCode == 200) {
+      final List<dynamic> data = json.decode(resp.body) as List<dynamic>;
+      return data
+          .map((e) => Product.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } else {
+      throw Exception('fetchProductsByTag failed: ${resp.statusCode}');
     }
-    return [];
   }
+
   /// GET /api/product-tags/by-product/{productId}
   static Future<List<Tag>> fetchTagsOfProduct(String productId) async {
     final uri = Uri.parse('$_productTagsPath/by-product/$productId');
@@ -265,6 +268,22 @@ class ProductService {
       return data.map((e) => Tag.fromJson(e as Map<String, dynamic>)).toList();
     }
     throw Exception('fetchTagsOfProduct failed: ${resp.statusCode}');
+  }
+  /// GET /api/product-tags/tags-with-products
+  static Future<List<Tag>> fetchTagsWithProducts() async {
+    final uri = Uri.parse('$_productTagsPath/tags-with-products');
+    debugPrint('→ GET $uri');
+    final resp = await http.get(uri);
+    debugPrint('← ${resp.statusCode} ${resp.body}');
+
+    if (resp.statusCode == 200) {
+      final data = json.decode(resp.body) as List<dynamic>;
+      return data
+          .map((e) => Tag.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+
+    throw Exception('fetchTagsWithProducts failed: ${resp.statusCode}');
   }
 
   /// POST /api/product-tags
