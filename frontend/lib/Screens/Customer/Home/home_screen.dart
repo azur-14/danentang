@@ -28,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int selectedIndex = 0;
   bool showAllCategories = false;
   bool isLoading = true;
-  double _opacity = 0.0; // For fade-in effect
+  double _opacity = 0.0;
 
   List<Product> allProducts = [];
   List<Product> filteredProducts = [];
@@ -36,7 +36,6 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Tag> tags = [];
   Map<String, List<Product>> productsByTag = {};
 
-  // Trạng thái bộ lọc
   String? selectedCategory;
   String? selectedTag;
   double minPrice = 0;
@@ -90,10 +89,10 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final prods = await ProductService.fetchAllProducts();
       final cats = await ProductService.fetchAllCategories();
-      final tgs = await ProductService.fetchAllTags();
+      final usedTags = await ProductService.fetchTagsWithProducts();
 
       final mapByTag = <String, List<Product>>{};
-      for (final t in tgs) {
+      for (final t in usedTags) {
         mapByTag[t.id] = await ProductService.fetchProductsByTag(t.id);
       }
 
@@ -101,11 +100,10 @@ class _HomeScreenState extends State<HomeScreen> {
         allProducts = prods;
         filteredProducts = List<Product>.from(prods);
         categories = cats;
-        tags = tgs;
+        tags = usedTags;
         productsByTag = mapByTag;
         _applyFilters(prods);
         isLoading = false;
-        // Trigger fade-in animation
         Future.delayed(const Duration(milliseconds: 100), () {
           setState(() => _opacity = 1.0);
         });
@@ -127,25 +125,27 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (selectedTag != null && selectedTag!.isNotEmpty) {
-      filtered = filtered.where((p) => productsByTag[selectedTag]?.contains(p) ?? false).toList();
+      filtered = filtered
+          .where((p) => productsByTag[selectedTag]
+          ?.any((tp) => tp.id == p.id) ?? false)
+          .toList();
     }
 
     filtered = filtered.where((p) {
-      final effectivePrice = p.discountPercentage != null && p.discountPercentage! > 0
+      final effectivePrice = (p.discountPercentage ?? 0) > 0
           ? p.minPrice * (1 - p.discountPercentage! / 100)
           : p.minPrice;
       return effectivePrice >= minPrice && effectivePrice <= maxPrice;
     }).toList();
 
     if (isPromoOnly) {
-      filtered = filtered.where((p) => p.discountPercentage != null && p.discountPercentage! > 0).toList();
+      filtered = filtered
+          .where((p) => (p.discountPercentage ?? 0) > 0)
+          .toList();
     }
 
-    if (sortOrder == 'A-Z') {
-      filtered.sort((a, b) => a.name.compareTo(b.name));
-    } else if (sortOrder == 'Z-A') {
-      filtered.sort((a, b) => b.name.compareTo(a.name));
-    }
+    filtered.sort((a, b) =>
+    sortOrder == 'A-Z' ? a.name.compareTo(b.name) : b.name.compareTo(a.name));
 
     setState(() {
       filteredProducts = filtered;
@@ -170,15 +170,15 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  int _calculateItemsPerRow(double screenWidth, double itemWidth, double spacing, double pad) {
-    final avail = screenWidth - pad * 2;
-    return ((avail + spacing) / (itemWidth + spacing)).floor();
+  int _calculateItemsPerRow(double w, double itemW, double spacing, double pad) {
+    final avail = w - pad * 2;
+    return ((avail + spacing) / (itemW + spacing)).floor();
   }
 
   void _showFilterDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         title: const Text('Bộ Lọc'),
         content: SingleChildScrollView(
           child: Column(
@@ -186,37 +186,31 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               DropdownButton<String>(
                 hint: const Text('Chọn Danh Mục'),
-                value: selectedCategory == null ? "" : selectedCategory,
+                value: selectedCategory ?? '',
                 items: [
-                  const DropdownMenuItem<String>(
-                    value: "",
-                    child: Text('Tất cả danh mục'),
-                  ),
-                  ...categories.map((c) => DropdownMenuItem<String>(
+                  const DropdownMenuItem(value: '', child: Text('Tất cả danh mục')),
+                  ...categories.map((c) => DropdownMenuItem(
                     value: c.id,
                     child: Text(c.name),
                   )),
                 ],
-                onChanged: (value) => setState(() {
-                  selectedCategory = value == "" ? null : value;
+                onChanged: (v) => setState(() {
+                  selectedCategory = v!.isEmpty ? null : v;
                   _applyFilters(allProducts);
                 }),
               ),
               DropdownButton<String>(
                 hint: const Text('Chọn Thẻ'),
-                value: selectedTag == null ? "" : selectedTag,
+                value: selectedTag ?? '',
                 items: [
-                  const DropdownMenuItem<String>(
-                    value: "",
-                    child: Text('Tất cả thẻ'),
-                  ),
-                  ...tags.map((t) => DropdownMenuItem<String>(
+                  const DropdownMenuItem(value: '', child: Text('Tất cả thẻ')),
+                  ...tags.map((t) => DropdownMenuItem(
                     value: t.id,
                     child: Text(t.name),
                   )),
                 ],
-                onChanged: (value) => setState(() {
-                  selectedTag = value == "" ? null : value;
+                onChanged: (v) => setState(() {
+                  selectedTag = v!.isEmpty ? null : v;
                   _applyFilters(allProducts);
                 }),
               ),
@@ -228,8 +222,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       value: minPrice,
                       min: 0,
                       max: 10000000,
-                      onChanged: (value) => setState(() {
-                        minPrice = value;
+                      onChanged: (v) => setState(() {
+                        minPrice = v;
                         if (minPrice > maxPrice) maxPrice = minPrice;
                         _applyFilters(allProducts);
                       }),
@@ -245,8 +239,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       value: maxPrice,
                       min: 0,
                       max: 10000000,
-                      onChanged: (value) => setState(() {
-                        maxPrice = value;
+                      onChanged: (v) => setState(() {
+                        maxPrice = v;
                         if (maxPrice < minPrice) minPrice = maxPrice;
                         _applyFilters(allProducts);
                       }),
@@ -257,17 +251,19 @@ class _HomeScreenState extends State<HomeScreen> {
               CheckboxListTile(
                 title: const Text('Chỉ Khuyến Mãi'),
                 value: isPromoOnly,
-                onChanged: (value) => setState(() {
-                  isPromoOnly = value ?? false;
+                onChanged: (v) => setState(() {
+                  isPromoOnly = v!;
                   _applyFilters(allProducts);
                 }),
               ),
               DropdownButton<String>(
                 hint: const Text('Sắp Xếp'),
                 value: sortOrder,
-                items: ['A-Z', 'Z-A'].map((e) => DropdownMenuItem<String>(value: e, child: Text(e))).toList(),
-                onChanged: (value) => setState(() {
-                  sortOrder = value ?? 'A-Z';
+                items: ['A-Z', 'Z-A']
+                    .map((o) => DropdownMenuItem(value: o, child: Text(o)))
+                    .toList(),
+                onChanged: (v) => setState(() {
+                  sortOrder = v!;
                   _applyFilters(allProducts);
                 }),
               ),
@@ -280,7 +276,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   isPromoOnly = false;
                   sortOrder = 'A-Z';
                   _applyFilters(allProducts);
-                  Navigator.pop(context);
+                  Navigator.pop(ctx);
                 }),
                 child: const Text('Xóa Bộ Lọc'),
               ),
@@ -288,10 +284,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Đóng')),
         ],
       ),
     );
@@ -299,27 +292,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final w = MediaQuery.of(context).size.width;
     if (isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     if (allProducts.isEmpty) {
-      return const Scaffold(
-        body: Center(child: Text('Không có sản phẩm nào để hiển thị')),
-      );
+      return const Scaffold(body: Center(child: Text('Không có sản phẩm nào để hiển thị')));
     }
-    final w = MediaQuery.of(context).size.width;
-    return w > 800 ? _buildWebLayout(context, w) : _buildMobileLayout(context, w);
+    return w > 800 ? _buildWebLayout(w) : _buildMobileLayout(w);
   }
 
-  Widget _buildMobileLayout(BuildContext context, double w) {
+  Widget _buildMobileLayout(double w) {
     const iconSize = 80.0, iconSpacing = 8.0, iconPadding = 16.0;
     final maxCats = _calculateItemsPerRow(w, iconSize, iconSpacing, iconPadding);
-    final visibleCats = showAllCategories ? categories : categories.take(maxCats).toList();
+    final visibleCats =
+    showAllCategories ? categories : categories.take(maxCats).toList();
 
     return Scaffold(
-      appBar: MobileHeader(
-        isLoggedIn: _isLoggedIn,
-      ),
+      appBar: MobileHeader(isLoggedIn: _isLoggedIn),
       body: AnimatedOpacity(
         opacity: _opacity,
         duration: const Duration(milliseconds: 500),
@@ -327,9 +317,10 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // search + filter
               Row(
                 children: [
-                  Expanded(child: MobileSearchBar()), // Removed isLoggedIn parameter
+                  Expanded(child: MobileSearchBar()),
                   IconButton(
                     icon: const Icon(Icons.filter_list),
                     onPressed: _showFilterDialog,
@@ -337,14 +328,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               const SizedBox(height: 20),
+              // categories
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: iconPadding, vertical: 8),
+                padding:
+                const EdgeInsets.symmetric(horizontal: iconPadding, vertical: 8),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Loại sản phẩm', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    const Text('Loại sản phẩm',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     GestureDetector(
-                      onTap: () => setState(() => showAllCategories = !showAllCategories),
+                      onTap: () =>
+                          setState(() => showAllCategories = !showAllCategories),
                       child: Text(
                         showAllCategories ? 'Thu lại' : 'Xem tất cả',
                         style: const TextStyle(color: Colors.blue),
@@ -355,18 +350,15 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               BannerSection(isWeb: false, screenWidth: w),
               const SizedBox(height: 20),
-              categories.isEmpty
-                  ? const Padding(
-                padding: EdgeInsets.symmetric(horizontal: iconPadding, vertical: 8),
-                child: Text('Không có danh mục nào'),
-              )
-                  : SingleChildScrollView(
+              SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: iconPadding),
                 child: Row(
                   children: visibleCats.map((cat) {
-                    final iconData = _iconMap[cat.name]?['icon'] as IconData? ?? Icons.category;
-                    final iconColor = _iconMap[cat.name]?['color'] as Color? ?? Colors.grey;
+                    final iconData =
+                        _iconMap[cat.name]?['icon'] as IconData? ?? Icons.category;
+                    final iconColor =
+                        _iconMap[cat.name]?['color'] as Color? ?? Colors.grey;
                     return Padding(
                       padding: const EdgeInsets.only(right: iconSpacing),
                       child: _AnimatedCategoryIcon(
@@ -377,7 +369,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ProductCatalogPage(categoryId: cat.id),
+                              builder: (_) =>
+                                  ProductCatalogPage(categoryId: cat.id),
                             ),
                           );
                         },
@@ -387,55 +380,45 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
 
-              const SizedBox(height: 40), // Increased spacing above
-              if (filteredProducts.isNotEmpty)
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFFE0B2), Color(0xFFFFB3B3)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  margin: const EdgeInsets.symmetric(horizontal: iconPadding),
-                  padding: const EdgeInsets.all(16), // Added padding to create space inside the Container
-                  child: ProductSection(
-                    title: 'Khuyến mãi',
-                    products: filteredProducts.where((p) => p.discountPercentage != null && p.discountPercentage! > 0).toList(),
-                    isWeb: false,
-                    screenWidth: w,
-                    onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
-                  ),
+              const SizedBox(height: 40),
+              // promo
+              if (filteredProducts.any((p) => (p.discountPercentage ?? 0) > 0))
+                ProductSection(
+                  title: 'Khuyến mãi',
+                  products: filteredProducts
+                      .where((p) => (p.discountPercentage ?? 0) > 0)
+                      .toList(),
+                  isWeb: false,
+                  screenWidth: w,
+                  onTap: (p) =>
+                      context.goNamed('product', pathParameters: {'id': p.id}),
                 ),
-              const SizedBox(height: 40), // Increased spacing below
-
+              const SizedBox(height: 20),
+              // by category
               for (final cat in categories)
                 if (filteredProducts.any((p) => p.categoryId == cat.id))
                   ProductSection(
                     title: cat.name,
-                    products: filteredProducts.where((p) => p.categoryId == cat.id).toList(),
+                    products: filteredProducts
+                        .where((p) => p.categoryId == cat.id)
+                        .toList(),
                     isWeb: false,
                     screenWidth: w,
-                    onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+                    onTap: (p) =>
+                        context.goNamed('product', pathParameters: {'id': p.id}),
                   ),
               const SizedBox(height: 20),
+              // by tag
               for (final tag in tags)
                 if ((productsByTag[tag.id] ?? []).isNotEmpty)
                   ProductSection(
                     title: tag.name,
-                    products: filteredProducts.where((p) => productsByTag[tag.id]?.contains(p) ?? false).toList(),
-                    isWeb: false,
+                    products: productsByTag[tag.id]!,  // ← show thẳng list này
+                    isWeb: false,                       // ← thật ra đang chạy mobile
                     screenWidth: w,
                     onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
                   ),
+
             ],
           ),
         ),
@@ -449,18 +432,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildWebLayout(BuildContext context, double w) {
-    final bool isLoggedIn = _isLoggedIn;
+  Widget _buildWebLayout(double w) {
     const iconSize = 80.0, iconSpacing = 16.0, iconPadding = 32.0;
     final maxCats = _calculateItemsPerRow(w, iconSize, iconSpacing, iconPadding);
-    final visibleCats = showAllCategories ? categories : categories.take(maxCats).toList();
+    final visibleCats =
+    showAllCategories ? categories : categories.take(maxCats).toList();
 
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: WebHeader(
-          isLoggedIn: _isLoggedIn,
-        ),
+        child: WebHeader(isLoggedIn: _isLoggedIn),
       ),
       body: AnimatedOpacity(
         opacity: _opacity,
@@ -468,6 +449,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: SingleChildScrollView(
           child: Column(
             children: [
+              // search + filter
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -481,38 +463,38 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 8),
               BannerSection(isWeb: true, screenWidth: w),
               const SizedBox(height: 16),
-              categories.isEmpty
-                  ? const Padding(
-                padding: EdgeInsets.symmetric(horizontal: iconPadding, vertical: 8),
-                child: Text('Không có danh mục nào'),
-              )
-                  : Padding(
-                padding: const EdgeInsets.symmetric(horizontal: iconPadding, vertical: 8),
+              // categories
+              Padding(
+                padding:
+                const EdgeInsets.symmetric(horizontal: iconPadding, vertical: 8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Loại sản phẩm',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0251CD)),
-                        ),
+                        const Text('Loại sản phẩm',
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0251CD))),
                         GestureDetector(
-                          onTap: () => setState(() => showAllCategories = !showAllCategories),
+                          onTap: () =>
+                              setState(() => showAllCategories = !showAllCategories),
                           child: Text(
                             showAllCategories ? 'Thu lại' : 'Xem tất cả',
-                            style: const TextStyle(color: Colors.blue, fontSize: 14),
+                            style: const TextStyle(color: Colors.blue),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 8),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
                       children: visibleCats.map((cat) {
-                        final iconData = _iconMap[cat.name]?['icon'] as IconData? ?? Icons.category;
-                        final iconColor = _iconMap[cat.name]?['color'] as Color? ?? Colors.grey;
+                        final iconData =
+                            _iconMap[cat.name]?['icon'] as IconData? ?? Icons.category;
+                        final iconColor =
+                            _iconMap[cat.name]?['color'] as Color? ?? Colors.grey;
                         return Padding(
                           padding: const EdgeInsets.only(right: iconSpacing),
                           child: _AnimatedCategoryIcon(
@@ -523,7 +505,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => ProductCatalogPage(categoryId: cat.id),
+                                  builder: (_) =>
+                                      ProductCatalogPage(categoryId: cat.id),
                                 ),
                               );
                             },
@@ -534,92 +517,51 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
+
+              // promo
               const SizedBox(height: 16),
-              if (filteredProducts.isNotEmpty)
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFFE0B2), Color(0xFFFFB3B3)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  margin: const EdgeInsets.symmetric(horizontal: iconPadding),
-                  child: ProductSection(
-                    title: 'Khuyến mãi',
-                    products: filteredProducts.where((p) => p.discountPercentage != null && p.discountPercentage! > 0).toList(),
-                    isWeb: true,
-                    screenWidth: w,
-                    onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
-                  ),
+              if (filteredProducts.any((p) => (p.discountPercentage ?? 0) > 0))
+                ProductSection(
+                  title: 'Khuyến mãi',
+                  products:
+                  filteredProducts.where((p) => (p.discountPercentage ?? 0) > 0).toList(),
+                  isWeb: true,
+                  screenWidth: w,
+                  onTap: (p) =>
+                      context.goNamed('product', pathParameters: {'id': p.id}),
                 ),
+
+              // by tag
               const SizedBox(height: 16),
               for (final tag in tags)
                 if ((productsByTag[tag.id] ?? []).isNotEmpty)
                   ProductSection(
                     title: tag.name,
-                    products: filteredProducts.where((p) => productsByTag[tag.id]?.contains(p) ?? false).toList(),
+                    products: productsByTag[tag.id]!,
                     isWeb: true,
                     screenWidth: w,
                     onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
                   ),
+              // by category
               const SizedBox(height: 16),
               for (final cat in categories)
                 if (filteredProducts.any((p) => p.categoryId == cat.id))
                   ProductSection(
                     title: cat.name,
-                    products: filteredProducts.where((p) => p.categoryId == cat.id).toList(),
+                    products:
+                    filteredProducts.where((p) => p.categoryId == cat.id).toList(),
                     isWeb: true,
                     screenWidth: w,
-                    onTap: (p) => context.goNamed('product', pathParameters: {'id': p.id}),
+                    onTap: (p) =>
+                        context.goNamed('product', pathParameters: {'id': p.id}),
                   ),
+
               const SizedBox(height: 16),
               Footer(),
             ],
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildPromoItem(IconData icon, String label) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.15),
-                blurRadius: 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Icon(icon, size: 24, color: const Color(0xFF0251CD)),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF1A0056),
-          ),
-        ),
-      ],
     );
   }
 }
@@ -642,17 +584,18 @@ class _AnimatedCategoryIcon extends StatefulWidget {
   __AnimatedCategoryIconState createState() => __AnimatedCategoryIconState();
 }
 
-class __AnimatedCategoryIconState extends State<_AnimatedCategoryIcon> with SingleTickerProviderStateMixin {
+class __AnimatedCategoryIconState extends State<_AnimatedCategoryIcon>
+    with SingleTickerProviderStateMixin {
   double _scale = 1.0;
 
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
-      onEnter: (_) => setState(() => _scale = 1.1), // Slight scale-up on hover (web)
+      onEnter: (_) => setState(() => _scale = 1.1),
       onExit: (_) => setState(() => _scale = 1.0),
       child: InkWell(
         onTap: () {
-          setState(() => _scale = 0.95); // Scale down on tap
+          setState(() => _scale = 0.95);
           Future.delayed(const Duration(milliseconds: 100), () {
             setState(() => _scale = 1.0);
             widget.onTap();
