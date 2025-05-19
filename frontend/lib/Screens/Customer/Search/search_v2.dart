@@ -6,6 +6,7 @@ import '../../../Service/product_service.dart';
 import '../../../Service/search_service.dart';
 import '../../../models/product.dart';
 import '../../../models/Review.dart';
+import '../../../widgets/Search/ProductCard.dart';
 
 class Searching extends StatelessWidget {
   const Searching({super.key});
@@ -123,6 +124,7 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
       );
     }
   }
+
   Future<void> _loadReviewsForProducts(List<Product> products) async {
     try {
       for (final product in products) {
@@ -292,51 +294,6 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
     });
   }
 
-  Widget _smartImage(String imageUrl, {double? width, double? height, BoxFit fit = BoxFit.cover}) {
-    if (imageUrl.isEmpty) {
-      return const Icon(Icons.image_not_supported, size: 50);
-    }
-    if (imageUrl.startsWith('http')) {
-      return Image.network(
-        imageUrl,
-        width: width,
-        height: height,
-        fit: fit,
-        errorBuilder: (context, error, stackTrace) => const Icon(Icons.error, size: 50),
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return const Center(child: CircularProgressIndicator());
-        },
-      );
-    }
-    try {
-      final bytes = base64Decode(imageUrl);
-      return Image.memory(
-        bytes,
-        width: width,
-        height: height,
-        fit: fit,
-        errorBuilder: (context, error, stackTrace) => const Icon(Icons.error, size: 50),
-      );
-    } catch (_) {
-      return const Icon(Icons.image_not_supported, size: 50);
-    }
-  }
-
-  Widget _buildRatingStars(double rating) {
-    return Row(
-      children: List.generate(5, (index) {
-        if (index < rating.floor()) {
-          return const Icon(Icons.star, color: Colors.amber, size: 16);
-        } else if (index < rating) {
-          return const Icon(Icons.star_half, color: Colors.amber, size: 16);
-        } else {
-          return const Icon(Icons.star_border, color: Colors.amber, size: 16);
-        }
-      }),
-    );
-  }
-
   void _showFilterBottomSheet() {
     _animationController?.forward();
     showModalBottomSheet(
@@ -447,7 +404,7 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
         body: Stack(
           children: [
             SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(12.0),
               physics: const ClampingScrollPhysics(),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -470,11 +427,15 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
                       child: GridView.builder(
                         shrinkWrap: true,
                         physics: const ClampingScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          crossAxisSpacing: 6,
-                          mainAxisSpacing: 6,
-                          childAspectRatio: 0.8,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: MediaQuery.of(context).size.width > 900
+                              ? 6
+                              : MediaQuery.of(context).size.width > 600
+                              ? 4
+                              : 2,
+                          crossAxisSpacing: 4,
+                          mainAxisSpacing: 4,
+                          childAspectRatio: 0.65,
                         ),
                         itemCount: _recommendedProducts.length,
                         itemBuilder: (context, index) {
@@ -489,81 +450,13 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
                               validReviews.length
                               : 0.0;
                           final reviewCount = validReviews.length;
-                          final latestComment =
-                          validReviews.isNotEmpty ? validReviews.first.comment : '';
-                          return Card(
-                            elevation: 2,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: ClipRRect(
-                                    borderRadius:
-                                    const BorderRadius.vertical(top: Radius.circular(10)),
-                                    child: _smartImage(
-                                      imageUrl,
-                                      width: double.infinity,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(6.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        product.name,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 3),
-                                      Text(
-                                        product.minPrice == product.maxPrice
-                                            ? '\$${product.minPrice.toStringAsFixed(0)}'
-                                            : '\$${product.minPrice.toStringAsFixed(0)} - \$${product.maxPrice.toStringAsFixed(0)}',
-                                        style: const TextStyle(
-                                          color: Colors.redAccent,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 10,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 3),
-                                      Row(
-                                        children: [
-                                          _buildRatingStars(averageRating),
-                                          const SizedBox(width: 3),
-                                          Text(
-                                            '($reviewCount)',
-                                            style: const TextStyle(fontSize: 10),
-                                          ),
-                                        ],
-                                      ),
-                                      if (latestComment.isNotEmpty) ...[
-                                        const SizedBox(height: 3),
-                                        Text(
-                                          '"$latestComment"',
-                                          style: const TextStyle(
-                                            fontSize: 10,
-                                            color: Colors.grey,
-                                            fontStyle: FontStyle.italic,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                          return ProductCard(
+                            product: product,
+                            imageUrl: imageUrl,
+                            averageRating: averageRating,
+                            reviewCount: reviewCount,
+                            width: double.infinity,
+                            height: 120,
                           );
                         },
                       ),
@@ -619,7 +512,7 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
                     ),
                   ],
                   if (_searchResults.isNotEmpty) ...[
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     const Text(
                       'Kết quả tìm kiếm',
                       style: TextStyle(
@@ -635,11 +528,15 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
                       child: GridView.builder(
                         shrinkWrap: true,
                         physics: const ClampingScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
-                          childAspectRatio: 0.7,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: MediaQuery.of(context).size.width > 900
+                              ? 6
+                              : MediaQuery.of(context).size.width > 600
+                              ? 4
+                              : 2,
+                          crossAxisSpacing: 4,
+                          mainAxisSpacing: 4,
+                          childAspectRatio: 0.65,
                         ),
                         itemCount: _searchResults.length,
                         itemBuilder: (context, index) {
@@ -654,81 +551,13 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
                               validReviews.length
                               : 0.0;
                           final reviewCount = validReviews.length;
-                          final latestComment =
-                          validReviews.isNotEmpty ? validReviews.first.comment : '';
-                          return Card(
-                            elevation: 4,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: ClipRRect(
-                                    borderRadius:
-                                    const BorderRadius.vertical(top: Radius.circular(12)),
-                                    child: _smartImage(
-                                      imageUrl,
-                                      width: double.infinity,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        product.name,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        product.minPrice == product.maxPrice
-                                            ? '\$${product.minPrice.toStringAsFixed(0)}'
-                                            : '\$${product.minPrice.toStringAsFixed(0)} - \$${product.maxPrice.toStringAsFixed(0)}',
-                                        style: const TextStyle(
-                                          color: Colors.redAccent,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        children: [
-                                          _buildRatingStars(averageRating),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            '($reviewCount)',
-                                            style: const TextStyle(fontSize: 12),
-                                          ),
-                                        ],
-                                      ),
-                                      if (latestComment.isNotEmpty) ...[
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          '"$latestComment"',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey,
-                                            fontStyle: FontStyle.italic,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                          return ProductCard(
+                            product: product,
+                            imageUrl: imageUrl,
+                            averageRating: averageRating,
+                            reviewCount: reviewCount,
+                            width: double.infinity,
+                            height: 120,
                           );
                         },
                       ),
@@ -740,8 +569,8 @@ class _SearchScreenState extends State<SearchScreen> with SingleTickerProviderSt
             if (_autocompleteSuggestions.isNotEmpty && _isSearchFocused)
               Positioned(
                 top: 0,
-                left: 16,
-                right: 16,
+                left: 12,
+                right: 12,
                 child: AnimatedOpacity(
                   opacity: _autocompleteSuggestions.isNotEmpty ? 1.0 : 0.0,
                   duration: const Duration(milliseconds: 200),
