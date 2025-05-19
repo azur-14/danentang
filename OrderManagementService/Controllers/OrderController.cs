@@ -151,10 +151,19 @@ namespace OrderManagementService.Controllers
                     var receiverEmail = order.ShippingAddress.Email;
                     var mailSubject = $"Xác nhận đơn hàng #{order.OrderNumber}";
                     var mailBody = $@"
-<b>Cảm ơn bạn đã đặt hàng!</b><br>
-Đơn hàng: {order.OrderNumber}<br>
-Tổng cộng: {order.TotalAmount:N0}đ<br>
-Trạng thái: {order.Status}
+<b>Cảm ơn bạn đã đặt hàng tại Hoalahe!</b><br>
+Người nhận: {order.ShippingAddress.ReceiverName}<br>
+SĐT: {order.ShippingAddress.PhoneNumber}<br>
+Địa chỉ: {order.ShippingAddress.AddressLine}, {order.ShippingAddress.Ward}, {order.ShippingAddress.District}, {order.ShippingAddress.City}<br>
+<b>Danh sách sản phẩm:</b>
+<ul>
+{string.Join("", order.Items.Select(i => $"<li>{i.ProductName} ({i.VariantName}) x{i.Quantity}: {i.Price:N0}đ</li>"))}
+</ul>
+<b>Phí vận chuyển:</b> {order.ShippingFee:N0}đ<br>
+<b>Tổng cộng:</b> {order.TotalAmount:N0}đ<br>
+<b>Giảm giá:</b> {order.DiscountAmount:N0}đ<br>
+<b>Điểm thưởng tích lũy:</b> {order.LoyaltyPointsEarned} điểm<br>
+<b>Trạng thái đơn hàng:</b> {order.Status}
 ";
                     await SendEmailAsync(receiverEmail, mailSubject, mailBody);
                 }

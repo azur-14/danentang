@@ -439,10 +439,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         borderRadius: BorderRadius.circular(18),
                       ),
                     ),
-                    onPressed: _placeOrder,
-                    child: Text('ĐẶT HÀNG', style: TextStyle(fontSize: 18, color: Colors.white)),
+                    onPressed: _isLoading ? null : _placeOrder,   // ← disabled khi loading
+                    child: _isLoading
+                        ? SizedBox(
+                      width: 20, height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                        : Text('ĐẶT HÀNG', style: TextStyle(fontSize: 18, color: Colors.white)),
                   ),
                 ),
+
               ],
             ),
           ),
