@@ -1,6 +1,4 @@
 ﻿using OrderManagementService.Data;
-using OrderManagementService.Services;
-using RabbitMQ.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,13 +33,6 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
-// 5. RabbitMQ – khởi tạo Connection/Channel chung
-var factory = new ConnectionFactory { HostName = builder.Configuration["RabbitMQ:Host"] ?? "localhost" };
-var connection = factory.CreateConnection();
-var channel = connection.CreateModel();
-builder.Services.AddSingleton<IModel>(channel);
-builder.Services.AddSingleton<RabbitMQPublisher>();
 
 var app = builder.Build();
 
