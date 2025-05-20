@@ -81,12 +81,40 @@ namespace OrderManagementService.Controllers
         [HttpPatch("{cartId:length(24)}/items")]
         public async Task<IActionResult> UpsertItem(string cartId, [FromBody] CartItem item)
         {
-            var update = Builders<Cart>.Update
-                .CurrentDate(c => c.UpdatedAt)
-                .AddToSet(c => c.Items, item);
+            // Thử cập nhật số lượng nếu item đã tồn tại
+            var filter = Builders<Cart>.Filter.And(
+                Builders<Cart>.Filter.Eq(c => c.Id, cartId),
+                Builders<Cart>.Filter.ElemMatch(c => c.Items,
+                    i => i.ProductId == item.ProductId &&
+                        (i.ProductVariantId == item.ProductVariantId || item.ProductVariantId == null))
+            );
 
-            var result = await _carts.UpdateOneAsync(c => c.Id == cartId, update);
-            if (result.MatchedCount == 0) return NotFound();
+            var update = Builders<Cart>.Update
+                .Set("Items.$.Quantity", item.Quantity)
+                .CurrentDate(c => c.UpdatedAt);
+
+            var result = await _carts.UpdateOneAsync(filter, update);
+
+            // Nếu không tìm thấy item để cập nhật, thì thêm mới
+            if (result.MatchedCount == 0)
+            {
+                // hoặc nếu dùng class thường:
+                var newItem = new CartItem
+                {
+                    ProductId = item.ProductId,
+                    ProductVariantId = item.ProductVariantId,
+                    Quantity = 1
+                };
+
+                var pushUpdate = Builders<Cart>.Update
+                    .Push(c => c.Items, newItem)
+                    .CurrentDate(c => c.UpdatedAt);
+
+                var pushResult = await _carts.UpdateOneAsync(c => c.Id == cartId, pushUpdate);
+                if (pushResult.MatchedCount == 0) return NotFound();
+            }
+
+
             return NoContent();
         }
 

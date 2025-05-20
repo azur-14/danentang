@@ -4,6 +4,7 @@ class ComplaintMessage {
   final String content;
   final bool isFromCustomer;
   final DateTime createdAt;
+  final String? imageUrl;   // <-- Thêm dòng này
 
   ComplaintMessage({
     required this.senderId,
@@ -11,6 +12,7 @@ class ComplaintMessage {
     required this.content,
     required this.isFromCustomer,
     required this.createdAt,
+    this.imageUrl,          // <-- Thêm dòng này
   });
 
   factory ComplaintMessage.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,7 @@ class ComplaintMessage {
       content: json['content'],
       isFromCustomer: json['isFromCustomer'],
       createdAt: DateTime.parse(json['createdAt']),
+      imageUrl: json['imageUrl'],       // <-- Thêm dòng này
     );
   }
 }

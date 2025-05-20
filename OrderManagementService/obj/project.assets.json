@@ -1373,11 +1373,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\code\\danentang\\OrderManagementService\\OrderManagementService.csproj",
+      "projectUniqueName": "C:\\Users\\ADMIN\\Documents\\GitHub\\danentang\\OrderManagementService\\OrderManagementService.csproj",
       "projectName": "OrderManagementService",
-      "projectPath": "D:\\code\\danentang\\OrderManagementService\\OrderManagementService.csproj",
+      "projectPath": "C:\\Users\\ADMIN\\Documents\\GitHub\\danentang\\OrderManagementService\\OrderManagementService.csproj",
       "packagesPath": "C:\\Users\\ADMIN\\.nuget\\packages\\",
-      "outputPath": "D:\\code\\danentang\\OrderManagementService\\obj\\",
+      "outputPath": "C:\\Users\\ADMIN\\Documents\\GitHub\\danentang\\OrderManagementService\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

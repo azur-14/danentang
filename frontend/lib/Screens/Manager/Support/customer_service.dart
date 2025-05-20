@@ -5,6 +5,8 @@ import 'package:danentang/Service/user_service.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart'; // Thêm import cho image_picker
+import 'dart:io'; // Để xử lý file hình ảnh
 import '../../../widgets/Footer/mobile_navigation_bar.dart';
 
 class CustomerServiceScreen extends StatefulWidget {
@@ -26,6 +28,7 @@ class _CustomerServiceScreenState extends State<CustomerServiceScreen> {
   bool _isLoading = true;
   int _selectedIndex = 0;
   WebSocketChannel? _channel;
+  final ImagePicker _picker = ImagePicker(); // Khởi tạo ImagePicker
 
   @override
   void initState() {
@@ -58,7 +61,6 @@ class _CustomerServiceScreenState extends State<CustomerServiceScreen> {
 
       _channel!.stream.listen((data) {
         final msg = jsonDecode(data);
-        // Chỉ xử lý khi sender là peerUser, không phải currentUser
         if (msg['senderId'] == _peerUser!.id &&
             msg['receiverId'] == _currentUser!.id) {
           setState(() {
@@ -67,11 +69,12 @@ class _CustomerServiceScreenState extends State<CustomerServiceScreen> {
               'content': msg['content'],
               'isFromCustomer': msg['isFromCustomer'],
               'createdAt': msg['createdAt'],
+              'image': msg['imageUrl'], // lấy đúng trường imageUrl
+              // Hỗ trợ hình ảnh từ WebSocket
             });
           });
         }
       });
-
 
       setState(() {
         _currentUser = currentUser;
@@ -112,9 +115,52 @@ class _CustomerServiceScreenState extends State<CustomerServiceScreen> {
     });
   }
 
+  Future<void> _pickAndSendImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image == null || _currentUser == null || _peerUser == null) return;
+
+      final bytes = await image.readAsBytes();
+      final base64Image = base64Encode(bytes);
+
+      final msg = {
+        'senderId': _currentUser!.id,
+        'receiverId': _peerUser!.id,
+        'content': '', // hoặc null
+        'isFromCustomer': !isAdmin,
+        'imageUrl': base64Image, // đúng tên trường imageUrl
+      };
+      _channel?.sink.add(jsonEncode(msg));
+
+
+      // 2. Gửi qua API để lưu lịch sử (tùy backend, dùng imageUrl/ image base64)
+      await UserService().sendMessage(
+        userId: _peerUser!.id,
+        senderId: _currentUser!.id,
+        content: '',        // gửi trống vì đây là ảnh
+        isFromCustomer: !isAdmin,
+        imageUrl: base64Image, // truyền base64 vào đây
+      );
+
+      setState(() {
+        _messages.add({
+          'sender': isAdmin ? 'admin' : _currentUser!.email,
+          'content': '',
+          'isFromCustomer': !isAdmin,
+          'createdAt': DateTime.now().toIso8601String(),
+          'imageUrl': base64Image,
+        });
+      });
+    } catch (e) {
+      print('[ERROR] Lỗi khi chọn hình ảnh: $e');
+    }
+  }
+
+
   @override
   void dispose() {
     _channel?.sink.close();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -174,6 +220,8 @@ class _CustomerServiceScreenState extends State<CustomerServiceScreen> {
                       time: createdAt != null
                           ? DateFormat('hh:mm a').format(DateTime.parse(createdAt).toLocal())
                           : '',
+                      image: msg['imageUrl'], // lấy đúng trường imageUrl
+// Truyền image vào ChatBubble
                     );
                   },
                 ),
@@ -208,6 +256,17 @@ class _CustomerServiceScreenState extends State<CustomerServiceScreen> {
       color: Colors.grey.shade200,
       child: Row(
         children: [
+          IconButton(
+            onPressed: _pickAndSendImage, // Gọi hàm chọn và gửi hình ảnh
+            icon: const Icon(Icons.image),
+            color: Colors.white,
+            style: ButtonStyle(
+              backgroundColor: MaterialStateProperty.all(Colors.blueAccent),
+              shape: MaterialStateProperty.all(CircleBorder()),
+              padding: MaterialStateProperty.all(const EdgeInsets.all(16)),
+            ),
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: TextField(
               controller: _controller,
@@ -235,7 +294,7 @@ class _CustomerServiceScreenState extends State<CustomerServiceScreen> {
               shape: MaterialStateProperty.all(CircleBorder()),
               padding: MaterialStateProperty.all(const EdgeInsets.all(16)),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -246,12 +305,14 @@ class ChatBubble extends StatelessWidget {
   final bool isUser;
   final String message;
   final String time;
+  final String? image; // Thêm thuộc tính image
 
   const ChatBubble({
     super.key,
     required this.isUser,
     required this.message,
     required this.time,
+    this.image,
   });
 
   @override
@@ -266,7 +327,7 @@ class ChatBubble extends StatelessWidget {
         child: FadeTransition(opacity: animation, child: child),
       ),
       child: Align(
-        key: ValueKey<String>(message + time),
+        key: ValueKey<String>(message + time + (image ?? '')),
         alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 6),
@@ -285,10 +346,66 @@ class ChatBubble extends StatelessWidget {
             crossAxisAlignment:
             isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
-              Text(message, style: TextStyle(color: isUser ? Colors.white : Colors.black)),
+              if (image != null)
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => FullImageScreen(base64Image: image!),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: Image.memory(
+                      base64Decode(image!),
+                      width: 150,
+                      height: 150,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.broken_image, size: 100, color: Colors.red),
+                    ),
+                  ),
+                ),
+
+              if (message.isNotEmpty) // Hiển thị tin nhắn nếu có
+                Text(
+                  message,
+                  style: TextStyle(color: isUser ? Colors.white : Colors.black),
+                ),
               const SizedBox(height: 4),
-              Text(time, style: TextStyle(color: Colors.white70, fontSize: 10)),
+              Text(
+                time,
+                style: TextStyle(
+                  color: isUser ? Colors.white70 : Colors.black54,
+                  fontSize: 10,
+                ),
+              ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}class FullImageScreen extends StatelessWidget {
+  final String base64Image;
+  const FullImageScreen({Key? key, required this.base64Image}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: Center(
+        child: InteractiveViewer(
+          child: Image.memory(
+            base64Decode(base64Image),
+            fit: BoxFit.contain,
           ),
         ),
       ),

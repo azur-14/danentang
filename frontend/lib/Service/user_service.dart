@@ -8,16 +8,15 @@ import '../models/Address.dart';
 class UserService {
   /// AuthController base URL
   final String _authBase;
-
   /// UserController base URL
   final String _userBase;
   final String _chatBase;
 
   UserService({
     // use 10.0.2.2 on Android emulator, localhost on web/desktop
-    String authBase = 'https://usermanagementservice-production-697c.up.railway.app/api/auth',
-    String userBase = 'https://usermanagementservice-production-697c.up.railway.app/api/user',
-    String chatBase = 'https://usermanagementservice-production-697c.up.railway.app/api/complaint',
+    String authBase = 'http://localhost:5012/api/auth',
+    String userBase = 'http://localhost:5012/api/user',
+    String chatBase = 'http://localhost:5012/api/complaint',
 
   })  : _authBase = authBase,
         _userBase = userBase,
@@ -386,6 +385,7 @@ class UserService {
       throw Exception('Failed to load complaining users');
     }
   }
+
   Future<void> changePassword({
     required String email,
     required String currentPassword,
@@ -401,13 +401,11 @@ class UserService {
         'newPassword': newPassword,
       }),
     );
-
     if (resp.statusCode != 200) {
       // Nếu server trả về plain-text, resp.body sẽ là chuỗi lỗi bạn muốn show
       throw Exception(resp.body);
     }
     // nếu cần parse JSON thành object thì mới gọi jsonDecode ở đây
   }
-
 }
 

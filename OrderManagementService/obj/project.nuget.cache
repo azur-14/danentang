@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "ixXPIKcIk9E=",
+  "dgSpecHash": "dXzNjEPs+wk=",
   "success": true,
-  "projectFilePath": "D:\\code\\danentang\\OrderManagementService\\OrderManagementService.csproj",
+  "projectFilePath": "C:\\Users\\ADMIN\\Documents\\GitHub\\danentang\\OrderManagementService\\OrderManagementService.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\ADMIN\\.nuget\\packages\\bouncycastle.cryptography\\2.5.1\\bouncycastle.cryptography.2.5.1.nupkg.sha512",
     "C:\\Users\\ADMIN\\.nuget\\packages\\dnsclient\\1.6.1\\dnsclient.1.6.1.nupkg.sha512",
