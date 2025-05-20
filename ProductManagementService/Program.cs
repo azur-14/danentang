@@ -36,12 +36,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowAll");
-
-// WebSocket config
+// ĐÂY! WebSocketOptions nên đặt sau CORS, trước UseWebSockets:
 var webSocketOptions = new WebSocketOptions
 {
     KeepAliveInterval = TimeSpan.FromMinutes(2),
-    AllowedOrigins = { "*" } // Có thể giới hạn nếu dùng production domain
+    AllowedOrigins = { "*" } // hoặc: { "https://your-frontend.com" }
 };
 app.UseWebSockets(webSocketOptions);
 

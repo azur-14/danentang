@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +8,7 @@ import 'package:danentang/models/CartItem.dart';
 import 'package:danentang/Service/order_service.dart';
 import 'package:danentang/Service/product_service.dart';
 import 'package:danentang/widgets/Product/AddToCartDialog.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 class ProductInfo extends StatefulWidget {
   final Product product;
@@ -24,7 +24,7 @@ class _ProductInfoState extends State<ProductInfo> {
   late Future<List<Review>> _futureReviews;
   double _averageRating = 0;
   int _reviewCount = 0;
-  WebSocket? _socket;
+  WebSocketChannel? _channel;
 
   @override
   void initState() {
@@ -57,8 +57,10 @@ class _ProductInfoState extends State<ProductInfo> {
 
   Future<void> _connectWebSocket() async {
     try {
-      _socket = await WebSocket.connect('ws://localhost:5005/ws/review-stream');
-      _socket!.listen((data) {
+      // Kết nối WebSocket
+      _channel = WebSocketChannel.connect(Uri.parse("ws://localhost:5011/ws/review-stream"));
+      print('[WS] Đã kết nối WebSocket');
+      _channel!.stream.listen((data) {
         final decoded = jsonDecode(data);
         if (decoded['productId'] == widget.product.id) {
           _loadReviews();
@@ -72,9 +74,10 @@ class _ProductInfoState extends State<ProductInfo> {
 
   @override
   void dispose() {
-    _socket?.close();
+    _channel?.sink.close();   // <--- PHẢI dùng .sink.close()
     super.dispose();
   }
+
 
   Future<void> _onAddToCart() async {
     final CartItem? item = await showDialog<CartItem>(

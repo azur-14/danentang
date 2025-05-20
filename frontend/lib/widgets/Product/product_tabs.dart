@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
@@ -8,6 +9,7 @@ import 'package:danentang/models/Review.dart';
 import 'package:danentang/models/user.dart';
 import 'package:danentang/Service/product_service.dart';
 import 'package:danentang/Service/user_service.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 class ProductTabs extends StatefulWidget {
   final TabController tabController;
@@ -32,13 +34,42 @@ class _ProductTabsState extends State<ProductTabs> {
   String? _userName;
   bool _isLoggedIn = false;
   bool _submitting = false;
+  WebSocketChannel? _reviewChannel;
+  StreamSubscription? _reviewSubscription;
 
   @override
   void initState() {
     super.initState();
     _loadReviews();
     _checkLogin();
+    _connectReviewWebSocket();
   }
+  @override
+  void dispose() {
+    _reviewSubscription?.cancel();
+    _reviewChannel?.sink.close();
+    super.dispose();
+  }
+
+  void _connectReviewWebSocket() {
+    // Chỉnh lại URL cho đúng backend deploy
+    _reviewChannel  = WebSocketChannel.connect(Uri.parse("ws://localhost:5011/ws/review-stream"));
+    print('[WS] Đã kết nối WebSocket');
+
+    _reviewSubscription = _reviewChannel!.stream.listen((data) {
+      final json = jsonDecode(data);
+      if (json['productId'] == widget.product.id) {
+        // Có review mới cho sản phẩm này, reload lại reviews
+        _loadReviews();
+        setState(() {}); // Cập nhật UI
+      }
+    }, onError: (err) {
+      debugPrint('[WS Review] Error: $err');
+    }, onDone: () {
+      debugPrint('[WS Review] Closed');
+    });
+  }
+
 
   void _loadReviews() {
     _futureReviews = ProductService.getReviews(widget.product.id);
