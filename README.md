@@ -38,11 +38,6 @@ mở terminal ở root của dự án, sau đó cd frontend
    	Kết nối thiết bị ảo hoặc thiết bị thật với máy tính, sau đó chạy:
    	flutter run
 
-3 Thông tin URL và đăng nhập máy chủ (nếu có)
-* link demo (Canva):https://www.canva.com/design/DAGn55qyYtc/yfQuENo1uADKDwf3BKPIbw/edit?utm_content=DAGn55qyYtc&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton
-* link demo (Drive):
-  *link deploy: https://azur-14.github.io/banmaytinh/#/homepage
-
 4 Thông tin tài khoản người dùng (dữ liệu đã được tải sẵn)
 
 | Vai trò      | Email                                                   | Mật khẩu     | Ghi chú                     |
