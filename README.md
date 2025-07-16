@@ -1,90 +1,111 @@
-﻿Đồ Án Cuối Kỳ
-Môn học: Phát triển Ứng dụng Di động đa nền tảng Học kỳ: Cuối Kỳ
-Đề tài: Quản lý cửa hàng HoaLaHe bán laptop và phụ kiện
+﻿Dưới đây là bản `README.md` đầy đủ, liền mạch, không sử dụng các ký hiệu định dạng như \*\*, phù hợp để nộp báo cáo hoặc chia sẻ GitHub một cách chuyên nghiệp và rõ ràng.
+
+---
+
+# HoaLaHe Laptop & Accessories Store App
+
+Ứng dụng HoaLaHe là một hệ thống thương mại điện tử đa nền tảng (mobile và web) phát triển bằng Flutter. Ứng dụng cho phép người dùng tìm kiếm, xem chi tiết và đặt mua các sản phẩm laptop và linh kiện điện tử. Phía quản trị viên có thể quản lý sản phẩm, danh mục, đơn hàng và người dùng. Dự án áp dụng kiến trúc Microservices, tích hợp công nghệ realtime và tìm kiếm nâng cao để đảm bảo hiệu suất và trải nghiệm người dùng mượt mà.
+
+Đây là đồ án cuối kỳ thuộc môn học Phát triển Ứng dụng Di động đa nền tảng.
 
 Tác giả:
-Lê Thị Hiếu Ngân - 52200040
-Nguyễn Thị Huyền Diệu - 52200090
-Huỳnh Hoàng Tiến Đạt - 52200023
 
-1 Thông tin chung về dự án
-Dự án một hệ thống thương mại điện tử đa nền tảng (mobile & web) được xây dựng bằng Flutter, mang tên HoaLaHe App. Ứng dụng cho phép người dùng thực hiện các chức năng như tìm kiếm, xem chi tiết và mua sắm các sản phẩm máy tính và linh kiện điện tử. Hệ thống được thiết kế để cung cấp trải nghiệm người dùng mượt mà, giao diện trực quan và tốc độ phản hồi nhanh.
-Công nghệ phía client: Ứng dụng được phát triển bằng Flutter, hỗ trợ cả hai nền tảng mobile và web, đảm bảo tính nhất quán và hiệu suất cao.
-Công nghệ phía server: Chọn ASP.NET làm backend framework để xây dựng API, kết nối với cơ sở dữ liệu MongoDB để quản lý dữ liệu sản phẩm, đơn hàng, và người dùng.
+* Lê Thị Hiếu Ngân – 52200040
+* Nguyễn Thị Huyền Diệu – 52200090
+* Huỳnh Hoàng Tiến Đạt – 52200023
 
-2 Hướng dẫn xây dựng và chạy ứng dụng
+Công nghệ sử dụng:
 
-Yêu cầu hệ thống
-Flutter SDK đã được cài đặt trên máy tính (theo hướng dẫn từ trang Flutter.dev).
-Git đã được thiết lập sẵn.
-Đã có thiết bị ảo (Emulator) hoặc thiết bị thật chạy Android/iOS để thử nghiệm.
-Các bước xây dựng và chạy
-* Tải hoặc Clone repository, source code
-Mở terminal hoặc command prompt và chạy:
-git clone [https://github.com/azur-14/danentang.git]
-   	chuyển vào thư mục dự án:
-cd lần lượt vào từng thư mục có file csproject(mở 3 terminal): cd UserManagementService\UserManagementService; cd ProductManagementService, cd OrderManagementService
-nhập lệnh:(chỉ cần nhập một lần) dotnet restore
-dotnet add package MongoDB.Bson
-dotnet add package MongoDB.Driver
-sau đó nhấn dotnet run đối với từng thư mục
-mở terminal ở root của dự án, sau đó cd frontend
+* Flutter và Dart: phát triển ứng dụng frontend cho Web, Android, iOS
+* ASP.NET Core kết hợp MongoDB: xây dựng backend theo kiến trúc Microservices
+* Redis và Socket.IO: xử lý hàng đợi và truyền dữ liệu thời gian thực
+* Elasticsearch: tìm kiếm sản phẩm nâng cao
+* RESTful API: giao tiếp giữa frontend và backend
+* GitHub Pages: deploy frontend web
+* Railway (đã hết trial): deploy backend
 
-	* Cài đặt các thư viện phụ thuộc
-   	Trong thư mục dự án, chạy:
-   	flutter pub get
+Hướng dẫn chạy dự án:
 
-	* Chạy ứng dụng
-   	Kết nối thiết bị ảo hoặc thiết bị thật với máy tính, sau đó chạy:
-   	flutter run
+1. Clone dự án:
+   git clone [https://github.com/azur-14/danentang.git](https://github.com/azur-14/danentang.git)
 
-4 Thông tin tài khoản người dùng (dữ liệu đã được tải sẵn)
+2. Mở 3 terminal, lần lượt chạy backend từng service:
+   cd UserManagementService/UserManagementService
+   dotnet restore
+   dotnet run
 
-| Vai trò      | Email                                                   | Mật khẩu     | Ghi chú                     |
-| ------------ | ------------------------------------------------------- | --------     | --------------------------- |
-| Admin        | [hieungan0906@gmail.com]                                | 0987654321   | Toàn quyền quản lý hệ thống |
-| Khách hàng 1 | [aoi13072004@gmail.com]                                 | Dieu13@      | Tài khoản khách hàng mẫu    |
+cd ProductManagementService/ProductManagementService
+dotnet restore
+dotnet run
 
+cd OrderManagementService/OrderManagementService
+dotnet restore
+dotnet run
 
-5. Các ghi chú quan trọng
+3. Chạy frontend Flutter:
+   cd frontend
+   flutter pub get
+   flutter run
 
-Kết nối Internet: Ứng dụng yêu cầu kết nối Internet để tải dữ liệu sản phẩm qua REST API và hỗ trợ bình luận/đánh giá thời gian thực bằng Socket.IO.
-Tài khoản Admin: Có quyền quản lý sản phẩm, danh mục và các thiết lập hệ thống.
-Tài khoản Khách hàng: Có thể xem sản phẩm, thêm vào giỏ hàng, thực hiện thanh toán (có thể ở chế độ demo) và tham gia đánh giá/bình luận.
+Lưu ý: Yêu cầu cài đặt sẵn Flutter SDK, .NET 6, Git và thiết bị Android hoặc emulator để chạy thử ứng dụng.
 
-6. Chi tiết các công nghệ đã sử dụng
+Tài khoản đăng nhập mẫu:
 
-Flutter: Framework UI mã nguồn mở của Google, hỗ trợ phát triển đa nền tảng từ một codebase duy nhất, với hiệu suất cao và khả năng tùy biến mạnh mẽ.
-Dart: Ngôn ngữ lập trình chính cho Flutter, định hướng đối tượng, cú pháp dễ học và thân thiện với người mới.
-ASP.NET: Framework backend mạnh mẽ của Microsoft, hỗ trợ xây dựng server hiệu quả, mở rộng cao, triển khai trên Google Cloud.
-REST API: Giao thức giao tiếp giữa frontend và backend qua HTTP (GET, POST, PUT, DELETE) để xử lý dữ liệu.
-Socket.IO: Thư viện giao tiếp hai chiều thời gian thực giữa client và server, sử dụng cho tính năng bình luận/đánh giá tức thời.
-Redis: Hệ thống lưu trữ trong bộ nhớ, đóng vai trò message broker cho hàng đợi gửi email; một worker nền xử lý email từ Redis và thực hiện gửi.
-Elasticsearch: Công cụ tìm kiếm dựa trên Lucene, cung cấp khả năng tìm kiếm nhanh, gợi ý và khớp gần đúng cho sản phẩm.
+| Vai trò    | Email                                                   | Mật khẩu   |
+| ---------- | ------------------------------------------------------- | ---------- |
+| Admin      | [hieungan0906@gmail.com](mailto:hieungan0906@gmail.com) | 0987654321 |
+| Khách hàng | [aoi13072004@gmail.com](mailto:aoi13072004@gmail.com)   | Dieu13@    |
+
+Tính năng chính:
+
+* Tìm kiếm và xem chi tiết sản phẩm
+* Đăng ký, đăng nhập, phân quyền người dùng
+* Thêm vào giỏ hàng, đặt hàng, hủy đơn hàng
+* Quản lý sản phẩm, danh mục, đơn hàng (Admin)
+* Bình luận và đánh giá theo thời gian thực sử dụng Socket.IO
+* Gợi ý tìm kiếm bằng Elasticsearch
+* Gửi email xác nhận đơn hàng thông qua Redis Queue
 
 Triển khai:
-Ứng dụng web và web view được triển khai trên Firebase Hosting.
-Server backend ASP.NET triển khai trên Google Cloud.
+Frontend web được build bằng Flutter và deploy lên GitHub Pages.
+Backend từng microservice triển khai trên Railway, tự động build từ GitHub.
+Hiện tại do Railway đã hết trial nên backend đang tạm ngừng hoạt động.
+Người dùng có thể chạy toàn bộ hệ thống local theo hướng dẫn trên.
 
-7. Điểm cộng
-   Để đạt điểm cộng, nhóm phát triển đã chú trọng vào phần xây dựng backend và các công nghệ liên quan, bao gồm:
+Tính năng mở rộng (Bonus):
+Trong thư mục Bonus, nhóm đã thực hiện và trình bày các nội dung mở rộng:
 
+* Triển khai Microservices với ba dịch vụ riêng biệt: người dùng, sản phẩm, đơn hàng
+* Giao tiếp giữa các service bằng Redis Queue, đảm bảo bất đồng bộ và giảm kết dính
+* Tích hợp AI gồm chatbot gợi ý sản phẩm, tìm kiếm bằng hình ảnh và phân tích cảm xúc đánh giá
 
-8. Thư mục Bonus
-   Trong thư mục "Bonus", nhóm chúng em đã triển khai các tính năng mở rộng sau để đạt điểm cộng, kèm theo bằng chứng minh họa:
+Cấu trúc thư mục chính:
 
-   Integrate AI-related features, such as a smart chatbot that can suggest
-   products directly related to this system, product search by image upload, and
-   Sentiment Analysis for reviews and feedback.
+danentang/
+├── frontend/
+│   └── lib/
+│       ├── Animation/              # Hiệu ứng chuyển động (animation, transition)
+│       ├── constants/              # Hằng số toàn cục (API URL, màu sắc, kích thước)
+│       ├── models/                 # Lớp mô hình dữ liệu (Product, User, Order...)
+│       ├── Screens/                # Giao diện người dùng
+│       │   ├── Customer/           # UI dành cho người dùng thông thường
+│       │   └── Manager/            # UI dành cho quản trị viên (admin)
+│       ├── Service/                # Gọi API hoặc xử lý logic nghiệp vụ
+│       ├── ultis/                  # Các hàm tiện ích, định dạng, helper
+│       ├── widgets/                # Các widget tái sử dụng (button, card, app bar)
+│       ├── main.dart               # Điểm khởi chạy ứng dụng
+│        └── routes.dart             # Quản lý định tuyến (Navigator, named routes)
+│
+├── UserManagementService/
+├── ProductManagementService/
+├── OrderManagementService/
 
-   Do not utilize Backend-as-a-Service platforms like Firebase. Instead,
-   develop your own backend solution using any framework of your choice (e.g.,
-   Express.js, NestJS, Spring MVC, or ASP.NET, etc.), with a database of your
-   preference such as MySQL, MongoDB, or PostgreSQL. You are required to
-   submit the complete source code along with all relevant information and
-   supporting evidence to earn additional points.
+Liên hệ:
+Lê Thị Hiếu Ngân
+Email: [hieungan0906@gmail.com](mailto:hieungan0906@gmail.com)
+GitHub: [https://github.com/azur-14](https://github.com/azur-14)
 
-   Deploy the system following a Microservices Architecture. In addition to the
-   front end and database, there must be at least three other services. You must also
-   demonstrate asynchronous communication and decoupling between services
-   using an intermediary channel, such as RabbitMQ or Redis.
+Ghi chú:
+Dự án sử dụng hoàn toàn công nghệ mã nguồn mở, không phụ thuộc vào nền tảng Backend-as-a-Service.
+Mọi thành phần đều được tự xây dựng và triển khai, có thể chạy thử và kiểm thử độc lập.
+Dự án chỉ dùng cho mục đích học thuật, không triển khai thương mại.
